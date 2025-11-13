@@ -7,7 +7,7 @@
     "start": "docusaurus start",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
-    "deploy": "gh-pages -d build",
+    "deploy": "gh-pages -d build --branch gh-pages",
     "predeploy": "npm run build",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
