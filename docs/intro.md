@@ -1,47 +1,47 @@
 ---
+title: Inicio
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+# Bienvenidos a la Documentación de Nuestro TFGS
 
-Let's discover **Docusaurus in less than 5 minutes**.
+## Sobre Nosotros
 
-## Getting Started
+Somos un equipo de **4 estudiantes de 2º curso del Grado Superior en Desarrollo de Aplicaciones Multiplataforma (DAM)** que estamos desarrollando nuestro **Proyecto de Fin de Grado**.
 
-Get started by **creating a new site**.
+### Integrantes del Equipo
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
+- Daniel Adrian Altenir Sánchez - Rol principal
+- José Manuel Altenir Sánchez - Rol principal  
+- Othmane Fathi - Rol principal
+- Jesús Mora Peñarrubia - Rol principal
 
-### What you'll need
+## El Proyecto
 
-- [Node.js](https://nodejs.org/en/download/) version 20.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
+Nuestra aplicación incluirá diversas funcionalidades innovadoras que iremos desarrollando a lo largo del curso académico. Este proyecto representa la culminación de nuestra formación en DAM y demuestra las competencias técnicas adquiridas.
 
-## Generate a new site
+## Propósito de Esta Documentación
 
-Generate a new Docusaurus site using the **classic template**.
+**Esta plataforma servirá como la fuente centralizada de documentación** donde registraremos y mantendremos actualizada toda la información relacionada con nuestro proyecto, incluyendo:
 
-The classic template will automatically be added to your project after you run the command:
+### 📋 Áreas de Documentación
 
-```bash
-npm init docusaurus@latest my-website classic
-```
+- **Cambios Técnicos**: Actualizaciones de arquitectura, tecnologías y implementación
+- **Funcionalidades**: Especificaciones y evolución de features
+- **Diseño**: Guías de estilo, UI/UX y prototipos
+- **Desarrollo**: Procesos, metodologías y mejores prácticas
+- **Despliegue**: Configuraciones y procedimientos de release
 
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
+## Estructura de la Documentación
 
-The command also installs all necessary dependencies you need to run Docusaurus.
+La documentación está organizada en las siguientes secciones principales:
 
-## Start your site
+1. **Guías de Desarrollo** - Instrucciones técnicas para contributors
+2. **Arquitectura** - Decisiones de diseño y estructura del sistema
+3. **Funcionalidades** - Especificaciones detalladas de features
+4. **Despliegue** - Procedimientos de instalación y configuración
+5. **Changelog** - Historial de cambios y versiones
 
-Run the development server:
+---
 
-```bash
-cd my-website
-npm run start
-```
-
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
-
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
-
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+**¡Sigue nuestro progreso mientras construimos esta aplicación desde cero!**

@@ -1,8 +1,8 @@
 {
-  "label": "Tutorial - Basics",
-  "position": 2,
+  "label": "Documentación de Wireframes",
+  "position": 3,
   "link": {
     "type": "generated-index",
-    "description": "5 minutes to learn the most important Docusaurus concepts."
+    "description": "Aqui tenemos una Documentación amplia sobre los Wireframes del Proyecto."
   }
 }

@@ -5,26 +5,314 @@
  */
 
 /* You can override the default Infima variables here. */
+/* src/css/custom.css */
+
+/* src/css/custom.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+
 :root {
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
-  --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  /* Fuente principal para texto */
+  --ifm-font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 
+                         'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 
+                         'Droid Sans', 'Helvetica Neue', sans-serif;
+  
+  /* Fuente para código */
+  --ifm-font-family-monospace: 'JetBrains Mono', 'SFMono-Regular', 'Menlo', 'Monaco', 
+                              'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  
+  /* Mejor interlineado para legibilidad */
+  --ifm-line-height-base: 1.6;
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
+:root {
+    /* Fuente principal para texto */
+  --ifm-font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 
+                         'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 
+                         'Droid Sans', 'Helvetica Neue', sans-serif;
+  
+  /* Fuente para código */
+  --ifm-font-family-monospace: 'JetBrains Mono', 'SFMono-Regular', 'Menlo', 'Monaco', 
+                              'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  
+  /* Mejor interlineado para legibilidad */
+  --ifm-line-height-base: 1.6;
+  /* Modo Claro - Púrpura con grises claros */
+  --ifm-color-primary: #71006c;
+  --ifm-color-primary-dark: #650061;
+  --ifm-color-primary-darker: #5f005b;
+  --ifm-color-primary-darkest: #4e004a;
+  --ifm-color-primary-light: #7d0077;
+  --ifm-color-primary-lighter: #83007d;
+  --ifm-color-primary-lightest: #94008e;
+  
+  /* Colores neutros */
+  --ifm-background-color: #f8f9fa;
+  --ifm-navbar-background-color: #ffffff;
+  --ifm-footer-background-color: #e9ecef;
+  /* Colores principales basados en #71006c */
+  --aa-primary-color-rgb: 113, 0, 108 !important;
+  --aa-primary-color: rgba(var(--aa-primary-color-rgb), 1) !important;
+  
+  /* Texto */
+  --aa-text-color-rgb: 33, 33, 33 !important;
+  --aa-text-color: rgba(var(--aa-text-color-rgb), 1) !important;
+  
+  /* Fondos */
+  --aa-background-color-rgb: 255, 255, 255 !important;
+  --aa-background-color: rgba(var(--aa-background-color-rgb), 1) !important;
+  --aa-input-background-color-rgb: 250, 250, 250 !important;
+  --aa-input-background-color: rgba(var(--aa-input-background-color-rgb), 1) !important;
+  --aa-modal-background-color-rgb: 255, 255, 255 !important;
+  
+  /* Bordes */
+  --aa-input-border-color-rgb: 113, 0, 108 !important;
+  --aa-input-border-color: rgba(var(--aa-input-border-color-rgb), 0.3) !important;
+  --aa-panel-border-color-rgb: 113, 0, 108 !important;
+  --aa-panel-border-color: rgba(var(--aa-panel-border-color-rgb), 0.1) !important;
+  
+  /* Estados */
+  --aa-selected-color-rgb: 113, 0, 108 !important;
+  --aa-selected-color: rgba(var(--aa-selected-color-rgb), 0.15) !important;
+  --aa-focus-color-rgb: 113, 0, 108 !important;
+  --aa-focus-color: rgba(var(--aa-focus-color-rgb), 0.3) !important;
+  
+  /* Iconos y elementos secundarios */
+  --aa-muted-color-rgb: 113, 0, 108 !important;
+  --aa-muted-color: rgba(var(--aa-muted-color-rgb), 0.7) !important;
+}
+
 [data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  /* Modo Oscuro - Púrpura desaturado con grises oscuros */
+  --ifm-color-primary: #8d5a89;
+  --ifm-color-primary-dark: #7f517b;
+  --ifm-color-primary-darker: #784c75;
+  --ifm-color-primary-darkest: #633f60;
+  --ifm-color-primary-light: #9b6997;
+  --ifm-color-primary-lighter: #a1719d;
+  --ifm-color-primary-lightest: #b089ad;
+  
+  /* Fondos oscuros sutiles */
+  --ifm-background-color: #0a0a0a;
+  --ifm-navbar-background-color: #151515;
+  --ifm-footer-background-color: #101010;
+  --aa-primary-color-rgb: 177, 69, 171 !important;
+  --aa-primary-color: rgba(var(--aa-primary-color-rgb), 1) !important;
+  
+  --aa-text-color-rgb: 250, 250, 250 !important;
+  --aa-text-color: rgba(var(--aa-text-color-rgb), 1) !important;
+  
+  --aa-background-color-rgb: 26, 26, 26 !important;
+  --aa-background-color: rgba(var(--aa-background-color-rgb), 1) !important;
+  --aa-input-background-color-rgb: 15, 15, 15 !important;
+  --aa-input-background-color: rgba(var(--aa-input-background-color-rgb), 1) !important;
+  --aa-modal-background-color-rgb: 26, 26, 26 !important;
+  
+  --aa-input-border-color-rgb: 177, 69, 171 !important;
+  --aa-input-border-color: rgba(var(--aa-input-border-color-rgb), 0.3) !important;
+  --aa-panel-border-color-rgb: 177, 69, 171 !important;
+  --aa-panel-border-color: rgba(var(--aa-panel-border-color-rgb), 0.1) !important;
+  
+  --aa-selected-color-rgb: 177, 69, 171 !important;
+  --aa-selected-color: rgba(var(--aa-selected-color-rgb), 0.15) !important;
+  --aa-focus-color-rgb: 177, 69, 171 !important;
+  --aa-focus-color: rgba(var(--aa-focus-color-rgb), 0.3) !important;
+  
+  --aa-muted-color-rgb: 177, 69, 171 !important;
+  --aa-muted-color: rgba(var(--aa-muted-color-rgb), 0.7) !important;
+}
+
+code {
+  font-family: var(--ifm-font-family-monospace) !important;
+  font-size: 0.875em;
+  font-weight: 500;
+}
+
+pre {
+  font-family: var(--ifm-font-family-monospace) !important;
+  line-height: 1.5;
+}
+
+.DocSearch-Container .DocSearch-Modal {
+  transition: all 0.3s ease-in-out;
+}
+
+.DocSearch-Button {
+  border: 1px solid var(--aa-input-border-color) !important;
+  background: var(--aa-input-background-color) !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+}
+
+.DocSearch-Button:hover {
+  border-color: var(--aa-primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(var(--aa-primary-color-rgb), 0.1) !important;
+}
+
+.DocSearch-Button-Placeholder {
+  color: var(--aa-muted-color) !important;
+  font-size: 0.9em !important;
+}
+
+.DocSearch-Button-Keys {
+  background: rgba(var(--aa-primary-color-rgb), 0.1) !important;
+  border: 1px solid rgba(var(--aa-primary-color-rgb), 0.2) !important;
+  border-radius: 4px !important;
+}
+
+.DocSearch-Button-Key {
+  background: transparent !important;
+  color: var(--aa-primary-color) !important;
+  box-shadow: none !important;
+  top: 0 !important;
+}
+
+/* MODAL DE BÚSQUEDA */
+.DocSearch-Modal {
+  background: var(--aa-modal-background-color) !important;
+  border: 1px solid var(--aa-panel-border-color) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
+}
+
+.DocSearch-SearchBar {
+  border-bottom: 1px solid var(--aa-panel-border-color) !important;
+  padding: 1rem !important;
+}
+
+/* INPUT DENTRO DEL MODAL */
+.DocSearch-Input {
+  background: var(--aa-input-background-color) !important;
+  border: 1px solid var(--aa-input-border-color) !important;
+  border-radius: 6px !important;
+  color: var(--aa-text-color) !important;
+  font-size: 1rem !important;
+}
+
+.DocSearch-Input:focus {
+  border-color: var(--aa-primary-color) !important;
+  box-shadow: 0 0 0 3px var(--aa-focus-color) !important;
+  outline: none !important;
+}
+
+.DocSearch-Input::placeholder {
+  color: rgba(var(--aa-muted-color-rgb), 0.5) !important;
+}
+
+/* ICONO DE BÚSQUEDA */
+.DocSearch-Search-Icon {
+  color: var(--aa-muted-color) !important;
+}
+
+/* RESULTADOS Y HITS */
+.DocSearch-Dropdown {
+  background: var(--aa-background-color) !important;
+}
+
+.DocSearch-Hits mark {
+  background: rgba(var(--aa-primary-color-rgb), 0.2) !important;
+  color: var(--aa-primary-color) !important;
+  padding: 0.1em 0.2em !important;
+  border-radius: 2px !important;
+}
+
+.DocSearch-Hit {
+  margin: 0.5rem 1rem !important;
+}
+
+.DocSearch-Hit a {
+  background: var(--aa-input-background-color) !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+.DocSearch-Hit a:hover {
+  background: rgba(var(--aa-primary-color-rgb), 0.05) !important;
+  border-color: rgba(var(--aa-primary-color-rgb), 0.2) !important;
+}
+
+.DocSearch-Hit--selected a {
+  background: var(--aa-selected-color) !important;
+  border-color: var(--aa-primary-color) !important;
+}
+
+.DocSearch-Hit-title {
+  color: var(--aa-text-color) !important;
+  font-weight: 500 !important;
+}
+
+.DocSearch-Hit-path {
+  color: var(--aa-muted-color) !important;
+  font-size: 0.85em !important;
+}
+
+/* PIE DE PÁGINA DEL MODAL */
+.DocSearch-Footer {
+  background: var(--aa-input-background-color) !important;
+  border-top: 1px solid var(--aa-panel-border-color) !important;
+  padding: 1rem !important;
+}
+
+/* LOGO DE ALGOLIA */
+.DocSearch-Logo .cls-1,
+.DocSearch-Logo .cls-2 {
+  fill: var(--aa-muted-color) !important;
+}
+
+/* BOTONES DE ACCIÓN */
+.DocSearch-Actions {
+  gap: 0.5rem !important;
+}
+
+.DocSearch-Actions button {
+  background: rgba(var(--aa-primary-color-rgb), 0.1) !important;
+  color: var(--aa-primary-color) !important;
+  border: 1px solid rgba(var(--aa-primary-color-rgb), 0.2) !important;
+  border-radius: 4px !important;
+  font-size: 0.8em !important;
+  padding: 0.4em 0.8em !important;
+  transition: all 0.2s ease !important;
+}
+
+.DocSearch-Actions button:hover {
+  background: rgba(var(--aa-primary-color-rgb), 0.2) !important;
+  border-color: var(--aa-primary-color) !important;
+}
+
+/* NO RESULTS STATE */
+.DocSearch-NoResults {
+  color: var(--aa-muted-color) !important;
+}
+
+.DocSearch-NoResults-Prefill-List {
+  background: var(--aa-input-background-color) !important;
+  border: 1px solid var(--aa-panel-border-color) !important;
+}
+
+.DocSearch-NoResults-Prefill-List li button {
+  color: var(--aa-text-color) !important;
+}
+
+.DocSearch-NoResults-Prefill-List li button:hover {
+  background: rgba(var(--aa-primary-color-rgb), 0.05) !important;
+  color: var(--aa-primary-color) !important;
+}
+
+/* SCROLLBAR */
+.DocSearch-Dropdown::-webkit-scrollbar {
+  width: 8px !important;
+}
+
+.DocSearch-Dropdown::-webkit-scrollbar-track {
+  background: var(--aa-input-background-color) !important;
+}
+
+.DocSearch-Dropdown::-webkit-scrollbar-thumb {
+  background: rgba(var(--aa-primary-color-rgb), 0.3) !important;
+  border-radius: 4px !important;
+}
+
+.DocSearch-Dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--aa-primary-color-rgb), 0.5) !important;
 }

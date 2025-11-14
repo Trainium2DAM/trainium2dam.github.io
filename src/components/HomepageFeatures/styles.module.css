@@ -1,11 +1,462 @@
-.features {
+/* styles.module.css */
+
+/* ========== VARIABLES CSS ========== */
+:root {
+  --primary-color: #71006c;
+  --primary-light: #8d5a89;
+  --accent-color: #ffd700;
+  --accent-light: #ffed4e;
+  --background-light: #ffffff;
+  --background-secondary: #f8f9fa;
+  --background-tertiary: #e9ecef;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #888888;
+  --border-light: rgba(113, 0, 108, 0.1);
+  --border-medium: rgba(113, 0, 108, 0.3);
+  --card-background: rgba(255, 255, 255, 0.9);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --primary-color: #b145ab;
+  --primary-light: #c55cbf;
+  --accent-color: #ffed4e;
+  --accent-light: #fff9b5;
+  --background-light: #0f0f0f;
+  --background-secondary: #1a1a1a;
+  --background-tertiary: #242526;
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-muted: #888888;
+  --border-light: rgba(177, 69, 171, 0.1);
+  --border-medium: rgba(177, 69, 171, 0.3);
+  --card-background: rgba(26, 26, 26, 0.9);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+/* ========== HERO SECTION ========== */
+.hero {
+  padding: 6rem 0 4rem;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #4a0047 100%);
+  color: var(--text-primary);
+  text-align: center;
+  transition: background 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme='dark'] .hero {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #1a0018 100%);
+}
+
+.heroContent {
+  padding: 2rem 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* Estilo para Rainium */
+.rainiumText {
+  font-size: 4.5rem;
+  font-weight: 800;
+  background: linear-gradient(45deg, #ffffff, var(--accent-color), #ffffff);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: rainiumShine 3s ease-in-out infinite;
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+@keyframes rainiumShine {
+  0%, 100% {
+    background-position: 0% 50%;
+    transform: scale(1);
+  }
+  50% {
+    background-position: 100% 50%;
+    transform: scale(1.05);
+  }
+}
+
+/* Contenedor de texto animado */
+.animatedTextContainer {
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+  min-height: 80px;
   display: flex;
   align-items: center;
-  padding: 2rem 0;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.animatedTextStatic {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.animatedTextRotating {
+  color: var(--accent-color);
+  font-weight: 700;
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.animatedTextVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Efecto de subrayado animado */
+.animatedTextRotating::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 0;
+  height: 3px;
+  background: var(--accent-color);
+  transition: width 0.5s ease;
+}
+
+.animatedTextVisible::after {
   width: 100%;
 }
 
-.featureSvg {
-  height: 200px;
-  width: 200px;
+.heroSubtitle {
+  font-size: 1.3rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.heroStats {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  margin-top: 3rem;
+}
+
+.stat {
+  text-align: center;
+}
+
+.statNumber {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  margin-bottom: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+[data-theme='dark'] .statNumber {
+  color: var(--accent-light);
+}
+
+.statLabel {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ========== REST OF YOUR EXISTING CSS ========== */
+.features {
+  padding: 4rem 0;
+  background: linear-gradient(135deg, var(--background-secondary) 0%, var(--background-tertiary) 100%);
+  transition: background 0.3s ease;
+}
+
+.featureImage {
+  height: 150px;
+  width: 150px;
+  object-fit: contain;
+  margin-bottom: 1rem;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  border-radius: 12px;
+  padding: 1rem;
+  background: rgba(var(--primary-color-rgb, 113, 0, 108), 0.05);
+  border: 1px solid var(--border-light);
+}
+
+.featureImage:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+  border-color: var(--border-medium);
+}
+
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.sectionHeader h2 {
+  font-size: 2.5rem;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  transition: color 0.3s ease;
+}
+
+.sectionHeader p {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+  transition: color 0.3s ease;
+}
+
+.col.col--4 {
+  padding: 1rem;
+}
+
+.col.col--4 > div {
+  background: var(--card-background);
+  border-radius: 16px;
+  padding: 2rem 1rem;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 4px 20px var(--shadow-color);
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.col.col--4 > div:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px var(--shadow-color);
+  border-color: var(--border-medium);
+}
+
+.col.col--4 h3 {
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  transition: color 0.3s ease;
+}
+
+.col.col--4 p {
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.ctaSection {
+  padding: 4rem 0;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #4a0047 100%);
+  color: var(--text-primary);
+  text-align: center;
+  transition: background 0.3s ease;
+}
+
+[data-theme='dark'] .ctaSection {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #1a0018 100%);
+}
+
+.ctaContent h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #ffffff;
+}
+
+.ctaContent p {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.ctaButtons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ctaButtonPrimary {
+  background: var(--accent-color);
+  color: var(--primary-color);
+  border: none;
+  padding: 12px 30px;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.ctaButtonPrimary:hover {
+  background: var(--accent-light);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+}
+
+[data-theme='dark'] .ctaButtonPrimary {
+  background: var(--accent-color);
+  color: #1a0018;
+}
+
+[data-theme='dark'] .ctaButtonPrimary:hover {
+  background: var(--accent-light);
+}
+
+.ctaButtonSecondary {
+  background: transparent;
+  color: var(--accent-color);
+  border: 2px solid var(--accent-color);
+  padding: 12px 30px;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.ctaButtonSecondary:hover {
+  background: var(--accent-color);
+  color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+[data-theme='dark'] .ctaButtonSecondary:hover {
+  color: #1a0018;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 996px) {
+  .col.col--4 {
+    margin-bottom: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .rainiumText {
+    font-size: 3.5rem;
+  }
+  
+  .animatedTextContainer {
+    font-size: 2rem;
+    min-height: 60px;
+  }
+  
+  .heroTitle {
+    font-size: 2.5rem;
+  }
+  
+  .heroStats {
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .stat {
+    flex: 1 1 100px;
+  }
+  
+  .statNumber {
+    font-size: 2rem;
+  }
+  
+  .ctaButtons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .ctaButtonPrimary,
+  .ctaButtonSecondary {
+    width: 200px;
+  }
+  
+  .featureImage {
+    height: 120px;
+    width: 120px;
+  }
+  
+  .sectionHeader h2 {
+    font-size: 2rem;
+  }
+  
+  .ctaContent h2 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 4rem 0 3rem;
+  }
+  
+  .rainiumText {
+    font-size: 2.8rem;
+  }
+  
+  .animatedTextContainer {
+    font-size: 1.5rem;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  
+  .features {
+    padding: 2rem 0;
+  }
+  
+  .ctaSection {
+    padding: 2rem 0;
+  }
+  
+  .heroTitle {
+    font-size: 2rem;
+  }
+  
+  .heroSubtitle {
+    font-size: 1.1rem;
+  }
+  
+  .sectionHeader h2 {
+    font-size: 1.75rem;
+  }
+}
+
+/* ========== ANIMACIONES SUAVES ========== */
+.col.col--4 > div,
+.featureImage,
+.ctaButtonPrimary,
+.ctaButtonSecondary {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========== MEJORAS DE ACCESIBILIDAD ========== */
+@media (prefers-reduced-motion: reduce) {
+  .rainiumText,
+  .animatedTextRotating,
+  .col.col--4 > div,
+  .featureImage,
+  .ctaButtonPrimary,
+  .ctaButtonSecondary {
+    animation: none;
+    transition: none;
+  }
+  
+  .col.col--4 > div:hover {
+    transform: none;
+  }
+  
+  .featureImage:hover {
+    transform: none;
+  }
+  
+  .ctaButtonPrimary:hover,
+  .ctaButtonSecondary:hover {
+    transform: none;
+  }
+  
+  .animatedTextRotating {
+    opacity: 1;
+    transform: none;
+  }
 }
