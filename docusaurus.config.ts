@@ -99,46 +99,28 @@ const config: Config = {
       style: "dark",
       links: [
         {
-          title: "Docs",
+          title: "Información",
           items: [
             {
-              label: "Tutorial",
+              label: "Introducción al proyecto",
+              to: "/docs/intro",
+            },
+            {
+              label: "Documentación de Wireframes",
+              to: "/docs/tutorial-basics/first",
+            },
+            {
+              label: "Instalación y puesta en marcha",
+              to: "/docs/intro",
+            },
+            {
+              label: "FAQ",
               to: "/docs/intro",
             },
           ],
         },
-        {
-          title: "Community",
-          items: [
-            {
-              label: "Stack Overflow",
-              href: "https://stackoverflow.com/questions/tagged/docusaurus",
-            },
-            {
-              label: "Discord",
-              href: "https://discordapp.com/invite/docusaurus",
-            },
-            {
-              label: "X",
-              href: "https://x.com/docusaurus",
-            },
-          ],
-        },
-        {
-          title: "More",
-          items: [
-            {
-              label: "Blog",
-              to: "/blog",
-            },
-            {
-              label: "GitHub",
-              href: "https://github.com/facebook/docusaurus",
-            },
-          ],
-        },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+      copyright: `Copyleft 🄯 ${new Date().getFullYear()} Rainium, no es una marca registrada y es de libre uso.`,
     },
     prism: {
       theme: prismThemes.github,

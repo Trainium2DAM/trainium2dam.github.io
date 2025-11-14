@@ -222,6 +222,43 @@ export default function HomepageFeatures(): ReactNode {
           </div>
         </div>
       </section>
+
+      {/* Sección de Logos */}
+      <section className={styles.logosSection}>
+        <div className="container">
+          <div className="row">
+            <div className="col col--12">
+              <div className={styles.logosContainer}>
+                <img 
+                  src="/img/logo1.png" 
+                  alt="IES Las Espeñetas" 
+                  className={styles.logoImage}
+                  loading="lazy"
+                />
+                <img 
+                  src="/img/logo2.png" 
+                  alt="Logo GVA" 
+                  className={styles.logoImage}
+                  loading="lazy"
+                />
+                <img 
+                  src="/img/logo3.jpg" 
+                  alt="Ministerio de Educación" 
+                  className={styles.logoImage}
+                  loading="lazy"
+                />
+                <img 
+                  src="/img/logo4.jpg" 
+                  alt="Fondo Social Europeo" 
+                  className={styles.logoImage}
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <CallToAction />
     </>
   );
