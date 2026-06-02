@@ -1,6 +1,6 @@
 {
-  "label": "Instalacion",
-  "position": 2,
+  "label": "Base de datos",
+  "position": 4,
   "collapsible": true,
   "collapsed": false
 }

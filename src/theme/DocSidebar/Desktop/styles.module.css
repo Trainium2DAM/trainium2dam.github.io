@@ -1,0 +1,14 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+}
+
+.sidebarNav {
+  padding: 0.875rem 0.75rem;
+  overflow: visible;
+  height: auto;
+}

@@ -1,6 +1,6 @@
 {
-  "label": "Instalacion",
-  "position": 2,
+  "label": "Despliegue",
+  "position": 9,
   "collapsible": true,
   "collapsed": false
 }
