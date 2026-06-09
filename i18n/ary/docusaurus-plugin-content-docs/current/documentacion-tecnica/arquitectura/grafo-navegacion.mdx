@@ -1,0 +1,91 @@
+---
+title: Grafo de navegación
+sidebar_position: 2
+---
+# الرسم البياني للملاحة
+
+تم الإعلان عن الرسم البياني للملاحة مركزيًا في `MainActivity.kt` باستخدام `NavHost`. وجهة البداية هي دائمًا `splash`.
+
+## الطرق المحددة
+
+| روتا | قابل للتركيب | الحجج | يمكن الوصول إليها | 
+|---|---|---|---| 
+| `splash` | `SplashVideoScreen` | نينغونو | بداية التطبيق | 
+| `loading` | بانتيلا دي كارجا وسيطة | نينغونو | `splash` (إكمال الفيديو) | 
+| `main` | `MainScreen` | نينغونو | `loading` | 
+| `login` | `LoginScreen` | نينغونو | `main` | 
+| `register` | `RegisterScreen` | نينغونو | `login` | 
+| `forgot` | `ForgotPasswordScreen` | نينغونو | `login` | 
+| `profile/{idUsuario}` | `ProfileScreen` | `Int` | `login` / `loading` (جلسة حراسة) | 
+| `edit_profile/{idUsuario}` | `EditProfileScreen` | `Int` | `profile` | 
+| `historial/{idUsuario}` | `HistorialScreen` | `Int` | `edit_profile` | 
+| `premium_selection/{idUsuario}` | `PremiumSelectionScreen` | `Int` | `profile` / `edit_profile` | 
+| `maquinas/{isAdmin}/{idUsuario}` | `MaquinasScreen` | `Int`, `Int` | `profile` | 
+| `reservas/{isAdmin}/{idUsuario}` | `ReservasScreen` | `Int`, `Int` | `profile` | 
+| `platos/{isAdmin}/{idUsuario}` | `PlatosScreen` | `Int`, `Int` | `profile` | 
+| `registro/{idUsuario}` | `RegistroScreen` | `Int` | `profile` |
+
+## تدفق التنقل الرئيسي
+
+```
+[splash]
+    |
+    v (onVideoFinished → popUpTo splash inclusive)
+[loading]  ─── sesión válida guardada ──────────────────────────> [profile/{idUsuario}]
+    |
+    v (sin sesión)
+[main]
+    |
+    v (onNavigateToLogin)
+[login]
+    |---> [register] (onNavigateToRegister)
+    |---> [forgot]   (onNavigateToForgot)
+    |
+    v (onLoginSuccess: idUsuario)
+[profile/{idUsuario}]
+    |---> [maquinas/{isAdmin}/{idUsuario}]     (onNavigateToMaquinas)
+    |---> [platos/{isAdmin}/{idUsuario}]       (onNavigateToPlatos)
+    |---> [registro/{idUsuario}]               (onNavigateToRegistroPeso)
+    |---> [reservas/{isAdmin}/{idUsuario}]     (onNavigateToReservas)
+    |---> [edit_profile/{idUsuario}]           (onNavigateToEditProfile)
+    |---> [premium_selection/{idUsuario}]      (onNavigateToPremium)
+    |---> [main] popUpTo(0)                    (onLogout)
+         |
+         v (edit_profile)
+    [edit_profile/{idUsuario}]
+         |---> [historial/{idUsuario}]           (onNavigateToHistorial)
+         |---> [premium_selection/{idUsuario}]   (onNavigateToPremium)
+```
+
+## شاشة التحميل
+
+يعمل المسار `loading` كوسيط بين البداية وبقية التطبيق. عند إدخال `loading`، يتم إجراء فحص لمعرفة ما إذا كانت هناك جلسة محفوظة صالحة على `SecureSessionManager`. إذا كان هناك، انتقل مباشرة إلى `profile/{idUsuario}` لاسترداد معرف مستخدم الجلسة. في حالة عدم وجود جلسة، انتقل إلى `main`.
+
+يسمح هذا السلوك للمستخدمين المعتمدين بعدم الاضطرار إلى تسجيل الدخول مرة أخرى في كل مرة يبدأ فيها التطبيق.
+
+## إدارة المكدس الخلفي
+
+تتم إزالة الوجهة `splash` من المجموعة الخلفية عند الانتقال إلى `loading` باستخدام `popUpTo("splash") { inclusive = true }`، مما يمنع المستخدم من العودة إلى شاشة الفيديو باستخدام زر الرجوع.
+
+عند تسجيل الخروج من `ProfileScreen`، يتم تنفيذ `popUpTo(0)` لمسح المجموعة الخلفية بالكامل قبل الانتقال إلى `main`، مما يمنع الوصول إلى الشاشات المحمية عبر زر الرجوع بالنظام. بالإضافة إلى ذلك، يقوم `SecureSessionManager.cerrarSesion()` بمسح بيانات الجلسة المستمرة.
+
+## تمرير القيم المنطقية كأعداد صحيحة
+
+لا يدعم إنشاء التنقل `Boolean` كنوع وسيطة تنقل. ولذلك، يتم نقل الحقل `isAdmin` كـ `Int` (0 أو 1) ويتم تحويله عن طريق المقارنة عند استرجاعه من `Bundle`:
+
+```kotlin
+val isAdmin = backStackEntry.arguments?.getInt("isAdmin") == 1
+```
+
+عند التصفح، يتم التحويل العكسي باستخدام المعامل الثلاثي:
+
+```kotlin
+navController.navigate("maquinas/${if (isAdmin) 1 else 0}/$idUsuario")
+```
+
+## إدارة شريط النظام
+
+يتفاعل `MainActivity.kt` مع تغييرات المسار باستخدام `SideEffect` لتكييف لون ونمط حالة النظام وأشرطة التنقل:
+
+- على الطريق `splash`: خلفية بيضاء، أيقونات داكنة، شريط تنقل مرئي. 
+- في بقية المسارات: خلفية ملائمة للموضوع (غامق `#0B1426` / فاتح `#F0F4FF`)، أيقونات حسب الموضوع، شريط التنقل المخفي (يتم عرضه عن طريق الانزلاق).

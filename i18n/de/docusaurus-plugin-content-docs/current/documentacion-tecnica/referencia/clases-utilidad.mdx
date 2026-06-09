@@ -1,0 +1,207 @@
+---
+title: Clases de utilidad y constantes
+sidebar_position: 2
+---
+# Utility-Klassen und Konstanten
+
+## AppConfig
+
+**Datensatz:** `AppConfig.kt`
+
+Singleton-Objekt, das alle Anwendungskonfigurationskonstanten zentralisiert. Vermeiden Sie die Verwendung von im Code verstreuten Zeichenfolgenliteralen.
+
+```kotlin
+object AppConfig {
+    // Supabase
+    const val SUPABASE_URL = "https://mi-proyecto.supabase.co"
+    const val SUPABASE_KEY = "eyJhbGci..."
+
+    // Firebase / DataConnect
+    const val FIREBASE_API_KEY = "AIzaSy..."
+    const val FIREBASE_APP_ID = "1:123456789:android:abc"
+    const val DATACONNECT_URL = "https://europe-southwest1-dataconnect.googleapis.com/..."
+
+    // Sesión persistente
+    const val SESSION_PREFS_NAME = "trainium_session"
+    const val SESSION_DURATION_MS = 7L * 24L * 60L * 60L * 1000L  // 7 días
+
+    // Imágenes
+    const val IMAGE_QUALITY = 70
+
+    // Formatos de fecha
+    val FORMAT_ISO_DATE = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    const val FORMAT_DATE_TIME = "yyyy-MM-dd HH:mm"
+    const val FORMAT_HOUR_MINUTE = "HH:mm"
+}
+```
+
+## DbConstants
+
+**Datensatz:** `DbConstants.kt`
+
+Definiert Supabase-Tabellen- und Spaltennamen als Konstanten, um Tippfehler zu vermeiden und das Refactoring zu erleichtern.
+
+### DbTables
+
+```kotlin
+object DbTables {
+    const val USUARIOS = "usuarios"
+    const val MAQUINAS = "maquinas"
+    const val PLATOS = "platos"
+    const val PAGOS = "pagos"
+    const val RESERVAS = "reservas"
+    const val PESO_USUARIO = "peso_usuario"
+    const val FOTO = "foto"
+}
+```
+
+### DbColumns
+
+```kotlin
+object DbColumns {
+    const val ID = "id"
+    const val ID_USUARIO = "id_usuario"
+    const val ID_MAQUINA = "id_maquina"
+    const val NOMBRE = "nombre"
+    const val EMAIL = "email"
+    const val DNI = "dni"
+    const val TELEFONO = "telefono"
+    const val CONTRASENIA_HASH = "contraseniaHash"
+    const val ADMIN = "admin"
+    const val PREMIUM = "premium"
+    const val FECHA_INI_PREM = "fecha_ini_prem"
+    const val FECHA_FIN_PREM = "fecha_fin_prem"
+    const val FOTO = "foto"
+    const val TIPO = "tipo"
+    const val ESTADO = "estado"
+    const val DESCRIPCION = "descripcion"
+    const val OPERATIVA = "operativa"
+    const val MANTENIMIENTO_DESDE = "mantenimiento_desde"
+    const val MANTENIMIENTO_HASTA = "mantenimiento_hasta"
+    const val IMAGEN_URL = "imagen_url"
+    const val VISIBILIDAD = "visibilidad"
+    const val ACEPTADO = "aceptado"
+    const val FECHA_SUBIDA = "fecha_subida"
+    const val HORA_INICIO = "hora_inicio"
+    const val HORA_FIN = "hora_fin"
+    const val FECHA = "fecha"
+    const val MONTO = "monto"
+    const val FECHA_PAGO = "fecha_pago"
+    const val METODO_PAGO = "metodo_pago"
+    const val PESO = "peso"
+    const val TIEMPO = "tiempo"
+}
+```
+
+---
+
+## ImageUtils
+
+**Datensatz:** `ImageUtils.kt`
+
+Es enthält zwei Konvertierungsfunktionen zwischen Bildformaten. Es wird zum Speichern von Profilbildern, Maschinenfotos und Geschirrfotos in Supabase verwendet.
+
+### uriToBase64
+
+Konvertiert einen ausgewählten Bild-URI aus der Gerätegalerie in eine komprimierte Base64-Zeichenfolge im JPEG-Format.
+
+```kotlin
+fun uriToBase64(uri: Uri, contentResolver: ContentResolver): String?
+```
+
+| Parameter | Geben Sie | ein Beschreibung | 
+|---|---|---| 
+| `uri` | `Uri` | URI des vom Benutzer ausgewählten Bildes | 
+| `contentResolver` | `ContentResolver` | Aus Kontext auflösen, um Bildstream zu öffnen |
+
+**Rückgabewert:** Base64-Zeichenfolge des komprimierten Bildes oder `null`, wenn eine Ausnahme auftritt.
+
+**Interner Prozess:**
+1. Öffnen Sie den `InputStream` des URI mit `contentResolver.openInputStream(uri)`. 
+2. Dekodieren Sie den Stream mit `BitmapFactory.decodeStream` in einen `Bitmap`. 
+3. Komprimieren Sie die Bitmap in JPEG mit der Qualität `AppConfig.IMAGE_QUALITY` (70) in einem `ByteArrayOutputStream`. 
+4. Codieren Sie das resultierende Byte-Array mit `Base64.encodeToString(byteArray, Base64.DEFAULT)` in Base64.
+
+### decodeBase64ToBitmap
+
+Konvertiert einen Base64-String zurück in ein `Bitmap`-Objekt.
+
+```kotlin
+fun decodeBase64ToBitmap(base64Str: String): Bitmap?
+```
+
+| Parameter | Geben Sie | ein Beschreibung | 
+|---|---|---| 
+| `base64Str` | `String` | Base64-String, der das Bild darstellt |
+
+**Rückgabewert:** `Bitmap` dekodiert oder `null`, wenn die Zeichenfolge kein gültiges Base64 ist oder eine Ausnahme auftritt.
+
+---
+
+## ThemeManager
+
+**Datensatz:** `ThemeManager.kt`
+
+Verwaltet die Persistenz der Designeinstellungen (hell/dunkel) mithilfe der Jetpack DataStore-Einstellungen.
+
+```kotlin
+class ThemeManager(private val context: Context) {
+    val isDarkMode: Flow<Boolean?>
+    suspend fun setDarkMode(isDark: Boolean)
+}
+```
+
+`isDarkMode` gibt beim ersten Durchlauf `null` aus. Der Kollektor in `MainActivity.kt` behandelt `null` als „das Systemthema verwendend“.
+
+---
+
+## NotificationSettingsManager
+
+**Datenblatt:** `NotificationSettingsManager.kt`
+
+Sowohl der vom Benutzer gewählte Reservierungsbenachrichtigungsvorlauf als auch der globale Aktivierungsstatus der Benachrichtigungen bleiben im DataStore erhalten.
+
+```kotlin
+class NotificationSettingsManager(private val context: Context) {
+    val minutesBefore: Flow<Int>
+    val notificationsEnabled: Flow<Boolean>
+
+    suspend fun setMinutesBefore(minutes: Int)
+    suspend fun setNotificationsEnabled(enabled: Boolean)
+
+    companion object {
+        const val DEFAULT_MINUTES = 30
+        val OPTIONS = listOf(10, 15, 30, 60, 120)
+    }
+}
+```
+
+`minutesBefore` gibt den aktuellen Wert aus (Standard: 30 Minuten). `notificationsEnabled` gibt standardmäßig `true` aus. Die Konfigurationsoberfläche befindet sich unter `EditProfileScreen`. Die vollständige Nutzung finden Sie unter [Notificaciones de reservas](/docs/funcionalidades/notificaciones).
+
+---
+
+## LanguageManager
+
+**Datensatz:** `data/i18n/LanguageManager.kt`
+
+Behält die vom Benutzer über DataStore ausgewählte Sprache bei.
+
+```kotlin
+class LanguageManager(private val context: Context) {
+    val currentLanguage: Flow<AppLanguage?>
+    suspend fun setLanguage(language: AppLanguage)
+    fun detectSystemLanguage(): AppLanguage
+}
+```
+
+`currentLanguage` gibt `null` aus, bis der Benutzer eine Sprache auswählt. `detectSystemLanguage()` ordnet `Locale.getDefault()` dem nächsten `AppLanguage` zu, mit `SPANISH` als Fallback. Das vollständige System finden Sie unter [Internacionalización](/docs/arquitectura/i18n).
+
+---
+
+## Datenbankadmin
+
+**Datenblatt:** `DatabaseAdmin.kt`
+
+Singleton, das eine direkte JDBC-Verbindung zu einer lokalen MySQL/MariaDB-Datenbank definiert. Diese Klasse entspricht der Abkürzung, die in den frühen Phasen der Entwicklung verwendet wurde.
+
+**Diese Klasse ist in der Produktionsversion nicht aktiv**; Alle Datenoperationen werden über `SupabaseClient` ausgeführt. Es wird im Archiv als historische Referenz aufbewahrt.

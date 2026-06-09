@@ -1,0 +1,76 @@
+---
+title: Gestión de reservas
+sidebar_position: 5
+---
+# Gestió de reserves
+
+La secció **"Les meves reserves"** et permet consultar totes les reserves, filtrar-les per data o estat, cancel·lar les que ja no necessitis i exportar-les al calendari del teu telèfon.
+
+---
+
+## Veure les teves reserves
+
+Clica **"Les meves reserves"** a la pantalla principal. Es carregaran totes les teves reserves ordenades per data (les més properes primer). Mentre es carrega la llista, veuràs l'efecte de skeleton loading.
+
+Cada targeta de reserva mostra:
+
+- Nom de la **màquina** reservada. 
+- **Data** de la reserva. 
+- **Hora d'inici i fi**. 
+- Estat (activa o passada).
+
+---
+
+## Filtrar reserves
+
+A la part superior de la pantalla trobaràs els filtres disponibles. Pots lliscar horitzontalment si no hi caben tots a la pantalla:
+
+| Filtre | Quina mostra | 
+|---|---| 
+| **Pròximes** | Reserves l'hora de fi de les quals encara no ha arribat. Vista per defecte en entrar | 
+| **Avui** | Només les reserves programades pel dia actual | 
+| **Passades** | Reserves que ja han passat l'hora de fi | 
+| **Totes** | Totes les reserves sense cap filtre | 
+| **Per data** | Obre un calendari per triar un dia concret |
+
+:::tip 
+El filtre **"Passades"** té en compte l'hora exacta de fi, no només el dia. Una reserva d'avui que ja ha acabat apareixerà correctament a Passades encara que segueixi sent el mateix dia. 
+:::
+
+---
+
+## Cancel·lar una reserva
+
+Per cancel·lar una reserva activa premeu el botó de cancel·lació que apareix a la vostra targeta. En fer-ho passa el següent automàticament:
+
+1. La reserva s'elimina del sistema. 
+2. El recordatori de notificació programat per a aquesta reserva es cancel·la. 
+3. Si teniu més reserves futures, el recordatori es reprograma per apuntar a la següent.
+
+No cal fer res manualment per gestionar les notificacions: l'app s'encarrega de tot en cancel·lar.
+
+:::caution 
+La cancel·lació és permanent. Un cop cancel·lada, hauràs de fer una nova reserva si vols tornar a fer servir aquesta màquina en aquest horari, sempre que segueixi disponible. 
+:::
+
+---
+
+## Exportar una reserva al calendari del telèfon
+
+Cada targeta de reserva inclou una icona de calendari a la part superior dreta. En prémer-ho:
+
+1. Apareix un diàleg de confirmació amb les dades de la reserva (màquina, data i horari). 
+2. Si confirmeu, l'app obre l'aplicació de calendari del vostre telèfon amb totes les dades ja emplenades: títol amb el nom de la màquina, data, hora d'inici i hora de fi. 
+3. Confirma a la teva app de calendari per desar l'esdeveniment.
+
+Aquesta funció és útil tant per a reserves futures (recordar-te visualment al calendari) com per a reserves passades (portar un registre històric de la teva activitat).
+
+:::info 
+L'exportació obre la vostra aplicació de calendari per defecte del telèfon. Si tens diverses apps de calendari instal·lades, el sistema et preguntarà quin vols fer servir. 
+:::
+
+---
+
+## Vista de l'administrador
+
+Si el vostre compte té permisos d'administrador, a la pantalla de reserves veuràs també les reserves de la **resta d'usuaris**, no només les teves. Cada targeta inclou a més el nom de lusuari que va fer la reserva. L'administrador pot cancel·lar qualsevol reserva activa, no només les pròpies.

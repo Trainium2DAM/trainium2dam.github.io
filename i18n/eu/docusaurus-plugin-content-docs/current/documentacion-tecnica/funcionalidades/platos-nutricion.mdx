@@ -1,0 +1,45 @@
+---
+title: Platos y nutricion
+sidebar_position: 2
+---
+# Platerak eta elikadura
+
+## PlakaPantaila
+
+Elikadura-katalogoak txartel bakarreko formatuan erakusten ditu onartutako platerak nabigazio sekuentzialarekin, karrusel lineal baten antzera. Erabiltzaileak plater bat ikusten du aldi berean eta haien artean aurrera eta atzera mugi daiteke.
+
+### Datuen igoera
+
+Pantaila abiaraztean, bi kontsulta egiten zaizkio Supabaseri paraleloan:
+
+**Onartutako platerak:** `from("platos").select { filter { eq("visibilidad", true); eq("aceptado", true) } }`. Administratzaile batek onartutako eta ikusgarritasuna gaituta duten platerak bakarrik bistaratzen dira karruselean.
+
+**Iradokizunak zain (administratzailea soilik):** `from("platos").select { filter { eq("aceptado", false) } }`. Moderatzeke dauden platerak administratzaileek soilik ikus ditzakete.
+
+### Plaka bistaratzea
+
+Txartel bakoitzak erakusten du:
+- Plateraren irudia (`imagen_url` Base64 kate bat badu, `Bitmap` deskodetzen da `ImageUtils.decodeBase64ToBitmap` erabiliz). 
+- Plateraren izena. 
+- Kaloriak. 
+- Prestaketa denbora. 
+- Deskribapena edo errezeta.
+
+### Erabiltzailearen plateraren iradokizuna
+
+Edozein erabiltzailek plater berri bat iradoki dezake iradokizun-botoiaren bidez, eta horrek elkarrizketa-koadroa irekitzen du eremu hauek dituena:
+- Izenburua (plateraren izena)
+- Errezeta edo deskribapena
+- Prestaketa denbora
+- Kaloriak
+- Argazkia (galeriatik hautatua `ActivityResultContracts.GetContent()` erabiliz, Base64 bihurtuta)
+
+Platera Supabase-n sartzen da `aceptado = false` eta `visibilidad = true`-rekin. Administratzaile batek berrikusteko zain egongo da.
+
+### Administratzaileak moderazioa
+
+Administratzaileak atal bereizi batean ikusten du onarpenaren zain dauden plateren zerrenda (`aceptado = false`). Plater bakoitzeko:
+- **OK:** Exekutatu `update { set("aceptado", true) }` Supabase-n. Platera karruselean ikusten da. 
+- **Ukatu:** Exekutatu `delete` Supabase-n. Plaka behin betiko kentzen da.
+
+Onartutako plateren karruseletik, administratzaileak dagoeneko argitaratutako platerak ezaba ditzake.

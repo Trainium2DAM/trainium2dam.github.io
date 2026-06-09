@@ -1,0 +1,134 @@
+---
+title: Instalación y configuración
+sidebar_position: 2
+---
+
+# Instalación y configuración
+
+## Clonar el repositorio
+
+```bash
+git clone <url-del-repositorio>
+cd AppFinal
+```
+
+El directorio raíz contiene el wrapper de Gradle (`gradlew` / `gradlew.bat`) y el único módulo de la aplicación (`:app`).
+
+## Estructura del proyecto
+
+```
+AppFinal/
+├── app/
+│   ├── build.gradle.kts              # Dependencias y configuración del módulo
+│   ├── google-services.json          # Credenciales Firebase (no incluir en repos públicos)
+│   ├── dataconnect/                  # Esquemas y queries de Firebase Data Connect
+│   │   ├── dataconnect.yaml
+│   │   ├── schema/
+│   │   │   └── schema.gql
+│   │   └── default_connector/
+│   │       ├── connector.yaml
+│   │       └── queries.gql
+│   └── src/
+│       └── main/
+│           ├── AndroidManifest.xml
+│           ├── java/com/example/trainium2/
+│           │   ├── AppConfig.kt          # Constantes de configuración
+│           │   ├── DbConstants.kt        # Nombres de tablas y columnas
+│           │   ├── SecureSessionManager.kt
+│           │   ├── SupabaseClient.kt
+│           │   ├── DataConnectClient.kt
+│           │   ├── ThemeManager.kt
+│           │   ├── ImageUtils.kt
+│           │   ├── MainActivity.kt
+│           │   ├── *Screen.kt            # Composables de pantalla
+│           │   ├── data/repository/      # Repositorios
+│           │   ├── di/                   # ServiceLocator
+│           │   ├── models/               # Data classes
+│           │   └── ui/                   # Tema, ViewModels y componentes
+│           └── res/
+│               ├── drawable/             # Imágenes de máquinas y fondos
+│               ├── raw/                  # video_app.mp4 (splash)
+│               └── values/
+├── build.gradle.kts                  # Configuración raíz (plugins)
+├── settings.gradle.kts               # Nombre del proyecto e inclusión del módulo
+├── gradle.properties                 # JVM args y flags de AndroidX
+├── setup_database.sql                # Script SQL de referencia
+├── bs.sql                            # Script SQL alternativo
+└── gradlew / gradlew.bat
+```
+
+## Configurar las credenciales de Supabase
+
+Las credenciales de Supabase se centralizan en `AppConfig.kt`:
+
+```kotlin
+object AppConfig {
+    const val SUPABASE_URL = "https://<tu-proyecto>.supabase.co"
+    const val SUPABASE_KEY = "<tu-anon-key>"
+    // ...
+}
+```
+
+Sustituir los valores por los del proyecto Supabase propio. Usar la `anon key` (clave pública), nunca la `service_role key` en la aplicación cliente.
+
+El singleton `SupabaseClient.kt` lee estas constantes de `AppConfig` al inicializarse:
+
+```kotlin
+object SupabaseClient {
+    val client = createSupabaseClient(
+        supabaseUrl = AppConfig.SUPABASE_URL,
+        supabaseKey = AppConfig.SUPABASE_KEY
+    ) {
+        install(Postgrest)
+        install(Auth)
+    }
+}
+```
+
+## Configurar Firebase
+
+1. Acceder a la consola de Firebase y seleccionar el proyecto correspondiente.
+2. Ir a **Configuración del proyecto > General > Tus aplicaciones**.
+3. Descargar el fichero `google-services.json`.
+4. Copiar el fichero en `app/google-services.json`.
+
+El plugin `com.google.gms.google-services` declarado en `app/build.gradle.kts` procesa este fichero automáticamente durante la compilación. Las constantes de Firebase (API key, App ID, URL de Data Connect) también se centralizan en `AppConfig.kt`.
+
+## Compilar el proyecto
+
+### Desde Android Studio
+
+1. Abrir Android Studio.
+2. Seleccionar **File > Open** y apuntar al directorio raíz `AppFinal/`.
+3. Esperar a que Gradle sincronice el proyecto (la primera vez descarga las dependencias).
+4. Conectar un dispositivo Android (API 24+) o lanzar un AVD.
+5. Pulsar **Run > Run 'app'** o el icono de play.
+
+### Desde línea de comandos
+
+```bash
+# En sistemas Unix/macOS
+./gradlew assembleDebug
+
+# En Windows
+gradlew.bat assembleDebug
+```
+
+El APK de debug se genera en `app/build/outputs/apk/debug/app-debug.apk`.
+
+## Configurar la base de datos
+
+El fichero `setup_database.sql` contiene el script de inicialización para MySQL/MariaDB (referencia del desarrollo inicial). El backend activo es Supabase. Véase [Esquema de Supabase](/docs/base-de-datos/esquema-supabase) para el esquema completo de tablas que debe existir en el proyecto de Supabase.
+
+## Parámetros de configuración de Gradle
+
+El fichero `gradle.properties` contiene las siguientes propiedades relevantes:
+
+```properties
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+android.useAndroidX=true
+kotlin.code.style=official
+android.nonTransitiveRClass=true
+```
+
+La propiedad `org.gradle.jvmargs=-Xmx2048m` asigna 2 GB de heap al proceso Gradle. En máquinas con poca RAM puede reducirse a `-Xmx1024m` a costa de tiempos de compilación más lentos.

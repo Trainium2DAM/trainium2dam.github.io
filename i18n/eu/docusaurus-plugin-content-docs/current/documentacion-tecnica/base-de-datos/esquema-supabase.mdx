@@ -1,0 +1,151 @@
+---
+title: Esquema de Supabase
+sidebar_position: 1
+---
+# Supabase eskema
+
+Supabase aplikazioaren backend nagusi gisa jokatzen du. Azpiko datu-basea PostgreSQL da. Taula bakoitza, bere zutabeak eta haien arteko erlazioak deskribatzen dira jarraian.
+
+## Taula: erabiltzaileak
+
+Aplikazioan erregistratutako erabiltzaileen datuak gordetzen ditu.
+
+| Zutabea | Mota | Murrizketak | Deskribapena | 
+|---|---|---|---| 
+| `id` | `integer` | PK, gehikuntza automatikoa | Erabiltzaile-identifikatzaile bakarra | 
+| `nombre` | `varchar(100)` | EZ NULL | Erabiltzailearen izen osoa | 
+| `dni` | `varchar(20)` | BAKARRA | Nortasun Agiri Nazionala. Saioa hasteko identifikatzaile gisa erabiltzen da | 
+| `contraseniaHash` | `varchar(255)` | | Biltegiratutako pasahitza (testu arrunta oraingo bertsioan) | 
+| `email` | `varchar(100)` | BAKARRA | Posta elektronikoa. Pasahitza berreskuratzeko erabiltzen da | 
+| `telefono` | `varchar(20)` | | Harremanetarako telefono zenbakia | 
+| `admin` | `integer` | LEHENESTASUNA 0 | Erabiltzaileak administratzaile rola duen adierazten du (0 = erabiltzailea, 1 = administratzailea) | 
+| `premium` | `boolean` | LEHENESTASUNA faltsua | Erabiltzaileak Premium harpidetza aktiboa duen adierazten du
+| `fecha_ini_prem` | `date` | | Premium harpidetza hasiera data | 
+| `fecha_fin_prem` | `date` | | Premium harpidetzaren amaiera-data | 
+| `foto` | `text` | | Base64 kodetutako profileko irudia |
+
+Dagokion datu-klasea `models/Usuario.kt` da.
+
+## Taula: makinak
+
+Gimnasioko makinen katalogoa gordetzen du.
+
+| Zutabea | Mota | Murrizketak | Deskribapena | 
+|---|---|---|---| 
+| `id` | `integer` | PK, gehikuntza automatikoa | Makina-identifikatzaile bakarra | 
+| `nombre` | `varchar(100)` | EZ NULL | Makinaren izen atsegina | 
+| `tipo` | `varchar(50)` | | Ariketa kategoria (Cardio, Bizkarra, Hanka, Bularra, etab.) | 
+| `estado` | `integer` | LEHENESTASUNA 0 | Egoera-eremu generikoa | 
+| `descripcion` | `text` | | Makinaren deskribapen zehatza | 
+| `operativa` | `boolean` | LEHENESTASUNA egia | Makina erreserbak egiteko erabilgarri dagoen adierazten du | 
+| `mantenimiento_desde` | `varchar` | | Mantentze-aldia hasierako data eta ordua (`yyyy-MM-dd HH:mm`) | 
+| `mantenimiento_hasta` | `varchar` | | Mantentze-aldiaren amaiera-data eta ordua (`yyyy-MM-dd HH:mm`) |
+
+Dagokion datu-klasea `models/Maquina.kt` da.
+
+## Taula: erreserbak
+
+Erabiltzaileek egindako makineriaren erreserbak gordetzen ditu.
+
+| Zutabea | Mota | Murrizketak | Deskribapena | 
+|---|---|---|---| 
+| `id` | `integer` | PK, gehikuntza automatikoa | Erreserbaren identifikatzaile bakarra | 
+| `id_usuario` | `integer` | FK → erabiltzaileak.id | Erreserba egin duen erabiltzailea | 
+| `id_maquina` | `integer` | FK → makinak.id | Erreserbatutako makina | 
+| `fecha` | `date` | | Erreserba data (`yyyy-MM-dd`) | 
+| `hora_inicio` | `time` | | Erreserbatutako zirrikituaren hasiera-ordua | 
+| `hora_fin` | `time` | | Erreserbatutako zirrikituaren amaiera-ordua | 
+| `estado` | `boolean` | LEHENESTASUNA egia | `true` = aktibo, `false` = bertan behera |
+
+Dagozkion datu-klaseak `models/Reserva.kt` eta `models/ReservaConDetalles.kt` dira. Bigarrenak `Usuario` eta `Maquina` objektu txertatuak barne hartzen ditu, PostgREST erlazio sintaxiaren bidez lortuak (`*, usuarios(*), maquinas(*)`).
+
+## Mahaia: platerak
+
+Gorde katalogoko nutrizio-platerak.
+
+| Zutabea | Mota | Murrizketak | Deskribapena | 
+|---|---|---|---| 
+| `id` | `integer` | PK, gehikuntza automatikoa | Plateraren identifikatzaile bakarra | 
+| `id_usuario` | `integer` | FK → erabiltzaileak.id | Platera iradoki duen erabiltzailea (sistemako plateretarako baliogabea) | 
+| `nombre` | `varchar(100)` | EZ NULL | Plateraren izena | 
+| `descripcion` | `text` | | Plateraren deskribapena edo errezeta | 
+| `calorias` | `double precision` | | Anoi bakoitzeko kaloria edukia | 
+| `imagen_url` | `varchar(255)` | | Irudiaren URLa edo plakaren irudiaren Base64 katea | 
+| `fecha_subida` | `timestamp` | | Erregistroa sortzeko data eta ordua | 
+| `visibilidad` | `boolean` | LEHENESTASUNA egia | Platera katalogoan ikusgai dagoen adierazten du | 
+| `tiempo` | `varchar` | | Aurreikusitako prestaketa denbora (adibidez, "30 minutu") | 
+| `aceptado` | `boolean` | LEHENESTASUNA faltsua | Platera administratzaile batek onartu duen adierazten du |
+
+Dagokion datu-klasea `models/Plato.kt` da.
+
+## Taula: user_weight
+
+Erabiltzaile bakoitzaren pisu-erregistroen historia gordetzen du.
+
+| Zutabea | Mota | Murrizketak | Deskribapena | 
+|---|---|---|---| 
+| `id` | `integer` | PK, gehikuntza automatikoa | Erregistroaren identifikatzaile bakarra | 
+| `id_usuario` | `integer` | FK → erabiltzaileak.id | Erregistroa nori dagokion erabiltzailea | 
+| `peso` | `double precision` | EZ NULL | Pisua kilogramotan | 
+| `fecha` | `date` | | Izena emateko data (`yyyy-MM-dd`) |
+
+Aplikazioak eguneko erregistro bakarraren muga ezartzen du UI mailan. Pantailak uneko datarako erregistrorik dagoen ala ez egiaztatzen du, berri bat gehitzeko baimena eman aurretik.
+
+Dagokion datu-klasea `models/PesoUsuario.kt` da.
+
+## Taula: ordainketak
+
+Premium harpidetza-transakzioen historia gordetzen du.
+
+| Zutabea | Mota | Murrizketak | Deskribapena | 
+|---|---|---|---| 
+| `id` | `integer` | PK, gehikuntza automatikoa | Ordainketa-identifikatzaile bakarra | 
+| `id_usuario` | `integer` | FK → erabiltzaileak.id | Ordainketa egin duen erabiltzailea | 
+| `monto` | `double precision` | EZ NULL | Eragiketaren zenbatekoa eurotan | 
+| `fecha_pago` | `date` | | Ordainketa egin zen data | 
+| `tipo` | `varchar(50)` | | Harpidetza modua (Hilerokoa, Semiurtekoa, Urtekoa) | 
+| `metodo_pago` | `varchar(25)` | | Erabilitako ordainketa-metodoa (Txartela, Bizum) |
+
+Dagokion datu-klasea `models/Pago.kt` da.
+
+## Erlazio diagrama
+
+```
+usuarios (id)
+    |
+    |--< reservas (id_usuario) >-- maquinas (id)
+    |
+    |--< peso_usuario (id_usuario)
+    |
+    |--< platos (id_usuario)
+    |
+    |--< pagos (id_usuario)
+```
+
+Harremanak denak bat-asko dira. Supabase Arbel mailan ez da atzerriko gako espliziturik definitzen; Erreferentziazko osotasuna aplikazio mailan kudeatzen da.
+
+## Errenkada-mailako segurtasuna
+
+Supabase Row Level Security (RLS) gidalerroak ez daude konfiguratuta bertsio honetan. Datuetarako sarbidea `anon key`rekin egiten da, beraz, gakoa duen edozein bezerok taula guztietan irakurri eta idatzi dezake. Produkzio-ingurune batean ezinbestekoa izango litzateke RLS politika egokiak definitzea edo `service_role key` fidagarriko backend batetik soilik erabiltzea.
+
+## Datu-basearen konstanteak
+
+Taulen eta zutabeen izenak `DbConstants.kt` `DbTables` eta `DbColumns` objektuen bidez zentralizatzen dira, kodean zehar sakabanatuta dauden kate literalak erabiltzea saihestuz:
+
+```kotlin
+object DbTables {
+    const val USUARIOS = "usuarios"
+    const val MAQUINAS = "maquinas"
+    const val PLATOS = "platos"
+    const val PAGOS = "pagos"
+    const val RESERVAS = "reservas"
+    const val PESO_USUARIO = "peso_usuario"
+}
+
+object DbColumns {
+    const val ID = "id"
+    const val DNI = "dni"
+    const val NOMBRE = "nombre"
+    // ...
+}
+```

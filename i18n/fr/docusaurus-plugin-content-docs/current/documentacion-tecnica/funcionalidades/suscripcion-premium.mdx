@@ -1,0 +1,90 @@
+---
+title: Suscripcion Premium
+sidebar_position: 4
+---
+# Abonnement Premium
+
+## PremiumSelectionScreen
+
+Gérez le flux de souscription et de renouvellement de l’abonnement Premium. Le processus se déroule sur un seul écran avec sélection du plan et sélection du mode de paiement.
+
+### Forfaits disponibles
+
+| Planifier | Prix ​​| Durée | 
+|---|---|---| 
+| Mensuel | 9,99 € | 1 mois | 
+| Semestriel | 49,99 € | 6 mois | 
+| Annuel | 89,99 € | 12 mois |
+
+Les plans sont définis comme une liste d'objets `PlanInfo` dans `PremiumSelectionViewModel` :
+
+```kotlin
+data class PlanInfo(val nombre: String, val precio: Double, val meses: Int)
+
+val planes = listOf(
+    PlanInfo("Mensual", 9.99, 1),
+    PlanInfo("Semestral", 49.99, 6),
+    PlanInfo("Anual", 89.99, 12)
+)
+```
+
+### Modes de paiement
+
+- **Carte de crédit/débit :** Affiche un formulaire avec les champs numéro de carte (entre 13 et 16 chiffres, pavé numérique), date d'expiration et CVV (3 chiffres). Le ViewModel valide le format des trois champs avant de traiter le paiement. 
+- **Bizum :** Ne nécessite pas de champs supplémentaires, confirmez simplement la sélection.
+
+### Validation de la carte
+
+Avant de traiter le paiement par carte, le ViewModel exécute `validateCard()`, qui vérifie :
+
+1. Numéro de carte composé de 13 à 16 chiffres. 
+2. CVV d'exactement 3 chiffres. 
+3. Date d'expiration dans un format valide et non expiré.
+
+Si une validation échoue, un code d'erreur est émis (`invalid_card_number`, `invalid_cvv`, `invalid_expiry_date`, `card_expired`) que l'écran traduit en un message localisé via `Toast`.
+
+### Renouvellement de l'abonnement
+
+Si l'utilisateur a déjà Premium actif, `PremiumSelectionViewModel.loadUser(id)` détecte le renouvellement (`esRenovacion = true`) et récupère `fechaFinActual`. Lors du calcul des dates de la nouvelle période, la date de début de renouvellement est fixée au lendemain du `fechaFinActual`, afin qu'il n'y ait pas de chevauchement ni de jours perdus :
+
+```kotlin
+fun calculateDates() {
+    val plan = planes.getOrNull(planSeleccionado) ?: return
+    val cal = Calendar.getInstance()
+    if (esRenovacion && !fechaFinActual.isNullOrBlank()) {
+        val fechaActual = AppConfig.FORMAT_ISO_DATE.parse(fechaFinActual) ?: Date()
+        cal.time = fechaActual
+        fechaInicioCalculada = fechaFinActual
+    } else {
+        cal.time = Date()
+        fechaInicioCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+    }
+    cal.add(Calendar.MONTH, plan.meses)
+    fechaFinCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+}
+```
+
+### Traitement des paiements
+
+Lorsque vous appuyez sur le bouton de confirmation, l'application exécute la séquence suivante :
+
+1. **Enregistrer le paiement :** Insère un nouvel enregistrement dans la table `pagos` avec `id_usuario`, le montant du plan sélectionné, la date actuelle, le type de plan et le mode de paiement.
+
+2. **Activer l'abonnement :** Met à jour l'enregistrement de l'utilisateur dans la table `usuarios` :
+- `premium = true`
+- `fecha_ini_prem` = date de début calculée (`yyyy-MM-dd`)
+- `fecha_fin_prem` = date de début calculée + nombre de mois dans le plan
+
+Une fois le traitement réussi, une boîte de dialogue de confirmation s'affiche et `onSuccess` est invoqué pour fermer l'écran.
+
+### Historique des paiements
+
+Les paiements enregistrés dans le tableau `pagos` sont consultés par `HistorialScreen`, qui les répertorie par ordre décroissant par `fecha_pago`. Chaque entrée indique le type de forfait, le mode de paiement, le montant, la date et la date de fin d'abonnement estimée (calculée localement à partir du type de forfait).
+
+Indicateur de ## jours restants sur ProfileScreen
+
+`ProfileViewModel` calcule les jours restants d'abonnement Premium à partir du champ `fechaFin` de l'utilisateur. Le résultat est affiché sous la forme `diasRestantes: Int` et affiché dans `ProfileScreen` :
+
+- Si `diasRestantes > 7` : indiqué en or, sans urgence. 
+- Si `diasRestantes` est compris entre 0 et 7 : il s'affiche en rouge pour avertir d'une expiration prochaine. 
+- Si `diasRestantes == 0` : le littéral "Cotisations aujourd'hui" est affiché à la place du numéro.

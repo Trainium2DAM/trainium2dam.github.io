@@ -1,0 +1,56 @@
+---
+title: Requisitos previos
+sidebar_position: 1
+---
+# Prérequis
+
+Avant de cloner le référentiel et de compiler le projet, il est nécessaire d'avoir installé et configuré les logiciels suivants sur la machine de développement.
+
+## Environnement de développement
+
+| Outil | Version minimale | Remarques | 
+|---|---|---| 
+| AndroidStudio | Hérisson (2023.1.1) ou supérieur | La dernière version stable est recommandée | 
+| JDK | 11 | Configuré comme `sourceCompatibility` et `targetCompatibility` dans le module `:app` | 
+| Diplômé | 8.13 | Géré par le wrapper inclus dans le référentiel (`gradlew`) | 
+| SDK Android (compileSdk) | 36 | Installer à partir du gestionnaire de SDK Android Studio | 
+| SDK Android (minSdk) | 24 (Android 7.0 Nougat) | L'application ne s'installe pas sur les versions précédentes | 
+| Kotlin | 2.0+ | Géré par le plugin `kotlin.android` déclaré dans `build.gradle.kts` |
+
+## Comptes de service requis
+
+Le projet dépend de deux backends externes qui nécessitent des comptes actifs :
+
+**Subase**
+
+Vous avez besoin d'un projet Supabase avec les tables de schéma décrites dans [Base de datos](/docs/base-de-datos/esquema-supabase). Les informations d'identification (`SUPABASE_URL` et `SUPABASE_KEY`) sont déclarées comme constantes dans `AppConfig.kt`. Pour les environnements de production, il est recommandé de les déplacer vers un fichier `local.properties` ou vers des variables d'environnement et de ne pas inclure les valeurs réelles dans le référentiel.
+
+**Firebase**
+
+Un projet Firebase avec le service Data Connect activé est requis. Le fichier `google-services.json` doit être copié dans `app/google-services.json`. Ce fichier ne doit pas être téléchargé dans le référentiel si le projet est public.
+
+## Autorisations requises par l'application
+
+Le `AndroidManifest.xml` déclare les autorisations suivantes :
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+```
+
+| Autorisation | Tapez | Objectif | 
+|---|---|---| 
+| `INTERNET` | Normale | Accès à Supabase et Firebase | 
+| `ACCESS_NETWORK_STATE` | Normale | Vérification de la connectivité | 
+| `POST_NOTIFICATIONS` | Exécution (Android 13+) | Afficher les notifications de rappel de réservation | 
+| `SCHEDULE_EXACT_ALARM` | Normale | Définir des alarmes exactes pour les rappels | 
+| `USE_EXACT_ALARM` | Normale | Assurance supplémentaire de la précision des alarmes dans API 33+ | 
+| `RECEIVE_BOOT_COMPLETED` | Normale | Déclaré pour une future reprogrammation d'alarme après réinitialisation |
+
+L'autorisation `POST_NOTIFICATIONS` est demandée lors de l'exécution à partir de `MainActivity.onCreate()` sur les appareils exécutant Android 13 (API 33) ou version ultérieure. Dans les versions précédentes, l'autorisation était accordée automatiquement. L'application fonctionne toujours sans cette autorisation, mais elle n'enverra pas de notifications de rappel.
+
+La connectivité réseau est essentielle au fonctionnement de l'application puisque toutes les opérations sur les données sont distantes.

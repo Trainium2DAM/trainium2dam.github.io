@@ -1,0 +1,130 @@
+---
+title: Sistema diseño
+sidebar_position: 1
+---
+# Diseinu sistema
+
+## Kolore paleta
+
+Trainium paleta `ui/theme/Color.kt` ezarrita dago. Estetika ilun eta monokromo bati jarraitzen dio, urdin elektrikoa azentu kolore gisa.
+
+### Oinarrizko tonuak (gaiaren independentea)
+
+| Token | HEX balioa | Erabilera nagusia | 
+|---|---|---| 
+| `BlueDark` | `#0B1426` | Gai iluna atzeko planoa | 
+| `BlueMid` | `#121F3D` | Gai iluna gainazal | 
+| `BlueDeep` | `#162347` | Gai iluneko aldaera azalera | 
+| `BlueAccent` | `#2196F3` | Ekintzen kolore nagusia (botoiak, ertz aktiboak) | 
+| `BlueElectric` | `#448AFF` | Gradientea CTA botoiak | 
+| `BlueSoft` | `#64B5F6` | Bigarren mailako testuak eta azpitituluak gai ilunean | 
+| `BlueGlow` | `#332196F3` | Distira eta itzal efektuak gardentasunarekin | 
+| `BlueLight` | `#BBDEFB` | Hondo leunak gai argian | 
+| `WhiteSoft` | `#F0F4FF` | Gai argiaren atzeko planoa |
+
+### Gai ilunaren kolore-eskema
+
+| Rol Materiala 3 | Token | Balio HEX | 
+|---|---|---| 
+| `primary` | `DarkPrimary` | `#448AFF` | 
+| `onPrimary` | `DarkOnPrimary` | `#001E5F` | 
+| `primaryContainer` | `DarkPrimaryContainer` | `#1A3A6E` | 
+| `background` | `DarkBackground` | `#0B1426` | 
+| `surface` | `DarkSurface` | `#121F3D` | 
+| `surfaceVariant` | `DarkSurfaceVariant` | `#1A2D54` | 
+| `error` | `DarkError` | `#FF6B6B` |
+
+### Argi-gaiaren kolore-eskema
+
+| Rol Materiala 3 | Token | Balio HEX | 
+|---|---|---| 
+| `primary` | `LightPrimary` | `#1565C0` | 
+| `onPrimary` | `LightOnPrimary` | `#FFFFFF` | 
+| `primaryContainer` | `LightPrimaryContainer` | `#D0E4FF` | 
+| `background` | `LightBackground` | `#F0F4FF` | 
+| `surface` | `LightSurface` | `#FFFFFF` | 
+| `surfaceVariant` | `LightSurfaceVariant` | `#E3ECFA` | 
+| `error` | `LightError` | `#D32F2F` |
+
+## Tipografia
+
+Letra-tipoaren eskala `ui/theme/Type.kt` ezarrita dago eta `FontFamily.SansSerif` erabiltzen du (Android sistemako sans-serif lehenetsia, normalean Roboto) maila guztietarako.
+
+| Nivel | Pisua | Tamaina | Interletraje | 
+|---|---|---|---| 
+| `displayLarge` | Beltza (900) | 34 sp | -0,25 sp | 
+| `headlineLarge` | Lodia (700) | 28 sp | 0 sp | 
+| `headlineMedium` | Lodia (700) | 24 sp | 0 sp | 
+| `titleLarge` | Erdi lodia (600) | 20 sp | 0,15 sp | 
+| `titleMedium` | Erdi lodia (600) | 16 sp | 0,15 sp | 
+| `bodyLarge` | Normala (400) | 16 sp | 0,5 sp | 
+| `bodyMedium` | Normala (400) | 14 sp | 0,25 sp | 
+| `labelLarge` | Lodia (700) | 14 sp | 1,2 sp | 
+| `labelMedium` | Ertaina (500) | 12 sp | 0,5 sp | 
+| `labelSmall` | Ertaina (500) | 11 sp | 0,5 sp |
+
+`labelLarge` `letterSpacing = 1.2 sp` duen __IC_148__ CTA botoietan erabiltzen da (adibidez, "HASI ORAIN", "JARRAITU") interfazearen ezaugarri hedatutako testu-efektua emateko.
+
+## Formak
+
+`PremiumShapes` forma pertsonalizatuko sistemak lehenetsitako Material 3 izkinen eskema ordezkatzen du:
+
+| Nivel | Radio de esquina | 
+|---|---| 
+| `small` | 10 dp | 
+| `medium` | 16 dp | 
+| `large` | 22 dp | 
+| `extraLarge` | 28 dp |
+
+Material 3-ren balio lehenetsiak baino erradio eskuzabal hauek txartelen eta botoien itxura biribilduari laguntzen diote.
+
+## Gaien kudeaketa
+
+Gaia bi geruzatan kudeatzen da:
+
+**MaterialTheme (`ui/theme/Theme.kt`):** `ColorScheme`, `Typography` eta `Shapes` `darkTheme` parametroaren arabera aplikatzen dituen `Trainium2Theme` konposagarria definitzen du.
+
+**ThemeManager (`ThemeManager.kt`):** erabiltzailearen hobespenak mantentzen ditu DataStore-n. Hobespena `Flow<Boolean?>` gisa irakurtzen da eta `MainActivity.kt`-n biltzen da `collectAsState(initial = null)`-rekin. Hasierako balioak `null` esan nahi du hobespena ez dela oraindik diskotik irakurri; kasu horretan, sistemaren gaia (`isSystemInDarkTheme()`) erabiltzen da.
+
+```kotlin
+val savedDarkMode by themeManager.isDarkMode.collectAsState(initial = null)
+val systemTheme = isSystemInDarkTheme()
+var isDarkTheme by remember(savedDarkMode) {
+    mutableStateOf(savedDarkMode ?: systemTheme)
+}
+```
+
+## Atzeko planoko gradienteak
+
+Pantaila guztiek gradiente bertikalak erabiltzen dituzte atzealde lauen ordez. Gradientea gai aktiboaren arabera aldatzen da:
+
+**Gai iluna:**
+```kotlin
+Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
+// #0B1426 → #121F3D → #162347
+```
+
+**Garbitu gaia:**
+```kotlin
+Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
+```
+
+## Sarrera animazioak
+
+Pantaila guztiek sarrerako animazio mailakatuak ezartzen dituzte `LaunchedEffect(Unit)` + `animateFloatAsState` erabiliz. Eredu estandarra hau da:
+
+```kotlin
+var elementoVisible by remember { mutableStateOf(false) }
+val alpha by animateFloatAsState(
+    targetValue = if (elementoVisible) 1f else 0f,
+    animationSpec = tween(durationMillis = 500),
+    label = "elemento_alpha"
+)
+
+LaunchedEffect(Unit) {
+    delay(100)
+    elementoVisible = true
+}
+```
+
+Elementuak sekuentzialki erakusten dira bakoitzaren artean 100-300 ms-ko atzerapenekin, kaskadako itxura efektua sortuz.

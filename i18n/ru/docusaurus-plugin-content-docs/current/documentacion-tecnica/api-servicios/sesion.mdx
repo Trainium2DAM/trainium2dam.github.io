@@ -1,0 +1,70 @@
+---
+title: Gestión de sesión
+sidebar_position: 3
+---
+# Управление сеансом
+
+## SecureSessionManager
+
+`SecureSessionManager.kt` управляет сохранением сеанса пользователя между запусками приложения с помощью `SharedPreferences`.
+
+```kotlin
+object SecureSessionManager {
+    fun setContext(context: Context)
+    fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+    fun obtenerSesion(): SesionData?
+    fun cerrarSesion()
+}
+```
+
+### Инициализация
+
+`setContext(context)` необходимо вызывать перед любой другой операцией. Вызывается в `MainActivity.onCreate()` с контекстом активности. Внутри он создает `SharedPreferences` с именем `AppConfig.SESSION_PREFS_NAME` (`"trainium_session"`) и режимом `MODE_PRIVATE`.
+
+### начало сеанса
+
+Сохраните данные сеанса в `SharedPreferences`:
+
+```kotlin
+fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+```
+
+`userId`, `userName`, `isAdmin` и `isPremium` сохраняются. Возвращает `true`, если сохранение завершилось успешно (проверьте, перечитав `userId`).
+
+Вызывается с `LoginScreen` сразу после успешной аутентификации.
+
+### getSession
+
+Восстановить сохраненные данные сеанса:
+
+```kotlin
+fun obtenerSesion(): SesionData?
+```
+
+Возвращает объект `SesionData` с данными пользователя или `null`, если нет сохраненного сеанса (первая загрузка или после выхода из системы). Он вызывается с экрана `loading` при запуске приложения.
+
+### закрыть сеанс
+
+Очистите все данные из `SharedPreferences`:
+
+```kotlin
+fun cerrarSesion()
+```
+
+Вызывается из `ProfileScreen`, когда пользователь нажимает «Выйти», непосредственно перед переходом к `main` с помощью `popUpTo(0)`.
+
+## Модель данных сеанса
+
+```kotlin
+data class SesionData(
+    val userId: Int,
+    val userName: String,
+    val isAdmin: Boolean,
+    val isPremium: Boolean,
+    val token: String = ""
+)
+```
+
+## Продолжительность сеанса
+
+`AppConfig.SESSION_DURATION_MS` определяет теоретическую продолжительность сеанса (7 дней в миллисекундах). Однако в текущей реализации сеанс не истекает автоматически; Оно сохраняется до тех пор, пока пользователь явно не выйдет из системы или данные приложения не будут очищены.

@@ -1,0 +1,63 @@
+---
+title: Trainium
+sidebar_position: 1
+---
+# Trainium
+
+Trainium és una aplicació Android nativa orientada a la gestió integral d´un gimnàs. Permet als usuaris registrar-se, reservar maquinària, controlar-ne el progrés físic mitjançant registre de pes i seguir plans de nutrició. Disposa d´un sistema de subscripció Premium que amplia les funcionalitats disponibles, així com un rol d´administrador amb accés a la gestió del catàleg de maquinària, les reserves actives i la moderació de plats nutricionals.
+
+## Característiques principals
+
+L'aplicació implementa les funcionalitats següents en la versió final:
+
+- Autenticació d'usuaris mitjançant DNI i contrasenya, amb recuperació de credencials per email 
+- Registre de nous usuaris amb validació de camps (nom, DNI, e-mail, telèfon) 
+- Sessió persistent entre arrencades mitjançant `SharedPreferences` amb durada configurable de 7 dies 
+- Reserva de maquinària amb selecció de data i franja horària, amb detecció de solapaments i límit de 1 hora per reserva 
+- Sistema de manteniment de maquinària amb cancel·lació automàtica de reserves afectades 
+- Notificacions push de recordatori de reserves amb antelació configurable (10, 15, 30, 60 o 120 minuts) 
+- Exportació de reserves al calendari del dispositiu 
+- Seguiment de pes amb gràfic devolució temporal 
+- Catàleg de plats nutricionals amb sistema de suggeriments per part de lusuari i moderació per ladministrador 
+- Subscripció Premium amb tres modalitats de preu (mensual, semestral i anual) i registre de pagaments, amb indicador de dies restants 
+- Edició de perfil amb foto d'usuari emmagatzemada a Base64 
+- Suport de tema clar i fosc amb persistència de preferència mitjançant DataStore 
+- **Suport multiidioma** amb detecció automàtica de l'idioma del sistema i selector manual (12 idiomes disponibles) 
+- Pantalla de splash animada amb reproducció de vídeo introductori 
+- Càrrega amb skeleton screens durant les consultes a l'API
+
+## Stack tecnològic
+
+| Capa | Tecnologia | 
+|---|---| 
+| Llenguatge | Kotlin | 
+| UI | Jetpack Compose + Material 3 | 
+| Navegació | Navigation Compose 2.7.7 | 
+| Backend principal | Supabase (PostgreSQL) via SDK oficial | 
+| Backend alternatiu | Firebase Data Connect (GraphQL) | 
+| Autenticació | Firebase Auth (declarada) | 
+| Persistència local | Jetpack DataStore Preferences + SharedPreferences | 
+| Internacionalització | Sistema propi de strings a Compose (i18n) | 
+| Notificacions AlarmManager + NotificationCompat | 
+| Build system | Gradle (Kotlin DSL) | 
+| IDE | Android Studio |
+
+## Estructura de la documentació
+
+**Instal·lació i configuració** cobreix els requisits de l'entorn de desenvolupament, la clonació del repositori i la configuració de les credencials de Supabase i Firebase necessàries per compilar el projecte.
+
+**Arquitectura** descriu l'estructura de mòduls, el graf de navegació, la capa de repositoris i les decisions de disseny adoptades.
+
+**Base de dades** documenta l'esquema de taules de Supabase, les relacions entre entitats i l'esquema GraphQL del Firebase Data Connect.
+
+**Pantalles** descriu cada pantalla de l'aplicació, les seves responsabilitats i els fluxos de navegació.
+
+**Funcionalitats** detalla la implementació de cada bloc funcional principal.
+
+**API i serveis** explica la integració amb Supabase, Firebase Auth i Firebase Data Connect.
+
+**Disseny** documenta el sistema de disseny, la paleta de colors, la tipografia i els components d'UI reutilitzables.
+
+**Desplegament** indica els passos per generar un APK de debug o release.
+
+**Referencia** recull l'inventari de models de dades, constants i classes d'utilitat.

@@ -1,0 +1,64 @@
+---
+title: Wireframes y flujos de navegacion
+sidebar_position: 3
+---
+# Wireframes und Navigationsflüsse
+
+In diesem Abschnitt werden der Entwurf von Referenz-Wireframes, die während der Entwicklung verwendet werden, und die wichtigsten Benutzerabläufe, die das Anwendungserlebnis definieren, erfasst.
+
+## Bildschirmkarte
+
+![Mapa de pantallas](./img/mapa-pantallas.png)
+
+Die Navigationsstruktur von Trainium dreht sich um die **untere Navigationsleiste** als zentrales Element für den Zugriff auf die Hauptfunktionen. Die visuelle Linie der Anwendung ist dunkel, professionell und monochromatisch in Blau gehalten.
+
+## Authentifizierungsablaufbildschirme
+
+| Bildschirm | Zweck | Navigieren Sie zu | 
+|---|---|---| 
+| ![Sistema de autenticación](./img/auth-system.png) Authentifizierung | Einstiegspunkt. Anmelden oder Zugriff auf die Registrierung. | Registrierung oder Dashboard | 
+| ![Registro de usuario](./img/register.png) Registrierung | Erfassung der ersten Benutzerdaten (ID, Name, E-Mail, Telefon, Passwort). | Geschlechtsauswahl | 
+| ![Selección de género](./img/gender.png) Geschlechtsauswahl | Schritt zur Profilanpassung. | Dashboard |
+
+## Hauptbildschirme (authentifiziert)
+
+| Bildschirm | Zweck | Navigieren Sie zu | 
+|---|---|---| 
+| ![Pantalla principal](./img/machine-booking.png) Dashboard | Schneller Zugriff auf Reservierungen, Gewichts- und Diätverfolgung. | Reserve, Gewichtsaufzeichnung, Diäten | 
+| ![Selección de máquinas](./img/seleccionmaquina.png) Maschinenkatalog | Liste und Reservierung von Fitnessgeräten. | Reservierungsbestätigung | 
+| ![Seguimiento de peso](./img/progress-tracking.png) Nachverfolgung | Gewichtskontrolle, Entwicklungsdiagramm, BMI und Fettanteil. | Dashboard | 
+| ![Planes de dieta](./img/diet-plans.png) Ernährung | Tagesgericht mit Makronährstoffen und Zutaten. | Dashboard |
+
+## Premium-Abonnementablauf
+
+| Schritt | Bildschirm | Aktion | 
+|---|---|---| 
+| 1 | ![Suscripción Premium](./img/premium-subscription.png) Pläne | Planauswahl (monatlich 9,99 €, halbjährlich 49,99 €, jährlich 89,99 €) | 
+| 2 | ![Métodos de pago](./img/opcionespago.png) Zahlung | Methodenauswahl (Card, Bizum) | 
+| 3 | ![Confirmación de pago](./img/confirmacionpago.png) Bestätigung | Zusammenfassende Überprüfung und endgültige Bestätigung | 
+| 4 | — | Aktives Abonnement. Zugriff auf Premium-Funktionen. |
+
+## Maschinenreservefluss
+
+| Schritt | Bildschirm | Aktion | 
+|---|---|---| 
+| 1 | Dashboard | Drücken Sie auf „Buchen“ bei der gewünschten Übungskategorie | 
+| 2 | Maschinenkatalog | Wählen Sie den spezifischen Computer für die Sitzung aus | 
+| 3 | — | Wählen Sie Datum und Uhrzeit mithilfe der Kalender- und Uhrdialoge aus | 
+| 4 | ![Confirmación de reserva](./img/confirmacionreserva.png) Bestätigung | Reservierung im System registriert |
+
+## Zugänglichkeit und Benutzerfreundlichkeit
+
+Die Schnittstelle wendet die folgenden Designkriterien an:
+
+**Benutzerfreundlichkeit:**
+- Sofortiges Feedback durch Fortschrittsbalken und Diagramme zur Gewichtsentwicklung. 
+- Feste und vorhersehbare untere Navigationsleiste, die die Lernkurve verkürzt. 
+- Gruppieren Sie Informationen in Karten mit klaren Überschriften zum einfachen visuellen Scannen. 
+- Schneller Zugriff auf die am häufigsten verwendeten Funktionen über das Dashboard.
+
+**Barrierefreiheit:**
+- Hoher Farbkontrast: weißer Text auf dunklem Hintergrund im dunklen Design, dunkelblauer Text auf hellem Hintergrund im hellen Design. 
+- Taktile Elemente von großzügiger Größe (mindestens 48 dp) und gutem Abstand. 
+- Beschreibende Beschriftungen und Platzhalter in allen Formularfeldern. 
+- Visuelle Statusanzeigen mit Textlegende (nicht nur Farbe).

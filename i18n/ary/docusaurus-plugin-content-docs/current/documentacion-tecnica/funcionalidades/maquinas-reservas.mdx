@@ -1,0 +1,111 @@
+---
+title: Máquinas y reservas
+sidebar_position: 1
+---
+#الآلات والاحتياطيات
+
+## شاشة ماكويناس
+
+يقوم `MaquinasScreen` بتفويض `MaquinasViewModel`، الذي يدير حالة قائمة الأجهزة ومربعات حوار الإجراءات وعمليات CRUD عبر `MaquinaRepository` و`ReservaRepository` عبر `ServiceLocator`.
+
+### حالة عرض النموذج
+
+```kotlin
+class MaquinasViewModel : ViewModel() {
+    var listaMaquinas by mutableStateOf<List<Maquina>>(emptyList())
+    var isLoading by mutableStateOf(false)
+    var showingDialogAdd by mutableStateOf(false)
+    var maquinaParaMantenimiento by mutableStateOf<Int?>(null)
+    var maquinaParaReservar by mutableStateOf<Int?>(null)
+    var fechaSeleccionada by mutableStateOf("")
+    var horaSeleccionada by mutableStateOf("")
+    var reservasDeLaMaquina by mutableStateOf<List<Reserva>>(emptyList())
+    var reservasDelUsuario by mutableStateOf<List<Reserva>>(emptyList())
+    var reservaExitosa by mutableStateOf<Reserva?>(null)
+    var errorMessage by mutableStateOf<String?>(null)
+    var nuevaFoto by mutableStateOf<String?>(null)
+    // ...
+}
+```
+
+بينما `isLoading` هو `true`، تعرض الشاشة `SkeletonList` بدلاً من المحتوى الفعلي.
+
+### وضع المستخدم القياسي
+
+يرى المستخدم القائمة الكاملة للأجهزة المتاحة. من خلال النقر على آلة التشغيل، يمكنك البدء في عملية الحجز.
+
+**عملية الحجز:**
+
+1. يتم عرض `DatePickerDialog` (عرض Android) لتحديد التاريخ. 
+2. يتم عرض `AppTimePickerDialog` (إنشاء المادة 3) لتحديد وقت البدء. يقوم التطبيق تلقائيًا بحساب وقت الانتهاء بإضافة 30 دقيقة. 
+3. **الحد الأقصى للتحقق من صحة المدة:** تتحقق المعلمة `onValidate` الخاصة بـ `AppTimePickerDialog` من أن الفترة الزمنية لا تتجاوز 60 دقيقة. وفي حالة تجاوزها، يتم عرض رسالة خطأ ولا يتم تأكيد الحجز. 
+4. يقوم ViewModel بتحميل `reservasDeLaMaquina` و`reservasDelUsuario` بالتوازي من المستودعات. 
+5. يتم التحقق من شرطين قبل التأكيد:
+- أن الآلة ليست محجوزة بالفعل في تلك الفترة الزمنية. 
+- أن المستخدم ليس لديه بالفعل حجز آخر في نفس الفتحة. 
+6. إذا لم يكن هناك تعارض، يتم استدعاء `ReservaRepository.insert(...)` مع `estado = true`. 
+7. بعد الإدراج الناجح، تتم جدولة التذكير تلقائيًا باستخدام `NotificationHelper.rescheduleNextReservationNotification(context, userId)`. 
+8. يتم عرض `Snackbar` مع خيار **إلغاء الحجز الذي تم إنشاؤه حديثًا** لبضع ثوان. إذا قام المستخدم بالضغط على "إلغاء"، فسيتم حذف الحجز وإلغاء الإشعار المجدول.
+
+**القيود بسبب حالة الصيانة:**
+
+إذا كان الجهاز يحتوي على `operativa = false`، فسيتم عرض شارة "الصيانة" ويتم تعطيل زر الحجز. تُظهر البطاقة تاريخي البدء والانتهاء لفترة الصيانة عند توفرها.
+
+### صور الآلات
+
+تعرض البطاقات صورة الجهاز إذا كان الحقل `foto` (Base64) متاحًا. إذا لم تكن هناك صورة، فسيتم عرض عنصر نائب. يمكن للمسؤولين إرفاق صورة عند إنشاء جهاز جديد أو عند تحريره عن طريق تحديدها من معرض الأجهزة باستخدام `ActivityResultContracts.GetContent()`.
+
+### وضع المسؤول
+
+يتمتع المسؤول بوظائف إضافية يمكن الوصول إليها من كل بطاقة جهاز:
+
+**تسجيل الجهاز:** يفتح FAB (`FloatingActionButton`) مربع حوار لإدخال اسم الجهاز الجديد ونوعه ووصفه وصورةه. المندوبون إلى `MaquinasViewModel.addMachine(...)` → `MaquinaRepository.insert(...)`.
+
+**الحذف الآلي:** يستدعي زر الحذف الموجود على كل بطاقة `MaquinasViewModel.deleteMachine(id)` → `MaquinaRepository.delete(id)`.
+
+**تنشيط الصيانة:** يفتح زر مفتاح الربط نموذجًا يحتوي على أربعة حقول (تاريخ البدء، ووقت البدء، وتاريخ الانتهاء، ووقت الانتهاء). بعد التأكيد، يقوم ViewModel بتنفيذ التسلسل التالي:
+
+1. `MaquinaRepository.activateMaintenance(id, desde, hasta)`: اطلب `operativa = false` واحفظ النطاق. 
+2. تحقق من جميع الحجوزات النشطة لهذا الجهاز. 
+3. لكل حجز، تحقق مما إذا كان النطاق `[fecha + hora_inicio, fecha + hora_fin]` يتداخل مع نطاق الصيانة. 
+4. يتم إلغاء الحجوزات المتداخلة تلقائيًا باستخدام `ReservaRepository.delete(reserva.id)`.
+
+يستخدم اكتشاف التداخل الشرط القياسي: `resInicio < calHasta && resFin > calDesde`.
+
+**إعادة تنشيط الجهاز:** اتصل بـ `MaquinasViewModel.deactivateMaintenance(id)` → `MaquinaRepository.deactivateMaintenance(id)`، الذي يدخل `operativa = true` ويمسح حقول الصيانة.
+
+---
+
+## شاشة الحجز
+
+قم بإدراج جميع الحجوزات بنظام التصفية حسب المعايير:
+
+| تصفية | السلوك | 
+|---|---| 
+| القادمة | يظهر الحجوزات التي لم يصل وقت انتهائها بعد | 
+| اليوم | يظهر الحجوزات بتاريخ يساوي التاريخ الحالي | 
+| الماضي | يعرض الحجوزات التي انقضى وقت انتهائها بالفعل | 
+| الكل | إظهار كافة الحجوزات بدون مرشح التاريخ | 
+| التاريخ | افتح `DatePickerDialog` للتصفية حسب تاريخ محدد |
+
+يعتمد منطق الفرز بين "التالي" و"الماضي" على وقت الانتهاء الكامل (`fecha + hora_fin`)، وليس التاريخ فقط. وهذا يسمح للحجز السابق اليوم بالظهور في مرشح "السابق" بشكل صحيح.
+
+يتم تحميل الحجوزات من `ReservaRepository` باستخدام صيغة العلاقات المضمنة: `*, usuarios(*), maquinas(*)`. يسمح ذلك بعرض اسم المستخدم والجهاز مباشرة دون استعلامات إضافية.
+
+** عرض المسؤول: ** يرى المسؤول حجوزات جميع المستخدمين. يعرض كل صف اسم المستخدم بالإضافة إلى اسم الجهاز. يمكنك أيضًا إلغاء أي حجز نشط.
+
+**عرض المستخدم:** يرى المستخدم حجوزاته الخاصة فقط ويمكنه إلغاء الحجز النشط.
+
+يتم فرز الحجوزات حسب التاريخ التصاعدي ثم حسب وقت البدء، بحيث تظهر الحجوزات الأقرب أولاً. أثناء تحميل البيانات يتم عرض `SkeletonList`.
+
+### تصدير إلى تقويم الجهاز
+
+تتضمن كل بطاقة حجز زر تقويم (`Icons.Default.CalendarMonth`). يؤدي الضغط عليه إلى عرض مربع حوار تأكيد، وعند القبول، يتم إطلاق `Intent` مع الإجراء `Intent.ACTION_INSERT` نحو `CalendarContract.Events.CONTENT_URI`. تتضمن النية عنوان الجهاز والوصف مع الوقت وأوقات البداية والنهاية بالمللي ثانية. يفتح الجهاز تطبيق تقويم المستخدم لإكمال إدراج الحدث.
+
+### الإلغاء والإخطارات
+
+عند إلغاء الحجز من الشاشة:
+
+1. تمت إزالة حجز Supabase بـ `ReservaRepository.delete(id)`. 
+2. تم إلغاء التذكير المبرمج بـ `NotificationHelper.cancelScheduledNotification(context, reservaId)`. 
+3. تمت إعادة جدولة التذكير بالحجز المستقبلي التالي باستخدام `NotificationHelper.rescheduleNextReservationNotification(context, userId)`.

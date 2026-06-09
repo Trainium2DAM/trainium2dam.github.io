@@ -1,0 +1,103 @@
+---
+title: Internacionalización (i18n)
+sidebar_position: 4
+---
+# Internationalisierung (i18n)
+
+Trainium implementiert in Compose ein eigenes Internationalisierungssystem, das es ermöglicht, die Schnittstellensprache zur Laufzeit zu ändern, ohne die Anwendung neu zu starten, basierend auf einem `CompositionLocal`.
+
+## Systemarchitektur
+
+Das System besteht aus fünf Dateien im Paket `data/i18n/`:
+
+| Datei | Verantwortung | 
+|---|---| 
+| `AppLanguage.kt` | Enum mit den 12 unterstützten Sprachen und deren Auflösung ab `Locale` | 
+| `AppStrings.kt` | Datenklasse mit allen UI-Literalen als Eigenschaften `String` | 
+| `LocalStrings.kt` | `CompositionLocal` + Funktion `stringsForLanguage()` | 
+| `LanguageManager.kt` | Sprachpersistenz im DataStore | 
+| `LanguagePickerDialog.kt` | Dialog zur Sprachauswahl (visuelle Komponente) |
+
+Die Zeichenfolgendateien (`StringsEs.kt`, `StringsEn.kt` usw.) enthalten die spezifischen Instanzen von `AppStrings` für jede Sprache.
+
+## Unterstützte Sprachen
+
+| Aufzählung | Code | Einheimischer Name | 
+|---|---|---| 
+| `SPANISH` | `es` | Spanisch | 
+| `ENGLISH` | `en` | Englisch | 
+| `VALENCIAN` | `ca-VALENCIA` | Valencia | 
+| `CATALAN` | `ca` | Katalonien | 
+| `FRENCH` | `fr` | Französisch | 
+| `MOROCCAN_ARABIC` | `ar-MA` | الدارجة | 
+| `BASQUE` | `eu` | Euskara | 
+| `GALICIAN` | `gl` | Galego | 
+| `GERMAN` | `de` | Deutsch | 
+| `PORTUGUESE` | `pt` | Portugiesisch | 
+| `RUSSIAN` | `ru` | Russisch | 
+| `CHINESE` | `zh` | 中文 |
+
+## Spracherkennung und -auflösung
+
+Um die App zu arrangieren, `MainActivity` beobachten Sie `Flow<AppLanguage?>` von `LanguageManager`:
+
+- Wenn der Benutzer bereits manuell eine Sprache ausgewählt hat (Wert ungleich Null), wird diese verwendet. 
+– Wenn der Wert `null` ist (erste Ausführung oder gelöschte Präferenz), wird `detectSystemLanguage()` aufgerufen, das den `Locale` des Systems dem nächsten `AppLanguage` zuordnet. Wenn das System eine nicht unterstützte Sprache verwendet, ist der Fallback `SPANISH`.
+
+```kotlin
+val resolvedLanguage by remember(savedLanguage) {
+    derivedStateOf {
+        savedLanguage ?: languageManager.detectSystemLanguage()
+    }
+}
+
+val currentStrings = remember(resolvedLanguage) {
+    stringsForLanguage(resolvedLanguage)
+}
+
+CompositionLocalProvider(LocalStrings provides currentStrings) {
+    // toda la jerarquía de composables
+}
+```
+
+## Zugriff auf Zeichenfolgen in Composables
+
+Jedes zusammensetzbare Element innerhalb des `CompositionLocalProvider` greift auf die aktiven Sprachzeichenfolgen zu mit:
+
+```kotlin
+val strings = LocalStrings.current
+Text(strings.login)
+```
+
+Es ist nicht erforderlich, Zeichenfolgen als Parameter zu übergeben: `CompositionLocal` gibt sie automatisch an die gesamte Hierarchie weiter.
+
+## Sprachwechsel zur Laufzeit
+
+Der Benutzer öffnet die Auswahl, indem er auf das Globussymbol (`Icons.Default.Language`) drückt, das auf den Hauptbildschirmen verfügbar ist. `LanguagePickerDialog` zeigt die Liste der Sprachen mit ihren nativen Namen. Nach Bestätigung:
+
+```kotlin
+scope.launch { languageManager.setLanguage(selectedLanguage) }
+```
+
+`LanguageManager.setLanguage` schreibt den Sprachcode in den DataStore. Der `Flow`, der `MainActivity` beobachtet, gibt den neuen Wert aus, `resolvedLanguage` ändert sich, `currentStrings` wird neu berechnet und `CompositionLocalProvider` wird neu zusammengesetzt. Die Änderung ist sofort sichtbar und auf der gesamten Benutzeroberfläche sichtbar, ohne dass die App neu gestartet werden muss.
+
+## LanguageManager
+
+```kotlin
+class LanguageManager(private val context: Context) {
+    val currentLanguage: Flow<AppLanguage?>
+    suspend fun setLanguage(language: AppLanguage)
+    fun detectSystemLanguage(): AppLanguage
+}
+```
+
+`currentLanguage` gibt `null` aus, bis der Benutzer zum ersten Mal eine Sprache auswählt. `detectSystemLanguage()` ist eine synchrone Funktion, die `Locale.getDefault()` dem entsprechenden `AppLanguage` zuordnet.
+
+## Fügen Sie eine neue Sprache hinzu
+
+So fügen Sie Unterstützung für eine zusätzliche Sprache hinzu:
+
+1. Fügen Sie einen neuen Eintrag in der Enumeration `AppLanguage` mit seinen `code`, `displayName` und `nativeName` hinzu. 
+2. Fügen Sie die Erkennung dieses Codes im Block `when` von `AppLanguage.fromLocale()` hinzu. 
+3. Erstellen Sie ein neues Objekt `StringsXx`, das `AppStrings` mit allen Übersetzungen instanziiert. 
+4. Fügen Sie den Fall in der Funktion `stringsForLanguage()` von `LocalStrings.kt` hinzu.

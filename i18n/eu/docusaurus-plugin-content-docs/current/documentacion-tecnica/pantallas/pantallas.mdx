@@ -1,0 +1,270 @@
+---
+title: Pantallas
+sidebar_position: 1
+---
+# Pantailak
+
+Atal honetan pantaila-mailako konposagarri bakoitza, bere erantzukizunak, jasotzen dituen parametroak eta sortzen dituen albo-ondorioak deskribatzen dira.
+
+---
+
+## SplashVideoScreen
+
+**Fichero:** `SplashVideoScreen.kt` 
+**Ruta:** `splash`
+
+Ongietorri-pantaila bat bistaratzen du sarrerako bideo-erreprodukzioarekin. Bideoa `res/raw/video_app.mp4`-tik kargatzen da `VideoView` erabiliz, Idatzi `AndroidView`-rekin integratuta dagoena.
+
+**Jokaera:**
+- Hasieran 500 ms-ko desagerpenarekin agertzen da. 
+- 2 segundo igaro ondoren, aurrerapen-adierazlea eta marka agertzen dira beheko eremuan. 
+- Bideoa amaitzean (`OnCompletionListener`) edo 13 segundoko denbora-muga igaro ondoren, `loading`ra nabigatzen da automatikoki bideoa amaitzen ez bada. 
+- Atzeko planoa zuria da sistemaren gaia edozein dela ere.
+
+**Parametroak:**
+
+| Parametroa | Mota | Deskribapena | 
+|---|---|---| 
+| `onVideoFinished` | `() -> Unit` | Bideoaren amaieran itzulera deitu da |
+
+---
+
+## LoadingScreen (kargatzeko pantaila)
+
+**Ruta:** `loading`
+
+`SecureSessionManager`-n iraun duen saio baliozkorik dagoen egiaztatzen duen tarteko pantaila. Ez du bere konposagarri propioa, logika zuzenean exekutatzen da NavHost-aren `loading` bidearen konposagarrian.
+
+**Jokaera:**
+- Irakurri gordetako saioa `SecureSessionManager.obtenerSesion()` erabiliz. 
+- Baliozko saio bat badago, zuzenean nabigatu `profile/{idUsuario}`-ra. 
+- Saiorik ez badago, joan `main`-ra.
+
+---
+
+## Pantaila nagusia
+
+**Fichero:** `MainScreen.kt` 
+**Ruta:** `main`
+
+Ongi etorri pantaila autentifikatu gabeko erabiltzaileentzat. Trainium logotipoa, leloa eta saioa hasteko botoia erakusten ditu. Goiko eskuineko izkinan dagoen gai-hautatzailea barne hartzen du.
+
+**Parametroak:**
+
+| Parametroa | Mota | Deskribapena | 
+|---|---|---| 
+| `isDarkTheme` | `Boolean` | Gai bisual aktiboa kontrolatzen du | 
+| `onToggleTheme` | `() -> Unit` | Aldatu gai argiaren eta ilunaren artean | 
+| `onNavigateToLogin` | `() -> Unit` | Nabigatu saioa hasteko pantailara |
+
+---
+
+## Saioa hasteko pantaila
+
+**Fichero:** `LoginScreen.kt` 
+**Ruta:** `login` 
+**Ikusi eredua:** `LoginViewModel`
+
+Lehendik dauden erabiltzaileen autentifikazioa kudeatzen du ID eta pasahitza erabiliz.
+
+**Autentifikazio-fluxua:**
+1. Erabiltzaileak bere NAN eta pasahitza sartzen ditu. 
+2. ViewModel-ek `AuthRepository.getUserByDni(dni)` galdetzen du. 
+3. Erregistro bat aurkitzen bada eta pasahitza bat badator, `SecureSessionManager.iniciarSesion(...)` deitzen da saioa jarraitzeko. 
+4. `onLoginSuccess` erabiltzailearen datuekin deitzen da. Aplikazioa `profile/{idUsuario}`ra nabigatzen da; profileko datuak (izena, administratzailea, premium) Supabasetik berri kargatzen dira `ProfileViewModel`-n. 
+5. Kredentzialak okerrak badira, errore-mezu bat bistaratuko da pantailan.
+
+**Parametroak:**
+
+| Parametroa | Mota | Deskribapena | 
+|---|---|---| 
+| `isDarkTheme` | `Boolean` | Gai bisual aktiboa kontrolatzen du | 
+| `onBack` | `() -> Unit` | Itzuli `MainScreen` | 
+| `onNavigateToRegister` | `() -> Unit` | Nabigatu erregistrora | 
+| `onNavigateToForgot` | `() -> Unit` | Joan pasahitza berreskuratzeko | 
+| `onLoginSuccess` | `(String, Int, Int, Int) -> Unit` | Itzuli deia (izena, isAdmin, userid, isPremium). Nabigazioak UserId soilik erabiltzen du; gainerakoa ProfileScreen-en ViewModel-en kargatzen da. |
+
+---
+
+## Erregistratu pantaila
+
+**Fichero:** `RegisterScreen.kt` 
+**Ruta:** `register` 
+**Ikusi eredua:** `RegisterViewModel`
+
+Erabiltzaile berria erregistratzeko formularioa. Bildu izena, NAN, posta elektronikoa, pasahitza eta telefono-zenbakia, eta delegatu `AuthRepository.insertUser(...)`-n.
+
+**Inplementatutako balioztapenak:**
+- Beharrezko eremu guztiak bete behar dira. 
+- NANa ezin da dagoeneko erregistratu (aldez aurretik egiaztatzea `AuthRepository.userExistsByDni`-rekin). 
+- Erabiltzaile berria `admin=0` eta `premium=false`rekin txertatzen da lehenespenez.
+
+**Parametroak:**
+
+| Parametroa | Mota | Deskribapena | 
+|---|---|---| 
+| `isDarkTheme` | `Boolean` | Gai bisual aktiboa kontrolatzen du | 
+| `onBack` | `() -> Unit` | Itzuli `LoginScreen` |
+
+---
+
+## Pasahitza ahaztuta
+
+**Fichero:** `ForgotPasswordScreen.kt` 
+**Ruta:** `forgot` 
+**Ikusi eredua:** `ForgotPasswordViewModel`
+
+Bi urratseko pasahitza berreskuratzeko fluxua:
+
+**1. urratsa:** Erabiltzaileak bere NAN eta posta elektronikoa sartzen ditu. `AuthRepository.verifyCredentials(dni, email)` deitzen da bikotea existitzen dela egiaztatzeko. Zuzena bada, jarraitu 2. urratsera.
+
+**2. urratsa:** Erabiltzaileak pasahitz berria eta bere berrespena sartzen ditu. Bat badatoz, `contraseniaHash` eremua eguneratzen da `AuthRepository.updatePassword(userId, newPass)` erabiliz.
+
+**Parametroak:**
+
+| Parametroa | Mota | Deskribapena | 
+|---|---|---| 
+| `isDarkTheme` | `Boolean` | Gai bisual aktiboa kontrolatzen du | 
+| `onBack` | `() -> Unit` | Itzuli `LoginScreen` |
+
+---
+
+## Profilen pantaila
+
+**Fichero:** `ProfileScreen.kt` 
+**Ruta:** `profile/{idUsuario}` 
+**Ikusi eredua:** `ProfileViewModel`
+
+Saioa hasi ondoren aplikazioaren ardatz nagusia. Erabiltzailearen avatarra, bere izena, bere Premium/Admin bereizgarria eta atal bakoitzerako atzitzeko botoiak erakusten ditu.
+
+** Kargatzean funtzionaltasuna:**
+- Supabasetik erabiltzaileen datuak eguneratuak lortzen ditu (izena, argazkia, Premium egoera, administratzaile rola). 
+- Erabiltzailea Premium bada, harpidetzaren gainerako egunak (`ProfileViewModel.diasRestantes`) kalkulatzen ditu `Usuario` ereduko `fechaFin` eremutik eta txapan erakusten ditu. Harpidetza gaur iraungitzen bada, "Gaur iraungitzen da". 7 egun edo gutxiago geratzen badira, adierazlea gorri bihurtzen da abisu gisa. 
+- Egiaztatu uneko datarako makineria mantentzeagatik automatikoki bertan behera utzitako erreserbarik dagoen. Hala bada, `AlertDialog` informazio bat bistaratzen du **saio bakoitzeko behin** (`avisoMostrado` aldagai globalak kontrolatua).
+
+**Goiburuaren ikonoak:**
+`ProfileScreen`-k goiburuan hizkuntzaren ikonoa (globoa), gaiaren ikonoa (eguzkia/ilargia) eta `edit_profile`-ra nabigatzen den ezarpenen ikonoa ditu.
+
+**Nabigazio botoiak erabilgarri:**
+
+| Botoia | Eskuragarri | Helmuga | 
+|---|---|---| 
+| Makinak | Guztiak | `maquinas/{isAdmin}/{idUsuario}` | 
+| Nire erreserbak | Guztiak | `reservas/{isAdmin}/{idUsuario}` | 
+| Platerak | Guztiak | `platos/{isAdmin}/{idUsuario}` | 
+| Pisu-erregistroa | Guztiak | `registro/{idUsuario}` | 
+| Premium | Guztiak | `premium_selection/{idUsuario}` | 
+| Amaitu saioa | Guztiak | `main` (popUpTo 0) + `SecureSessionManager.cerrarSesion()` |
+
+**Parametroak:**
+
+| Parametroa | Mota | Deskribapena | 
+|---|---|---| 
+| `userId` | `Int` | Erabiltzaile ID datu-basean | 
+| `isPremium` | `Boolean` | Premium harpidetza egoera (ViewModel-ek kargatutakoaren osagarria) | 
+| `darkTheme` | `Boolean` | Gai bisual aktiboa kontrolatzen du | 
+| `onToggleTheme` | `() -> Unit` | Aldatu gai argiaren eta ilunaren artean | 
+| `onToggleLanguage` | `() -> Unit` | Ireki hizkuntza-hautatzailea | 
+| `onLogout` | `() -> Unit` | Amaitu deia atzera | 
+| `onNavigateToMaquinas` | `() -> Unit` | Joan makinen katalogora | 
+| `onNavigateToPlatos` | `() -> Unit` | Joan plateren katalogora | 
+| `onNavigateToRegistroPeso` | `() -> Unit` | Joan pisuaren erregistrora | 
+| `onNavigateToReservas` | `() -> Unit` | Nabigatu erreserbetara | 
+| `onNavigateToEditProfile` | `() -> Unit` | Joan profila editatzera | 
+| `onNavigateToPremium` | `() -> Unit` | Nabigatu Premium plan aukeraketara |
+
+---
+
+## Editatu profileko pantaila
+
+**Fichero:** `EditProfileScreen.kt` 
+**Ruta:** `edit_profile/{idUsuario}` 
+**Ikusi eredua:** `EditProfileViewModel`
+
+Erabiltzaileari bere izena, posta elektronikoa, telefono zenbakia, pasahitza eta profileko argazkia aldatzeko aukera ematen dio. Argazkia gailuaren galerian hautatzen da `ActivityResultContracts.GetContent()` erabiliz eta Base64ra bihurtzen da `ImageUtils.uriToBase64` erabiliz. Gordetzen duzunean, `UsuarioRepository.update(...)` eskuordetzen duzu.
+
+**Jakinarazpenen atala:** Pantailak bi kontrol dituen erreserbaren jakinarazpenen konfigurazio atal bat du:
+- `Switch` jakinarazpenak globalki aktibatzeko edo desaktibatzeko (`NotificationSettingsManager.setNotificationsEnabled`). 
+- `FilterChip` talde bat eskuragarri dauden aurrerapen-aukerekin (10, 15, 30, 60 eta 120 minutu), jakinarazpenak aktibatuta daudenean soilik ikusgai. Hobespenak `NotificationSettingsManager.setMinutesBefore(minutes)`-rekin jarraitzen du.
+
+**Parametroak:**
+
+| Parametroa | Mota | Deskribapena | 
+|---|---|---| 
+| `idUsuario` | `Int` | Erabiltzaile IDa editatzeko | 
+| `isDarkTheme` | `Boolean` | Gai bisual aktiboa kontrolatzen du | 
+| `onBack` | `() -> Unit` | Itzuli `ProfileScreen` | 
+| `onNavigateToHistorial` | `(Int) -> Unit` | Joan ordainketen historiara | 
+| `onNavigateToPremium` | `() -> Unit` | Nabigatu Premium plan aukeraketara |
+
+---
+
+## MaquinasScreen
+
+**Fichero:** `MaquinasScreen.kt` 
+**Ruta:** `maquinas/{isAdmin}/{idUsuario}` 
+**Ikusi eredua:** `MaquinasViewModel`
+
+Gimnasioko makinen katalogoa erabiltzaile estandarrentzat erreserba funtzionaltasunarekin eta administratzaileentzako mantentze-lanak kudeatzen ditu. Erreserba bakoitzeko 60 minutuko gehienezko iraupena balioztatzea barne hartzen du. Erreserba bat sortzen duzunean, automatikoki programatu abisua `NotificationHelper` erabiliz.
+
+Dokumentazio zehatza [Funcionalidades - Máquinas y reservas](/docs/funcionalidades/maquinas-reservas)-n dago.
+
+---
+
+## Erreserben pantaila
+
+**Fichero:** `ReservasScreen.kt` 
+**Ruta:** `reservas/{isAdmin}/{idUsuario}` 
+**Ikusi eredua:** `ReservasViewModel`
+
+Bost irizpideren arabera iragazteko sistema duten erreserben zerrenda: datozenak, gaurkoak, iraganak, guztiak eta data. Erreserba bakoitzerako gailuaren egutegira esportatzeko botoi bat eta bertan behera uzteko jakinarazpenen kudeaketa barne hartzen ditu. Dokumentazio zehatza [Funcionalidades - Máquinas y reservas](/docs/funcionalidades/maquinas-reservas)-n dago.
+
+---
+
+## PlakaPantaila
+
+**Fichero:** `PlatosScreen.kt` 
+**Ruta:** `platos/{isAdmin}/{idUsuario}` 
+**Ikusi eredua:** `PlatosViewModel`
+
+Nutrizio plateren katalogoa. Dokumentazio zehatza [Funcionalidades - Platos y nutrición](/docs/funcionalidades/platos-nutricion)-n dago.
+
+---
+
+## Erregistro pantaila
+
+**Fichero:** `RegistroScreen.kt` 
+**Ruta:** `registro/{idUsuario}` 
+**Ikusi eredua:** `RegistroViewModel`
+
+Gorputzaren pisuaren kontrola eboluzio grafikoarekin. Dokumentazio zehatza [Funcionalidades - Registro de peso](/docs/funcionalidades/registro-peso)-n dago.
+
+---
+
+## HistorialPantaila
+
+**Fichero:** `HistorialScreen.kt` 
+**Ruta:** `historial/{idUsuario}` 
+**Ikusi eredua:** `HistorialViewModel`
+
+Erabiltzailearen ordainketa-historia beheranzko dataren arabera ordenatuta erakusten du. Ordainketak `PagoRepository.getByUser(idUsuario)`tik zorduntzen dira.
+
+Zerrendako elementu bakoitzak kontzeptua (plan mota), ordainketa modua, zenbatekoa eta data erakusten ditu. Konektibitate-errorearen kasuan, berriro saiatu botoia duen errore-mezu bat bistaratuko da. Datuak kargatzen ari diren bitartean, hezurdura-zerrenda bat bistaratzen da.
+
+**Parametroak:**
+
+| Parametroa | Mota | Deskribapena | 
+|---|---|---| 
+| `idUsuario` | `Int` | Historia kontsultatu duen erabiltzailearen IDa | 
+| `isDarkTheme` | `Boolean` | Gai bisual aktiboa kontrolatzen du | 
+| `onBack` | `() -> Unit` | Itzuli `EditProfileScreen` |
+
+---
+
+## PremiumSelectionScreen
+
+**Fichero:** `PremiumSelectionScreen.kt` 
+**Ruta:** `premium_selection/{idUsuario}` 
+**Ikusi eredua:** `PremiumSelectionViewModel`
+
+Premium harpidetza kontratatzeko pantaila. Dokumentazio zehatza [Funcionalidades - Suscripción Premium](/docs/funcionalidades/suscripcion-premium)-n dago.

@@ -711,7 +711,11 @@ hr { border: none; border-top: 1px solid var(--surface-border); margin: 2.5rem 0
 .footer__link-item:hover { color: var(--brand-primary) !important; text-decoration: none; }
 .footer__copyright { color: var(--text-primary) !important; font-size: 0.78rem; opacity: 0.75 !important; }
 
-html, body { scrollbar-gutter: stable both-edges; }
+.footer__links { justify-content: flex-start !important; flex-wrap: nowrap !important; }
+.footer__links .col { padding-left: 0 !important; padding-right: 0 !important; flex: 0 0 auto !important; width: auto !important; }
+.footer__col + .footer__col { margin-left: 2rem !important; }
+
+html, body { scrollbar-gutter: stable; }
 
 .DocSearch-Hit { padding-bottom: 0; }
 .DocSearch-Hit a { border-radius: 5px; border: 1px solid transparent; }

@@ -1,0 +1,126 @@
+---
+title: Notificaciones de reservas
+sidebar_position: 5
+---
+# Уведомления о резервировании
+
+Trainium отправляет локальные напоминания перед каждым резервированием техники. Система использует `AlarmManager` для установки точных сигналов тревоги и `NotificationCompat` для отображения уведомления.
+
+## Компоненты
+
+### Помощник по уведомлениям
+
+`NotificationHelper.kt` — это одноэлементный объект с тремя обязанностями:
+
+**Создание канала уведомлений:**
+
+```kotlin
+fun createNotificationChannel(context: Context)
+```
+
+Зарегистрируйте канал `trainium_reservations` в системе `NotificationManager` (требуется, начиная с Android 8.0/API 26). Канал имеет важность `IMPORTANCE_HIGH` и активирована вибрация. Вызывается в `MainActivity.onCreate()` перед любой другой операцией.
+
+**Установка напоминания:**
+
+```kotlin
+fun scheduleReservationNotification(
+    context: Context,
+    reservaId: Int,
+    maquinaNombre: String,
+    fecha: String,
+    horaInicio: String,
+    horaFin: String,
+    minutesBefore: Int
+)
+```
+
+Рассчитайте момент выстрела как `horaInicioReserva - minutesBefore * 60 000 ms`. Если этот момент уже прошел, будильник не устанавливается. В противном случае он создает `PendingIntent`, нацеленный на `NotificationReceiver`, и регистрирует его с помощью `AlarmManager.setExactAndAllowWhileIdle` (API 23+) или `setExact` в более старых версиях. `requestCode` из `PendingIntent` — это `reservaId`, поэтому каждое резервирование имеет свой собственный независимый сигнал тревоги.
+
+**Отмена напоминания:**
+
+```kotlin
+fun cancelScheduledNotification(context: Context, reservaId: Int)
+```
+
+Пересоберите `PendingIntent` с тем же `reservaId` и вызовите `AlarmManager.cancel`. Вызывается при отмене бронирования с `ReservasScreen`.
+
+**Переносим следующее напоминание:**
+
+```kotlin
+suspend fun rescheduleNextReservationNotification(context: Context, userId: Int)
+```
+
+Функция `suspend`, которая просматривает будущие бронирования пользователя, сортирует их по времени начала и устанавливает будильник для ближайшего из них. Вызывается после создания или отмены резервирования, чтобы всегда сохранять активным следующее напоминание о резервировании.
+
+### Получатель уведомлений
+
+`BroadcastReceiver`, который получает `Intent` сигнала тревоги, когда система его вызывает. Создайте и опубликуйте уведомление:
+
+- Название: `"Trainium — Recordatorio de reserva"`
+- Кузов: `"<nombre máquina>: HH:mm – HH:mm"`
+- Приоритет: `PRIORITY_HIGH`
+- Автоматическая отмена при нажатии
+
+`notificationId` — это `reservaId`, поэтому несколько ожидающих сигналов тревоги не перекрываются.
+
+###Менеджер настроек уведомлений
+
+И предварительное уведомление, выбранное пользователем, и статус активации уведомлений сохраняются в DataStore:
+
+```kotlin
+class NotificationSettingsManager(private val context: Context) {
+    val minutesBefore: Flow<Int>               // antelación actual (default: 30)
+    val notificationsEnabled: Flow<Boolean>    // activadas/desactivadas (default: true)
+
+    suspend fun setMinutesBefore(minutes: Int)
+    suspend fun setNotificationsEnabled(enabled: Boolean)
+
+    companion object {
+        const val DEFAULT_MINUTES = 30
+        val OPTIONS = listOf(10, 15, 30, 60, 120)
+    }
+}
+```
+
+## Конфигурация из пользовательского интерфейса
+
+Для предпочтений уведомлений установлено значение `EditProfileScreen` в разделе «Уведомления». Есть два элемента управления:
+
+- **Переключатель:** активирует или деактивирует уведомления о бронировании по всему миру. Значение сохраняется с помощью `notifManager.setNotificationsEnabled(enabled)`. 
+- **Фишки заранее:** группа `FilterChip` с доступными вариантами (10, 15, 30, 60 и 120 минут). Выбор опции сохраняет значение с `notifManager.setMinutesBefore(minutes)`. Они отображаются только в том случае, если уведомления включены.
+
+## Разрешения в манифесте
+
+```xml
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+<receiver
+    android:name=".NotificationReceiver"
+    android:exported="false" />
+```
+
+Разрешение `POST_NOTIFICATIONS` запрашивается во время выполнения на Android 13+. Если пользователь это отрицает, система бронирования продолжает работать в обычном режиме, но уведомления не отправляются.
+
+## Жизненный цикл напоминания
+
+```
+Usuario crea reserva
+    → ReservasScreen / MaquinasScreen
+    → NotificationHelper.rescheduleNextReservationNotification()
+        → Consulta reservas futuras del usuario
+        → scheduleReservationNotification() con la próxima reserva
+            → AlarmManager programa alarma exacta
+
+Cuando llega la hora - minutesBefore:
+    → AlarmManager dispara el Intent
+    → NotificationReceiver.onReceive()
+        → Muestra notificación al usuario
+
+Usuario cancela reserva
+    → NotificationHelper.cancelScheduledNotification(reservaId)
+    → NotificationHelper.rescheduleNextReservationNotification()
+        → Se reprograma con la siguiente reserva futura
+```

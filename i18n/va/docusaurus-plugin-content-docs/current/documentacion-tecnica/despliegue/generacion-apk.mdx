@@ -1,0 +1,123 @@
+---
+title: Generacion del APK
+sidebar_position: 1
+---
+# Generació de l'APK
+
+## APK la depuració
+
+L'APK de debug es genera automàticament en executar l'aplicació des de Android Studio o mitjançant el wrapper de Gradle:
+
+```bash
+./gradlew assembleDebug
+```
+
+L'artefacte es genera a: 
+```
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+L'APK de debug porta la signatura de debug d'Android Studio i no es pot distribuir a Google Play. És adequat per a proves internes i instal·lació directa en dispositius mitjançant `adb`.
+
+## Allibera l'APK
+
+Per generar un APK signat apte per a distribució:
+
+### 1. Crear un keystore
+
+Si no disposeu d'un keystore de signatura:
+
+```bash
+keytool -genkey -v \
+  -keystore trainium-release-key.jks \
+  -alias trainium \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 10000
+```
+
+### 2. Configurar la signatura a build.gradle.kts
+
+Afegir la configuració de `signingConfigs` a `app/build.gradle.kts`:
+
+```kotlin
+android {
+    signingConfigs {
+        create("release") {
+            storeFile = file("../trainium-release-key.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = "trainium"
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+}
+```
+
+Es recomana llegir les contrasenyes des de variables d'entorn (`System.getenv`) en lloc d'incloure-les en text pla al fitxer de build.
+
+### 3. Generar l'APK signat
+
+```bash
+./gradlew assembleRelease
+```
+
+L'artefacte es genera a: 
+```
+app/build/outputs/apk/release/app-release.apk
+```
+
+## Minificació i ofuscació
+
+A la configuració actual, `isMinifyEnabled = false` al bloc `release`. Això vol dir que el codi no es minifica ni s'ofusca amb R8/ProGuard. Per a una distribució en producció es recomana habilitar la minificació:
+
+```kotlin
+release {
+    isMinifyEnabled = true
+    proguardFiles(
+        getDefaultProguardFile("proguard-android-optimize.txt"),
+        "proguard-rules.pro"
+    )
+}
+```
+
+En habilitar la minificació amb Supabase i `kotlinx.serialization` cal afegir les regles de ProGuard corresponents per preservar les classes serialitzables. El fitxer `proguard-rules.pro` inclòs al projecte està buit en aquesta versió.
+
+## Instal·lació via adb
+
+Per instal·lar l'APK directament en un dispositiu connectat:
+
+```bash
+adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
+Si hi ha diversos dispositius connectats, especifiqueu la destinació:
+
+```bash
+adb -s <device-serial> install app-debug.apk
+```
+
+Per obtenir la llista de dispositius connectats:
+
+```bash
+adb devices
+```
+
+## Requisits del dispositiu destinació
+
+| Requisit | Valor | 
+|---|---| 
+| API mínima | 24 (Android 7.0 Nougat) | 
+| API objectiu | 36 | 
+| Arquitectura | arm64-v8a, armeabi-v7a, x86_64 (segons el dispositiu) | 
+| Permisos en instal·lació | INTERNET, ACCESS_NETWORK_STATE | 
+| Connexió a internet | Obligatòria per al funcionament de laplicació |

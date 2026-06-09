@@ -1,0 +1,90 @@
+---
+title: Suscripcion Premium
+sidebar_position: 4
+---
+#اشتراك مميز
+
+## شاشة التحديد المميزة
+
+إدارة التعاقد على الاشتراك المميز وتدفق التجديد. تكتمل العملية على شاشة واحدة مع اختيار الخطة واختيار طريقة الدفع.
+
+### الخطط المتاحة
+
+| خطة | السعر | المدة | 
+|---|---|---| 
+| شهري | 9.99 يورو | شهر واحد | 
+| نصف سنوية | 49.99 يورو | 6 أشهر | 
+| سنوي | 89.99 يورو | 12 شهرا |
+
+يتم تعريف الخطط كقائمة من كائنات `PlanInfo` في `PremiumSelectionViewModel`:
+
+```kotlin
+data class PlanInfo(val nombre: String, val precio: Double, val meses: Int)
+
+val planes = listOf(
+    PlanInfo("Mensual", 9.99, 1),
+    PlanInfo("Semestral", 49.99, 6),
+    PlanInfo("Anual", 89.99, 12)
+)
+```
+
+### طرق الدفع
+
+- **بطاقة الائتمان/الخصم:** تعرض نموذجًا يحتوي على رقم بطاقة الحقول (بين 13 و16 رقمًا، ولوحة المفاتيح الرقمية)، وتاريخ انتهاء الصلاحية وCVV (3 أرقام). يتحقق ViewModel من صحة تنسيق الحقول الثلاثة قبل معالجة الدفع. 
+- **Bizum:** لا يتطلب حقولاً إضافية، فقط قم بتأكيد الاختيار.
+
+### التحقق من صحة البطاقة
+
+قبل معالجة الدفع بالبطاقة، ينفذ ViewModel `validateCard()`، والذي يتحقق مما يلي:
+
+1. رقم البطاقة المكون من 13 إلى 16 رقم. 
+2. CVV مكون من 3 أرقام بالضبط. 
+3. تاريخ انتهاء الصلاحية بتنسيق صالح وغير منتهي الصلاحية.
+
+في حالة فشل أي عملية تحقق، يتم إصدار رمز خطأ (`invalid_card_number`، `invalid_cvv`، `invalid_expiry_date`، `card_expired`) والذي تترجمه الشاشة إلى رسالة موجودة من خلال `Toast`.
+
+### تجديد الاشتراك
+
+إذا كان المستخدم لديه Premium نشط بالفعل، فإن `PremiumSelectionViewModel.loadUser(id)` يكتشف التجديد (`esRenovacion = true`) ويستعيد `fechaFinActual`. عند حساب تواريخ الفترة الجديدة، يتم تحديد تاريخ بدء التجديد إلى اليوم التالي لـ `fechaFinActual`، حتى لا يكون هناك تداخل أو ضياع للأيام:
+
+```kotlin
+fun calculateDates() {
+    val plan = planes.getOrNull(planSeleccionado) ?: return
+    val cal = Calendar.getInstance()
+    if (esRenovacion && !fechaFinActual.isNullOrBlank()) {
+        val fechaActual = AppConfig.FORMAT_ISO_DATE.parse(fechaFinActual) ?: Date()
+        cal.time = fechaActual
+        fechaInicioCalculada = fechaFinActual
+    } else {
+        cal.time = Date()
+        fechaInicioCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+    }
+    cal.add(Calendar.MONTH, plan.meses)
+    fechaFinCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+}
+```
+
+### معالجة الدفع
+
+عند الضغط على زر التأكيد، يقوم التطبيق بتنفيذ التسلسل التالي:
+
+1. **تسجيل الدفع:** إدراج سجل جديد في الجدول `pagos` مع `id_usuario` ومبلغ الخطة المحدد والتاريخ الحالي ونوع الخطة وطريقة الدفع.
+
+2. **تفعيل الاشتراك:** تحديث سجل المستخدم في الجدول `usuarios`:
+- `premium = true`
+- `fecha_ini_prem` = تاريخ البدء المحسوب (`yyyy-MM-dd`)
+- `fecha_fin_prem` = تاريخ البدء المحسوب + عدد الأشهر في الخطة
+
+عند نجاح المعالجة، يتم عرض مربع حوار التأكيد ويتم استدعاء `onSuccess` لإغلاق الشاشة.
+
+### تاريخ الدفع
+
+المدفوعات المسجلة في الجدول `pagos` يتم الرجوع إليها من قبل `HistorialScreen`، والذي يسردها بترتيب تنازلي بواسطة `fecha_pago`. يعرض كل إدخال نوع الخطة وطريقة الدفع والمبلغ والتاريخ وتاريخ انتهاء الاشتراك المقدر (يتم حسابه محليًا من نوع الخطة).
+
+## مؤشر الأيام المتبقية على شاشة الملف الشخصي
+
+`ProfileViewModel` يحسب الأيام المتبقية من الاشتراك المميز من حقل `fechaFin` الخاص بالمستخدم. يتم عرض النتيجة كـ `diasRestantes: Int` وعرضها في `ProfileScreen`:
+
+- إذا `diasRestantes > 7`: مبينة بالذهب، دون إلحاح. 
+- إذا كان `diasRestantes` بين 0 و 7: يتم عرضه باللون الأحمر كتحذير بانتهاء الصلاحية القادمة. 
+- إذا كان `diasRestantes == 0`: يتم عرض "المستحقات اليوم" بدلاً من الرقم.

@@ -1,0 +1,56 @@
+---
+title: Requisitos previos
+sidebar_position: 1
+---
+# Aurrebaldintzak
+
+Biltegia klonatu eta proiektua konpilatu aurretik, beharrezkoa da honako software hau garatzeko makinan instalatuta eta konfiguratuta edukitzea.
+
+## Garapen ingurunea
+
+| Tresna | Gutxieneko bertsioa | Oharrak | 
+|---|---|---| 
+| AndroidStudio | Trikua (2023.1.1) edo handiagoa | Azken bertsio egonkorra gomendatzen da | 
+| JDK | 11 | `sourceCompatibility` eta `targetCompatibility` gisa konfiguratuta `:app` moduluan | 
+| Gradle | 8.13 | Biltegian sartutako wrapper-ak kudeatzen du (`gradlew`) | 
+| Android SDK (compileSdk) | 36 | Instalatu Android Studio SDK kudeatzailetik | 
+| Android SDK (minSdk) | 24 (Android 7.0 Turroia) | Aplikazioa ez da aurreko bertsioetan instalatzen | 
+| Kotlin | 2.0+ | `build.gradle.kts`-n deklaratutako `kotlin.android` pluginak kudeatzen du
+
+## Zerbitzu-kontuak behar dira
+
+Proiektua kontu aktibo behar dituzten kanpoko bi backend-en araberakoa da:
+
+**Supabase**
+
+Supabase proiektu bat behar duzu [Base de datos](/docs/base-de-datos/esquema-supabase)-n deskribatutako eskema-taulekin. Kredentzialak (`SUPABASE_URL` eta `SUPABASE_KEY`) konstante gisa deklaratzen dira `AppConfig.kt`-n. Produkzio-inguruneetarako, gomendatzen da `local.properties` fitxategi batera edo ingurune-aldagaietara eramatea eta benetako balioak biltegian ez sartzea.
+
+**Firebase**
+
+Data Connect zerbitzua gaituta duen Firebase proiektu bat behar da. `google-services.json` fitxategia `app/google-services.json`-n kopiatu behar da. Fitxategi hau ez da biltegira igo behar proiektua publikoa bada.
+
+## Aplikazioak eskatzen dituen baimenak
+
+`AndroidManifest.xml`-k baimen hauek deklaratzen ditu:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+```
+
+| Baimena | Mota | Helburua | 
+|---|---|---| 
+| `INTERNET` | Normala | Supabase eta Firebaserako sarbidea | 
+| `ACCESS_NETWORK_STATE` | Normala | Konektibitatearen egiaztapena | 
+| `POST_NOTIFICATIONS` | Exekuzioa (Android 13+) | Erakutsi erreserba abisuaren jakinarazpenak | 
+| `SCHEDULE_EXACT_ALARM` | Normala | Ezarri alarma zehatzak abisuetarako | 
+| `USE_EXACT_ALARM` | Normala | Alarmaren zehaztasunaren berme gehigarria API 33+ | 
+| `RECEIVE_BOOT_COMPLETED` | Normala | Berrezarri ondoren alarmaren birprogramaziorako deklaratua |
+
+`POST_NOTIFICATIONS` baimena exekutatzean eskatzen zaio `MainActivity.onCreate()`-ri Android 13 (API 33) edo berriagoa duten gailuetan. Aurreko bertsioetan baimena automatikoki ematen da. Aplikazioak oraindik ere baimenik gabe funtzionatzen du, baina ez du abisuaren jakinarazpenik bidaliko.
+
+Sare-konektibitatea ezinbestekoa da aplikazioaren funtzionamendurako, datu-eragiketa guztiak urruneko direnez.

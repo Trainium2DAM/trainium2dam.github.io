@@ -1,0 +1,70 @@
+---
+title: Gestión de sesión
+sidebar_position: 3
+---
+# Sitzungsverwaltung
+
+## SecureSessionManager
+
+`SecureSessionManager.kt` verwaltet die Persistenz der Benutzersitzung zwischen Anwendungsstarts mithilfe von `SharedPreferences`.
+
+```kotlin
+object SecureSessionManager {
+    fun setContext(context: Context)
+    fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+    fun obtenerSesion(): SesionData?
+    fun cerrarSesion()
+}
+```
+
+### Initialisierung
+
+`setContext(context)` muss vor jeder anderen Operation aufgerufen werden. Wird in `MainActivity.onCreate()` mit dem Aktivitätskontext aufgerufen. Intern wird ein `SharedPreferences` mit dem Namen `AppConfig.SESSION_PREFS_NAME` (`"trainium_session"`) und dem Modus `MODE_PRIVATE` erstellt.
+
+### startSession
+
+Speichern Sie die Sitzungsdaten unter `SharedPreferences`:
+
+```kotlin
+fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+```
+
+`userId`, `userName`, `isAdmin` und `isPremium` bleiben bestehen. Gibt `true` zurück, wenn die Speicherung erfolgreich abgeschlossen wurde (überprüfen Sie dies durch erneutes Lesen von `userId`).
+
+Von `LoginScreen` sofort nach erfolgreicher Authentifizierung angerufen.
+
+### getSession
+
+Gespeicherte Sitzungsdaten wiederherstellen:
+
+```kotlin
+fun obtenerSesion(): SesionData?
+```
+
+Gibt ein `SesionData`-Objekt mit den Benutzerdaten zurück, oder `null`, wenn keine gespeicherte Sitzung vorhanden ist (erster Start oder nach einer Abmeldung). Der Aufruf erfolgt über den Bildschirm „`loading`“, wenn die App gestartet wird.
+
+### closeSession
+
+Alle Daten von `SharedPreferences` löschen:
+
+```kotlin
+fun cerrarSesion()
+```
+
+Wird von `ProfileScreen` aufgerufen, wenn der Benutzer auf „Abmelden“ klickt, kurz bevor er mit `popUpTo(0)` zu `main` navigiert.
+
+## SessionData-Modell
+
+```kotlin
+data class SesionData(
+    val userId: Int,
+    val userName: String,
+    val isAdmin: Boolean,
+    val isPremium: Boolean,
+    val token: String = ""
+)
+```
+
+## Sitzungsdauer
+
+`AppConfig.SESSION_DURATION_MS` definiert die theoretische Dauer der Sitzung (7 Tage in Millisekunden). In der aktuellen Implementierung läuft die Sitzung jedoch nicht automatisch ab. Sie bleibt bestehen, bis sich der Benutzer explizit abmeldet oder die Daten der App gelöscht werden.

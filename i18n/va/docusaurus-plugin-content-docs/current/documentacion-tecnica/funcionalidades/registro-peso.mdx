@@ -1,0 +1,44 @@
+---
+title: Registro de peso
+sidebar_position: 3
+---
+# Registre de pes
+
+## Pantalla de registre
+
+Permet a l'usuari registrar el pes corporal diari i visualitzar l'evolució temporal mitjançant un gràfic de línies dibuixat amb l'API de `Canvas` de Compose.
+
+### Càrrega de dades
+
+En inicialitzar la pantalla es consulta la taula `peso_usuario` de Supabase filtrant per `id_usuario` i ordenant els resultats de forma ascendent per data. Els registres s'emmagatzemen a l'estat `registros: List<PesoUsuario>`.
+
+### Restricció d'un registre per dia
+
+La pantalla comprova si ja hi ha un registre per a la data actual (`fechaHoy`) abans de mostrar el camp d'entrada. La variable `yaExisteHoy` es calcula comparant la data de cada registre amb la data del sistema:
+
+```kotlin
+val fechaHoy = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+val yaExisteHoy = registros.any { it.fecha == fechaHoy }
+```
+
+Si ja hi ha registre per avui, el camp d'entrada s'amaga i es mostra un missatge informatiu. Aquesta restricció és exclusivament a nivell d'UI, no hi ha una restricció `UNIQUE` a la base de dades per a aquesta combinació de columnes.
+
+### Inserció d'un registre nou
+
+L'usuari introdueix el pes al camp de text (accepta valors decimals) i prem el botó de confirmar. S'executa un `insert` a Supabase amb el `id_usuario`, el valor de pes i la data actual.
+
+### Edició d'un registre existent
+
+Cada fila del llistat inclou un botó d'edició que activa el mode d'edició en línia (`editandoId`). En confirmar, s'executa un `update` a Supabase sobre el registre identificat pel seu `id`.
+
+### Eliminació d'un registre
+
+El botó d'esborrament de cada fila executa un `delete` a Supabase filtrant per `id` del registre.
+
+### Gràfic d'evolució
+
+El gràfic es dibuixa amb `Canvas` de Jetpack Compose. La implementació normalitza els valors de pes al rang `[0, 1]` relatiu al mínim i màxim de l'historial, els mapeja a coordenades de píxel al canves i els uneix amb línies mitjançant `drawPath`. Cada punt es representa amb un cercle farcit.
+
+L'eix horitzontal representa el temps (les entrades estan ordenades cronològicament) i l'eix vertical el pes en quilograms. Els valors mínim i màxim es mostren com a etiquetes de text als extrems de l'eix.
+
+Si l'historial conté menys de dos punts, el gràfic no es renderitza (calen almenys dos punts per dibuixar una línia).

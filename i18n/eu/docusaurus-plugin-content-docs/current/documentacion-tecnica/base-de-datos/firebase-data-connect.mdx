@@ -1,0 +1,139 @@
+---
+title: Firebase Data Connect
+sidebar_position: 2
+---
+# Firebase Data Connect
+
+Firebase Data Connect GraphQL API bat kudeatutako PostgreSQL datu-base baten gainean erakusten duen Firebase zerbitzu bat da. Trainium-en Supabaseren backend osagarri gisa erabiltzen da zenbait eragiketetarako.
+
+## Konfigurazioa
+
+`app/dataconnect/` direktorioa Data Connect konfigurazio artefaktuak ditu:
+
+```
+dataconnect/
+├── dataconnect.yaml           # Configuración del servicio
+├── schema/
+│   └── schema.gql             # Definición del esquema de tipos
+└── default_connector/
+    ├── connector.yaml         # Configuración del conector
+    └── queries.gql            # Queries y mutaciones definidas
+```
+
+### dataconnect.yaml
+
+Firebase proiektuaren izena, eskualdea eta Data Connect zerbitzuaren izena definitzen ditu. Konfiguratutako eskualdea `europe-southwest1` da.
+
+### konektorea.yaml
+
+Lehenetsitako konektorearen izena definitzen du (`default`) eta `queries.gql` fitxategiko kontsultak konektore horrekin lotzen ditu.
+
+## GraphQL eskema (schema.gql)
+
+Eskemak Supabase taulei gutxi gorabehera sei mota nagusi definitzen ditu:
+
+### Makina mota
+
+```graphql
+type Maquinas @table(name: "MAQUINAS") {
+  id: Int!
+  nombre: String! @col(dataType: "varchar(100)")
+  tipo: String @col(dataType: "varchar(50)")
+  estado: Int! @default(value: 0)
+  descripcion: String @col(dataType: "text")
+  operativa: Int! @default(value: 1)
+}
+```
+
+### Erabiltzaile mota
+
+```graphql
+type Usuario @table(name: "USUARIO") {
+  id: Int!
+  nombre: String! @col(dataType: "varchar(100)")
+  dni: String @unique @col(dataType: "varchar(20)")
+  email: String @unique @col(dataType: "varchar(100)")
+  contraseniaHash: String @col(name: "CONTRASEÑA_HASH", dataType: "varchar(255)")
+  telefono: String @col(dataType: "varchar(20)")
+  premium: Boolean @default(value: false)
+  fechaIniPrem: Date @col(name: "FECHA_INI_PREM")
+  fechaFinPrem: Date @col(name: "FECHA_FIN_PREM")
+  fechaReg: Date! @col(name: "FECHA_REG") @default(expr: "request.time")
+  admin: Int! @default(value: 0)
+}
+```
+
+### Plater mota
+
+```graphql
+type Platos @table(name: "PLATOS") {
+  id: Int!
+  idUsuario: Usuario
+  nombre: String! @col(dataType: "varchar(100)")
+  descripcion: String @col(dataType: "text")
+  calorias: Float @col(name: "CALORIAS")
+  imagenUrl: String @col(name: "IMAGEN_URL", dataType: "varchar(255)")
+  fechaSubida: Date! @col(name: "FECHA_SUBIDA") @default(expr: "request.time")
+  visibilidad: Boolean @default(value: true)
+}
+```
+
+### Erreserba mota
+
+```graphql
+type Reservas @table(name: "RESERVAS") {
+  id: Int!
+  idUsuario: Usuario!
+  idMaquina: Maquinas!
+  fecha: Date
+  horaInicio: String @col(name: "HORA_INICIO", dataType: "time")
+  horaFin: String @col(name: "HORA_FIN", dataType: "time")
+  estado: Boolean @default(value: true)
+}
+```
+
+### IdatziUserWeight
+
+```graphql
+type PesoUsuario @table(name: "PESO_USUARIO") {
+  id: Int!
+  idUsuario: Usuario!
+  peso: Float! @col(name: "PESO")
+  fecha: Date
+}
+```
+
+### Ordainketa mota
+
+```graphql
+type Pagos @table(name: "PAGOS") {
+  id: Int!
+  idUsuario: Usuario!
+  monto: Int! @col(name: "monto", dataType: "bigint")
+  fechaPago: Date @col(name: "fecha_pago")
+  tipo: String @col(name: "tipo", dataType: "varchar(50)")
+  metodoPago: String @col(name: "metodo_pago", dataType: "varchar(25)")
+}
+```
+
+## Bezero HTTP (DataConnectClient.kt)
+
+Data Connect-ekin komunikazioak ez du erabiltzen Firebase SDK Android-erako, baizik eta `DataConnectClient.kt`-n inplementatutako eskuzko HTTP bezero bat. Singleton objektu honek `POST` eskaerak egiten dizkio Data Connect REST amaierako puntuari, kontsultaren gorputzarekin JSON formatuan.
+
+```kotlin
+object DataConnectClient {
+    private const val API_KEY = "..."
+    private const val APP_ID = "<app-id-de-ejemplo>..."
+    private const val ENDPOINT = "https://europe-southwest1-dataconnect.googleapis.com/v1beta/projects/tu-proyecto.../connectors/default:executeGraphql"
+
+    suspend fun execute(
+        query: String,
+        variables: Map<String, Any?> = emptyMap(),
+        operationName: String? = null
+    ): JSONObject?
+}
+```
+
+Google APIarekin autentifikazioa `x-goog-api-key` goiburua erabiliz egiten da. Amaiera puntuak eskualdeko `europe-southwest1-dataconnect.googleapis.com` azpidomeinua barne hartzen du, 404 erantzunak saihesteko beharrezkoa den zerbitzua eskualde zehatz batean zabaltzen denean.
+
+`execute` metodoak erantzun osoaren `JSONObject` objektua edo `null` itzultzen du sareko errorea edo HTTP erantzuna arrakastatsua izan ezean. Deia `Dispatchers.IO` bidaltzailean exekutatzen da `withContext` erabiliz.

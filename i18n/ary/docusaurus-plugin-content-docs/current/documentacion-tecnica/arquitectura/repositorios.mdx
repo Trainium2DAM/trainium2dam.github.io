@@ -1,0 +1,105 @@
+---
+title: Capa de repositorios
+sidebar_position: 3
+---
+# طبقة المستودع
+
+تقوم طبقة المستودع باستخلاص الوصول إلى Supabase من بقية التطبيق. يقوم كل مستودع بتغليف عمليات CRUD لكيان معين. جميع الطرق هي وظائف `suspend` تعمل على `Dispatchers.IO`.
+
+## محدد الخدمة
+
+يعمل `di/ServiceLocator.kt` كنقطة وصول إلى المستودعات. يتم إنشاء مثيل لكل مستودع بطريقة `lazy` (مثيل واحد، يتم إنشاؤه عند الوصول الأول):
+
+```kotlin
+object ServiceLocator {
+    val authRepository by lazy { AuthRepository() }
+    val usuarioRepository by lazy { UsuarioRepository() }
+    val maquinaRepository by lazy { MaquinaRepository() }
+    val reservaRepository by lazy { ReservaRepository() }
+    val platoRepository by lazy { PlatoRepository() }
+    val pesoRepository by lazy { PesoRepository() }
+    val pagoRepository by lazy { PagoRepository() }
+}
+```
+
+يمكن لـ ViewModels الوصول إلى المستودعات من خلال `ServiceLocator.xRepository`.
+
+## مستودع المصادقة
+
+يدير عمليات المصادقة والتسجيل.
+
+| الطريقة | الوصف | 
+|---|---| 
+| `getUserByDni(dni)` | البحث عن مستخدم عن طريق رقم التعريف. إرجاع `Usuario?` | 
+| `userExistsByDni(dni)` | تحقق مما إذا كان DNI مسجلاً بالفعل. يُرجع `Boolean` | 
+| `verifyCredentials(dni, email)` | تحقق من زوج البريد الإلكتروني DNI + لاستعادة كلمة المرور | 
+| `updatePassword(userId, newPass)` | يقوم بتحديث حقل `contraseniaHash` الخاص بالمستخدم | 
+| `insertUser(nombre, dni, email, pass, telefono)` | قم بتسجيل مستخدم جديد بـ `admin=0` و `premium=false` |
+
+##مستودع المستخدم
+
+يدير قراءة وتحديث ملف تعريف المستخدم.
+
+| الطريقة | الوصف | 
+|---|---| 
+| `getById(id)` | يحصل على المستخدم عن طريق معرفه. إرجاع `Usuario?` | 
+| `update(id, nombre, email, telefono, pass, foto)` | تحديث حقول الملف الشخصي القابلة للتحرير | 
+| `updatePremium(id, isPremium, fechaIni, fechaFin)` | تفعيل أو إلغاء الاشتراك المميز |
+
+## مستودع ماكينا
+
+إدارة كتالوج الآلات.
+
+| الطريقة | الوصف | 
+|---|---| 
+| `getAll()` | يحصل على القائمة الكاملة للآلات. يعود `List<Maquina>` | 
+| `insert(maquina)` | أدخل آلة جديدة | 
+| `delete(id)` | حذف جهاز بواسطة المعرف | 
+| `activateMaintenance(id, desde, hasta)` | قم بتمييز الجهاز على أنه غير قابل للتشغيل من خلال نطاق الصيانة | 
+| `deactivateMaintenance(id)` | إعادة تنشيط الجهاز وتنظيف حقول الصيانة |
+
+## ريسيرفا مستودع
+
+إدارة احتياطيات الآلات.
+
+| الطريقة | الوصف | 
+|---|---| 
+| `getAll()` | احصل على جميع الحجوزات مع بيانات المستخدم والجهاز المضمنة | 
+| `getByUser(userId)` | الحصول على حجوزات من مستخدم محدد | 
+| `getByMachine(machineId)` | احصل على الحجوزات النشطة لجهاز | 
+| `insert(reserva)` | إنشاء حجز جديد | 
+| `delete(id)` | إلغاء/حذف الحجز عن طريق المعرف |
+
+تستخدم استعلامات الحجوزات صيغة العلاقة المضمنة PostgREST (`*, usuarios(*), maquinas(*)`) لاسترداد بيانات المستخدم والجهاز في طلب واحد.
+
+## مستودع أفلاطون
+
+إدارة كتالوج الأطباق الغذائية.
+
+| الطريقة | الوصف | 
+|---|---| 
+| `getAccepted()` | الحصول على الأطباق باستخدام `aceptado=true` و`visibilidad=true` | 
+| `getPending()` | الحصول على الأطباق باستخدام `aceptado=false` (للمسؤولين فقط) | 
+| `insert(plato)` | أدخل لوحة جديدة مع `aceptado=false` | 
+| `accept(id)` | الموافقة على طبق: `aceptado=true` | 
+| `delete(id)` | حذف لوحة نهائيا |
+
+## مستودع البيزو
+
+إدارة سجلات وزن الجسم.
+
+| الطريقة | الوصف | 
+|---|---| 
+| `getByUser(userId)` | يحصل على سجل وزن المستخدم، مرتبة حسب التاريخ التصاعدي | 
+| `insert(pesoUsuario)` | أدخل سجل وزن جديد | 
+| `update(id, peso)` | يقوم بتحديث قيمة السجل الموجود | 
+| `delete(id)` | حذف سجل وزن |
+
+## مستودع باجو
+
+إدارة سجل دفع الاشتراك.
+
+| الطريقة | الوصف | 
+|---|---| 
+| `getByUser(userId)` | يحصل على مدفوعات المستخدم، مرتبة حسب التاريخ التنازلي | 
+| `insert(pago)` | تسجيل دفع اشتراك جديد |

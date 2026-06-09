@@ -1,0 +1,44 @@
+---
+title: Registro de peso
+sidebar_position: 3
+---
+#Rexistro de peso
+
+## Pantalla de rexistro
+
+Permite ao usuario rexistrar o seu peso corporal diario e visualizar a evolución ao longo do tempo mediante un gráfico de liñas debuxado coa API `Canvas` de Compose.
+
+### Carga de datos
+
+Ao inicializar a pantalla, consúltase a táboa Supabase `peso_usuario`, filtrando por `id_usuario` e ordenando os resultados en orde ascendente por data. Os rexistros almacénanse no estado `registros: List<PesoUsuario>`.
+
+### Restrición dunha inscrición por día
+
+A pantalla comproba se xa existe un rexistro para a data actual (`fechaHoy`) antes de mostrar o campo de entrada. A variable `yaExisteHoy` calcúlase comparando a data de cada rexistro coa data do sistema:
+
+```kotlin
+val fechaHoy = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+val yaExisteHoy = registros.any { it.fecha == fechaHoy }
+```
+
+Se xa existe un rexistro para hoxe, o campo de entrada está oculto e móstrase unha mensaxe informativa. Esta restrición é exclusivamente a nivel de IU, non hai ningunha restrición `UNIQUE` na base de datos para esta combinación de columnas.
+
+### Inserción dun novo rexistro
+
+O usuario introduce o peso no campo de texto (acepta valores decimais) e preme o botón de confirmación. Un `insert` execútase en Supabase co `id_usuario`, o valor de peso e a data actual.
+
+### Editando un rexistro existente
+
+Cada fila da lista inclúe un botón de edición que activa o modo de edición en liña (`editandoId`). Despois da confirmación, execútase un `update` en Supabase no rexistro identificado polo seu `id`.
+
+### Eliminando un rexistro
+
+O botón de eliminación de cada fila executa un `delete` en Supabase filtrando por `id` do rexistro.
+
+### Gráfico de evolución
+
+O gráfico está debuxado co `Canvas` de Jetpack Compose. A implementación normaliza os valores de peso ao intervalo `[0, 1]` en relación co mínimo e o máximo do historial, mapea con coordenadas de píxeles no lenzo e úneos con liñas usando `drawPath`. Cada punto está representado por un círculo cheo.
+
+O eixe horizontal representa o tempo (as entradas están ordenadas cronoloxicamente) e o eixe vertical representa o peso en quilogramos. Os valores mínimos e máximos móstranse como etiquetas de texto nos extremos do eixe.
+
+Se o historial contén menos de dous puntos, o gráfico non se renderiza (se necesitan polo menos dous puntos para trazar unha liña).

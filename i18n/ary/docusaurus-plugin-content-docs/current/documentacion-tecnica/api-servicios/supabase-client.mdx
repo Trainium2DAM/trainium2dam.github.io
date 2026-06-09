@@ -1,0 +1,96 @@
+---
+title: Cliente Supabase
+sidebar_position: 1
+---
+# عميل Supabase
+
+## SupabaseClient
+
+يحدد `SupabaseClient.kt` مفردًا `object` يقوم بتهيئة عميل Supabase SDK. إنها نقطة الوصول الوحيدة لجميع عمليات قاعدة البيانات في التطبيق.
+
+```kotlin
+object SupabaseClient {
+    val client = createSupabaseClient(
+        supabaseUrl = AppConfig.SUPABASE_URL,
+        supabaseKey = AppConfig.SUPABASE_KEY
+    ) {
+        install(Postgrest)
+        install(Auth)
+    }
+}
+```
+
+تتم قراءة بيانات الاعتماد من `AppConfig`، الذي يقوم بمركزية كافة ثوابت التكوين. المكونات الإضافية المثبتة هي `Postgrest` (لعمليات CRUD على الجداول) و`Auth` (وحدة مصادقة SDK، متاحة للاستخدام المستقبلي).
+
+## استخدم من خلال المستودعات
+
+لا يتم تنفيذ عمليات قاعدة البيانات مباشرة من العناصر المركبة أو ViewModels، ولكن من خلال طبقة المستودع (راجع [Capa de repositorios](/docs/arquitectura/repositorios)). جميع أساليب المستودع هي وظائف `suspend` تعمل على `Dispatchers.IO`.
+
+### استعلام بسيط (اختر باستخدام الفلتر)
+
+```kotlin
+val usuario = SupabaseClient.client.from(DbTables.USUARIOS)
+    .select { filter { eq(DbColumns.DNI, dni) } }
+    .decodeSingleOrNull<Usuario>()
+```
+
+### الاستعلام مع العلاقات المضمنة (انضمام ضمني)
+
+يتيح لك PostgREST استرداد البيانات من الجداول ذات الصلة في طلب واحد باستخدام بناء جملة العمود الأولي:
+
+```kotlin
+val columns = Columns.raw("*, usuarios(*), maquinas(*)")
+val reservas = SupabaseClient.client.from(DbTables.RESERVAS)
+    .select(columns)
+    .decodeList<ReservaConDetalles>()
+```
+
+يعلن الكائن `ReservaConDetalles` عن الحقول `usuario: Usuario?` و `maquina: Maquina?` مع `@SerialName` المحاذية لاسم الجدول ذي الصلة.
+
+### الإدراج (إدراج)
+
+```kotlin
+SupabaseClient.client.from(DbTables.RESERVAS)
+    .insert(Reserva(
+        idUsuario = idUsuario,
+        idMaquina = maquina.id,
+        fecha = fechaSeleccionada,
+        horaInicio = horaSeleccionada,
+        horaFin = horaFin
+    ))
+```
+
+### التحديث (التحديث مع الفلتر)
+
+```kotlin
+SupabaseClient.client.from(DbTables.MAQUINAS)
+    .update({
+        set("operativa", false)
+        set(DbColumns.MANTENIMIENTO_DESDE, desde)
+        set(DbColumns.MANTENIMIENTO_HASTA, hasta)
+    }) { filter { eq(DbColumns.ID, maquina.id) } }
+```
+
+### حذف (حذف باستخدام الفلتر)
+
+```kotlin
+SupabaseClient.client.from(DbTables.RESERVAS)
+    .delete { filter { eq(DbColumns.ID, reserva.id ?: 0) } }
+```
+
+## إلغاء التسلسل التلقائي
+
+يتم شرح فئات البيانات الخاصة بالحزمة `models` بـ `@Serializable` من `kotlinx.serialization`. يستخدم Supabase SDK هذه الآلية لتعيين JSON لاستجابات PostgREST تلقائيًا لأنواع Kotlin المقابلة. تتم محاذاة أسماء الحقول التي تختلف بين عمود قاعدة البيانات وحقل Kotlin مع `@SerialName`:
+
+```kotlin
+@Serializable
+data class Reserva(
+    val id: Int? = null,
+    @SerialName("id_usuario") val idUsuario: Int,
+    @SerialName("id_maquina") val idMaquina: Int,
+    val fecha: String,
+    @SerialName("hora_inicio") val horaInicio: String,
+    @SerialName("hora_fin") val horaFin: String,
+    val estado: Boolean = true
+)
+```

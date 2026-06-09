@@ -1,0 +1,70 @@
+---
+title: Gestión de sesión
+sidebar_position: 3
+---
+#إدارة الجلسة
+
+## مدير الجلسة الآمنة
+
+يدير `SecureSessionManager.kt` استمرارية جلسة المستخدم بين بدء تشغيل التطبيق باستخدام `SharedPreferences`.
+
+```kotlin
+object SecureSessionManager {
+    fun setContext(context: Context)
+    fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+    fun obtenerSesion(): SesionData?
+    fun cerrarSesion()
+}
+```
+
+### التهيئة
+
+يجب استدعاء `setContext(context)` قبل أي عملية أخرى. تم استدعاؤه في `MainActivity.onCreate()` مع سياق النشاط. داخليًا، يقوم بإنشاء `SharedPreferences` بالاسم `AppConfig.SESSION_PREFS_NAME` (`"trainium_session"`) والوضع `MODE_PRIVATE`.
+
+### بداية الجلسة
+
+احفظ بيانات الجلسة في `SharedPreferences`:
+
+```kotlin
+fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+```
+
+`userId`، `userName`، `isAdmin` و `isPremium` مستمرة. يُرجع `true` إذا اكتمل الحفظ بنجاح (تأكد من ذلك بإعادة قراءة `userId`).
+
+تم الاتصال من `LoginScreen` مباشرة بعد المصادقة الناجحة.
+
+### احصل على الجلسة
+
+استعادة بيانات الجلسة المحفوظة:
+
+```kotlin
+fun obtenerSesion(): SesionData?
+```
+
+إرجاع كائن `SesionData` مع بيانات المستخدم، أو `null` إذا لم تكن هناك جلسة محفوظة (التمهيد الأول أو بعد تسجيل الخروج). يتم استدعاؤه من شاشة `loading` عند بدء تشغيل التطبيق.
+
+### جلسة قريبة
+
+مسح كافة البيانات من `SharedPreferences`:
+
+```kotlin
+fun cerrarSesion()
+```
+
+يتم الاتصال من `ProfileScreen` عندما يضغط المستخدم على "تسجيل الخروج"، مباشرة قبل الانتقال إلى `main` باستخدام `popUpTo(0)`.
+
+## نموذج بيانات الجلسة
+
+```kotlin
+data class SesionData(
+    val userId: Int,
+    val userName: String,
+    val isAdmin: Boolean,
+    val isPremium: Boolean,
+    val token: String = ""
+)
+```
+
+## مدة الجلسة
+
+`AppConfig.SESSION_DURATION_MS` يحدد المدة النظرية للجلسة (7 أيام بالمللي ثانية). ومع ذلك، في التنفيذ الحالي، لا تنتهي صلاحية الجلسة تلقائيًا؛ ويستمر حتى يقوم المستخدم بتسجيل الخروج بشكل صريح أو يتم مسح بيانات التطبيق.

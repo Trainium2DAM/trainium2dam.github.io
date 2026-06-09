@@ -1,0 +1,225 @@
+---
+title: Componentes y patrones de UI
+sidebar_position: 2
+---
+# Componentes e padrões de UI
+
+Esta seção documenta componentes reutilizáveis ​​e padrões de UI que se repetem em toda a interface do usuário.
+
+## Cabeçalho da tela
+
+**Ficha:** `ui/theme/ScreenHeader.kt`
+
+Componente de cabeçalho reutilizável usado em todas as telas filhas. Inclui título, subtítulo, botão Voltar opcional, conteúdo extra à direita e alternância de tópicos.
+
+```kotlin
+@Composable
+fun ScreenHeader(
+    title: String,
+    subtitle: String,
+    visible: Boolean = true,
+    onBack: (() -> Unit)? = null,
+    trailing: @Composable (() -> Unit)? = null,
+    textColor: Color,
+    subtitleColor: Color,
+    onToggleTheme: (() -> Unit)? = null,
+    darkTheme: Boolean? = null
+)
+```
+
+O componente aplica `statusBarsPadding()` e anima seu alfa de entrada com `animateFloatAsState` quando `visible` vai de `false` para `true`.
+
+## Carregamento de esqueleto
+
+**Ficha:** `ui/theme/SkeletonLoading.kt`
+
+Carregamento de componentes que são exibidos enquanto aguarda dados da API, melhorando a experiência do usuário evitando telas em branco.
+
+### Cartão Esqueleto
+
+Espaço reservado retangular animado para cartões de lista:
+
+```kotlin
+@Composable
+fun SkeletonCard(
+    modifier: Modifier = Modifier,
+    height: Int? = null,
+    width: Int? = null
+)
+```
+
+Use um gradiente linear animado em loop com `rememberInfiniteTransition` para simular o efeito de brilho.
+
+### Círculo Esqueleto
+
+Placeholder circular para avatares e iconos:
+
+```kotlin
+@Composable
+fun SkeletonCircle(
+    modifier: Modifier = Modifier,
+    size: Int = 100
+)
+```
+
+### SkeletonText
+
+Espaço reservado retangular arredondado para textos:
+
+```kotlin
+@Composable
+fun SkeletonText(
+    modifier: Modifier = Modifier,
+    width: Int = 200,
+    height: Int = 20
+)
+```
+
+### Lista de Esqueletos
+
+Composição de múltiplos `SkeletonCard` empilhados verticalmente:
+
+```kotlin
+@Composable
+fun SkeletonList(
+    itemCount: Int = 5,
+    modifier: Modifier = Modifier,
+    itemHeight: Int = 80
+)
+```
+
+**Uso típico:**
+
+```kotlin
+if (isLoading) {
+    SkeletonList(itemCount = 5, modifier = Modifier.fillMaxWidth())
+} else {
+    LazyColumn { /* items reales */ }
+}
+```
+
+## AppTimePickerDialog
+
+**Ficha:** `ui/theme/AppTimePickerDialog.kt`
+
+Caixa de diálogo de seleção de tempo com base no `TimePicker` do Material 3. Substitui o `TimePickerDialog` do Android View usado em versões anteriores.
+
+```kotlin
+@Composable
+fun AppTimePickerDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (hour: Int, minute: Int) -> Unit,
+    initialHour: Int = LocalTime.now().hour,
+    initialMinute: Int = LocalTime.now().minute,
+    title: String = "Seleccionar hora",
+    is24Hour: Boolean = true,
+    onValidate: ((hour: Int, minute: Int) -> String?)? = null
+)
+```
+
+O parâmetro `onValidate` permite que validações adicionais sejam aplicadas antes do commit. Se a função retornar um `String` (mensagem de erro), ela o exibirá como `Toast` e não fechará a caixa de diálogo. Se retornar `null`, a seleção é considerada válida e `onConfirm` é chamado.
+
+## Padrão de cartão de item de lista
+
+As listas de máquinas, reservas e pratos seguem o mesmo padrão de cartão:
+
+```
+Card (RoundedCornerShape 16 dp, elevation, cardBg)
+  └── Row (padding 16 dp, verticalAlignment Center)
+        ├── Image/Icon (60-80 dp)
+        ├── Column (weight 1f)
+        │     ├── Text nombre (titleMedium, fontWeight Bold)
+        │     └── Text subtítulo (bodyMedium, alpha 0.5)
+        └── Botones de acción (IconButton)
+```
+
+A cor de fundo `cardBg` se adapta ao tema ativo: `Color(0xFF162347).copy(0.9f)` no escuro e `Color.White` no claro.
+
+## Padrão de campo de texto (OutlinedTextField)
+
+Todos os formulários usam `OutlinedTextField` com o esquema de cores personalizado:
+
+```kotlin
+val inputColors = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = BlueAccent,
+    unfocusedBorderColor = if (isDarkTheme) Color.White.copy(0.15f) else BlueDark.copy(0.15f),
+    focusedLabelColor = BlueAccent,
+    unfocusedLabelColor = if (isDarkTheme) Color.White.copy(0.4f) else BlueDark.copy(0.4f),
+    cursorColor = BlueAccent,
+    focusedTextColor = textColor,
+    unfocusedTextColor = textColor.copy(0.9f)
+)
+```
+
+A borda ativa é sempre `BlueAccent` (#2196F3) independente do tema.
+
+## Botão de ação principal (CTA)
+
+Os botões de ação principais usam um gradiente horizontal em vez da cor plana do Material 3:
+
+```kotlin
+Button(
+    onClick = accion,
+    modifier = Modifier.fillMaxWidth().height(56.dp),
+    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+    contentPadding = PaddingValues()
+) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(
+                Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)),
+                RoundedCornerShape(16.dp)
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            "CONFIRMAR",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 2.sp,
+            color = Color.White
+        )
+    }
+}
+```
+
+## Botão Voltar
+
+O retrocesso é implementado com `TextButton` em vez de uma seta `IconButton`, para mais área de toque. `ScreenHeader` padroniza esse comportamento usando `Icons.AutoMirrored.Filled.ArrowBack`.
+
+## Seletor de tema (alternar)
+
+A alternância do tema aparece em `MainScreen` e `ProfileScreen` como um `IconButton` alinhado ao canto superior direito, com `statusBarsPadding()` para respeitar a barra de status do sistema:
+
+```kotlin
+IconButton(
+    onClick = onToggleTheme,
+    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).statusBarsPadding()
+) {
+    Icon(
+        if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+        contentDescription = "Cambiar tema",
+        tint = if (isDarkTheme) BlueSoft else BlueAccent
+    )
+}
+```
+
+Nas demais telas, o toggle é integrado em `ScreenHeader` através dos parâmetros `darkTheme` e `onToggleTheme`.
+
+## Avatar do usuário
+
+O avatar do perfil é exibido em `ProfileScreen` e `EditProfileScreen` como uma circular `Box` com `clip(CircleShape)`. Caso o usuário possua uma foto em Base64, ela é decodificada com `ImageUtils.decodeBase64ToBitmap`. Se você não tiver uma foto, um ícone genérico de pessoa será exibido.
+
+## Indicador de estado de máquina
+
+Os cartões de máquina em `MaquinasScreen` exibem um emblema de status colorido:
+
+| Estado | Cor | Texto | 
+|---|---|---| 
+| Operacional | Verde (`Color(0xFF4CAF50)`) | Disponível | 
+| Em manutenção | Laranja (`Color(0xFFFF9800)`) | Manutenção |
+
+## Chip de Filtro (Tela de Reservas)
+
+Os filtros de tela de reserva são implementados como `FilterChip` do Material 3 em um `LazyRow` rolável horizontalmente.

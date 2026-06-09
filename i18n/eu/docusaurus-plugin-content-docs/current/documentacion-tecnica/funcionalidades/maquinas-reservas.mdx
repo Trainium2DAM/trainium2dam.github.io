@@ -1,0 +1,111 @@
+---
+title: Máquinas y reservas
+sidebar_position: 1
+---
+# Makinak eta erreserbak
+
+## MaquinasScreen
+
+`MaquinasScreen` eskuordetzen du `MaquinasViewModel`, zeinak makinen zerrendaren egoera, ekintzen elkarrizketa-koadroak eta CRUD eragiketak kudeatzen ditu `MaquinaRepository` eta `ReservaRepository` `ServiceLocator` bidez.
+
+### Ikusi ereduaren egoera
+
+```kotlin
+class MaquinasViewModel : ViewModel() {
+    var listaMaquinas by mutableStateOf<List<Maquina>>(emptyList())
+    var isLoading by mutableStateOf(false)
+    var showingDialogAdd by mutableStateOf(false)
+    var maquinaParaMantenimiento by mutableStateOf<Int?>(null)
+    var maquinaParaReservar by mutableStateOf<Int?>(null)
+    var fechaSeleccionada by mutableStateOf("")
+    var horaSeleccionada by mutableStateOf("")
+    var reservasDeLaMaquina by mutableStateOf<List<Reserva>>(emptyList())
+    var reservasDelUsuario by mutableStateOf<List<Reserva>>(emptyList())
+    var reservaExitosa by mutableStateOf<Reserva?>(null)
+    var errorMessage by mutableStateOf<String?>(null)
+    var nuevaFoto by mutableStateOf<String?>(null)
+    // ...
+}
+```
+
+`isLoading` `true` den bitartean, pantailak `SkeletonList` erakusten du benetako edukiaren ordez.
+
+### Erabiltzaile modu estandarra
+
+Erabiltzaileak eskuragarri dauden makinen zerrenda osoa ikusten du. Makina operatibo batean klik eginez, erreserba-prozesua has dezakezu.
+
+**Erreserba prozesua:**
+
+1. `DatePickerDialog` (Android View) bistaratzen da data hautatzeko. 
+2. `AppTimePickerDialog` (Compose Material 3) bistaratzen da hasiera-ordua hautatzeko. Aplikazioak automatikoki kalkulatzen du amaiera-ordua 30 minutu gehituz. 
+3. **Gehieneko iraupenaren baliozkotzea:** `AppTimePickerDialog`ren `onValidate` parametroak egiaztatzen du denbora-tarteak 60 minutu baino gehiago ez dituela. Gainditzen bada, errore-mezu bat bistaratuko da eta erreserba ez da berresten. 
+4. ViewModel-ek `reservasDeLaMaquina` eta `reservasDelUsuario` kargatzen ditu biltegietatik paraleloki. 
+5. Bi baldintza egiaztatzen dira baieztatu aurretik:
+- Makina ez dagoela jada denbora tarte horretan erreserbatuta. 
+- Erabiltzaileak ez duela jada beste erreserba bat tarte horretan bertan. 
+6. Gatazkarik ez badago, `ReservaRepository.insert(...)` deitzen da `estado = true`-rekin. 
+7. Txertatu ondoren, abisua automatikoki programatzen da `NotificationHelper.rescheduleNextReservationNotification(context, userId)` erabiliz. 
+8. `Snackbar` bat bistaratzen da **sortutako erreserba bertan behera uzteko** segundo batzuetan. Erabiltzaileak "Utzi" sakatzen badu, erreserba ezabatuko da eta programatutako jakinarazpena bertan behera uzten da.
+
+**Mantentze-egoeraren ondoriozko murrizketa:**
+
+Makina batek `operativa = false` badu, "Mantentzea" bereizgarria bistaratuko da eta erreserba botoia desgaituta dago. Txartelak mantentze-aldiaren hasiera eta amaiera datak erakusten ditu eskuragarri dagoenean.
+
+### Makinen irudiak
+
+Txartelek makinaren argazkia erakusten dute `foto` (Base64) eremua erabilgarri badago. Irudirik ez badago, leku-marka bat bistaratuko da. Administratzaileek irudi bat erantsi dezakete makina berri bat sortzean edo hura editatzean, gailuaren galerian hautatuta `ActivityResultContracts.GetContent()` erabiliz.
+
+### Administratzaile modua
+
+Administratzaileak funtzionalitate gehigarriak ditu makina-txartel bakoitzetik eskuragarri:
+
+**Makina erregistratzea:** FAB batek (`FloatingActionButton`) elkarrizketa-koadro bat irekitzen du makina berri baten izena, mota, deskribapena eta irudia sartzeko. Delegatuak `MaquinasViewModel.addMachine(...)` → `MaquinaRepository.insert(...)`.
+
+**Makina ezabatzea:** Txartel bakoitzeko ezabatzeko botoiak `MaquinasViewModel.deleteMachine(id)` → `MaquinaRepository.delete(id)` deitzen du.
+
+**Mantentze-aktibazioa:** Giltza-botoiak lau eremu dituen inprimaki bat irekitzen du (hasiera-data, hasiera-ordua, amaiera-data eta amaiera-ordua). Berrespenean, ViewModel-ek sekuentzia hau exekutatzen du:
+
+1. `MaquinaRepository.activateMaintenance(id, desde, hasta)`: markatu `operativa = false` eta gorde barrutia. 
+2. Egiaztatu makina horren erreserba aktibo guztiak. 
+3. Erreserba bakoitzeko, egiaztatu `[fecha + hora_inicio, fecha + hora_fin]` tartea mantentze-barrutiarekin gainjartzen den. 
+4. Gainjarritako erreserbak automatikoki bertan behera uzten dira `ReservaRepository.delete(reserva.id)` erabiliz.
+
+Gainjartze-hautemateak baldintza estandarra erabiltzen du: `resInicio < calHasta && resFin > calDesde`.
+
+**Makina berraktibatzea:** Deitu `MaquinasViewModel.deactivateMaintenance(id)` → `MaquinaRepository.deactivateMaintenance(id)`, honek `operativa = true` sartu eta mantentze-eremuak garbitzen ditu.
+
+---
+
+## Erreserben pantaila
+
+Zerrendatu iragazketa-sistema duten erreserba guztiak irizpideen arabera:
+
+| Iragazkia | Portaera | 
+|---|---| 
+| Datorren | Amaiera ordua oraindik iritsi ez duten erreserbak erakusten ditu | 
+| Gaur | Uneko dataren pareko data duten erreserbak erakusten ditu | 
+| Iragana | Amaiera-ordua dagoeneko gainditu duten erreserbak erakusten ditu | 
+| Guztiak | Erakutsi erreserba guztiak data-iragazkirik gabe | 
+| Data | Ireki `DatePickerDialog` data zehatz baten arabera iragazteko |
+
+"Hurrengoa" eta "Iraganeko" artean ordenatzeko logika amaiera-ordu osoan (`fecha + hora_fin`) oinarritzen da, ez datan bakarrik. Horri esker, gaur egungo iraganeko erreserba bat "Iraganeko" iragazkian behar bezala ager daiteke.
+
+Erreserbak `ReservaRepository`-tik kargatzen dira txertatutako erlazio sintaxiarekin: `*, usuarios(*), maquinas(*)`. Horri esker, erabiltzaile eta makinaren izena zuzenean bistaratu daitezke kontsulta gehigarririk gabe.
+
+**Administratzailearen ikuspegia:** Administratzaileak erabiltzaile guztien erreserbak ikusten ditu. Errenkada bakoitzak erabiltzaile-izena erakusten du makinaren izenaz gain. Erreserba aktibo oro ere bertan behera utzi dezakezu.
+
+**Erabiltzaileen ikuspegia:** Erabiltzaileak bere erreserbak bakarrik ikusten ditu eta erreserba aktibo bat bertan behera utzi dezake.
+
+Erreserbak goranzko dataren arabera eta, ondoren, hasierako orduaren arabera ordenatzen dira, beraz, hurbilenak agertzen dira lehenik. Datuak kargatzen ari diren bitartean `SkeletonList` bat bistaratzen da.
+
+### Esportatu gailuaren egutegira
+
+Erreserba-txartel bakoitzak egutegiko botoi bat dauka (`Icons.Default.CalendarMonth`). Sakatzean berrespen-elkarrizketa bat bistaratzen da eta, onartutakoan, `Intent` ekintzarekin `Intent.ACTION_INSERT` abiarazten da `CalendarContract.Events.CONTENT_URI` aldera. Asmoak makinaren izenburua, denborarekin deskribapena eta hasierako eta amaierako orduak milisegundotan biltzen ditu. Gailuak erabiltzailearen egutegiaren aplikazioa irekitzen du gertaeraren txertaketa osatzeko.
+
+### Ezeztapena eta jakinarazpenak
+
+Erreserba pantailatik bertan behera uzten duzunean:
+
+1. `ReservaRepository.delete(id)` duen Supabase erreserba kendu da. 
+2. `NotificationHelper.cancelScheduledNotification(context, reservaId)`-rekin programatutako abisua bertan behera geratzen da. 
+3. Etorkizuneko hurrengo erreserbarako abisua `NotificationHelper.rescheduleNextReservationNotification(context, userId)`rekin berriro programatzen da.

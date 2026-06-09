@@ -1,0 +1,56 @@
+---
+title: Requisitos previos
+sidebar_position: 1
+---
+# Voraussetzungen
+
+Vor dem Klonen des Repositorys und dem Kompilieren des Projekts muss die folgende Software auf dem Entwicklungscomputer installiert und konfiguriert sein.
+
+## Entwicklungsumgebung
+
+| Werkzeug | Mindestversion | Notizen | 
+|---|---|---| 
+| AndroidStudio | Igel (2023.1.1) oder höher | Die neueste stabile Version wird empfohlen | 
+| JDK | 11 | Konfiguriert als `sourceCompatibility` und `targetCompatibility` im Modul `:app` | 
+| Gradle | 8.13 | Verwaltet durch den im Repository enthaltenen Wrapper (`gradlew`) | 
+| Android SDK (compileSdk) | 36 | Von Android Studio SDK Manager | installieren
+| Android SDK (minSdk) | 24 (Android 7.0 Nougat) | Die Anwendung lässt sich auf früheren Versionen nicht installieren | 
+| Kotlin | 2.0+ | Verwaltet durch das Plugin `kotlin.android`, deklariert in `build.gradle.kts` |
+
+## Dienstkonten erforderlich
+
+Das Projekt ist auf zwei externe Backends angewiesen, die aktive Konten erfordern:
+
+**Supabase**
+
+Sie benötigen ein Supabase-Projekt mit den in [Base de datos](/docs/base-de-datos/esquema-supabase) beschriebenen Schematabellen. Die Anmeldeinformationen (`SUPABASE_URL` und `SUPABASE_KEY`) werden in `AppConfig.kt` als Konstanten deklariert. Für Produktionsumgebungen wird empfohlen, sie in eine `local.properties`-Datei oder in Umgebungsvariablen zu verschieben und die tatsächlichen Werte nicht in das Repository aufzunehmen.
+
+**Feuerbasis**
+
+Es ist ein Firebase-Projekt mit aktiviertem Data Connect-Dienst erforderlich. Die Datei `google-services.json` muss nach `app/google-services.json` kopiert werden. Diese Datei sollte nicht in das Repository hochgeladen werden, wenn das Projekt öffentlich ist.
+
+## Für die Anwendung erforderliche Berechtigungen
+
+Der `AndroidManifest.xml` deklariert die folgenden Berechtigungen:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+```
+
+| Erlaubnis | Geben Sie | ein Zweck | 
+|---|---|---| 
+| `INTERNET` | Normal | Zugriff auf Supabase und Firebase | 
+| `ACCESS_NETWORK_STATE` | Normal | Konnektivitätsprüfung | 
+| `POST_NOTIFICATIONS` | Laufzeit (Android 13+) | Benachrichtigungen zur Reservierungserinnerung anzeigen | 
+| `SCHEDULE_EXACT_ALARM` | Normal | Stellen Sie genaue Alarme für Erinnerungen ein | 
+| `USE_EXACT_ALARM` | Normal | Zusätzliche Gewährleistung der Alarmgenauigkeit in API 33+ | 
+| `RECEIVE_BOOT_COMPLETED` | Normal | Deklariert für zukünftige Alarmneuprogrammierung nach dem Zurücksetzen |
+
+Die Berechtigung `POST_NOTIFICATIONS` wird zur Laufzeit von `MainActivity.onCreate()` auf Geräten mit Android 13 (API 33) oder höher angefordert. In früheren Versionen wird die Berechtigung automatisch erteilt. Die App funktioniert auch ohne diese Berechtigung, sendet jedoch keine Erinnerungsbenachrichtigungen.
+
+Die Netzwerkkonnektivität ist für den Betrieb der Anwendung von entscheidender Bedeutung, da alle Datenvorgänge remote erfolgen.

@@ -1,0 +1,126 @@
+---
+title: Notificaciones de reservas
+sidebar_position: 5
+---
+# إشعارات الحجز
+
+يرسل Trainium إشعارات تذكير محلية قبل حجز كل آلة. يستخدم النظام `AlarmManager` لضبط التنبيهات الدقيقة و`NotificationCompat` لعرض الإشعار.
+
+## عناصر
+
+### مساعد الإشعارات
+
+`NotificationHelper.kt` هو كائن مفرد له ثلاث مسؤوليات:
+
+**إنشاء قناة الإعلام:**
+
+```kotlin
+fun createNotificationChannel(context: Context)
+```
+
+قم بتسجيل القناة `trainium_reservations` في النظام `NotificationManager` (مطلوب منذ Android 8.0 / API 26). القناة لها أهمية `IMPORTANCE_HIGH` ومفعلة بالاهتزاز. تم الاتصال بـ `MainActivity.onCreate()` قبل أي عملية أخرى.
+
+**إعداد تذكير:**
+
+```kotlin
+fun scheduleReservationNotification(
+    context: Context,
+    reservaId: Int,
+    maquinaNombre: String,
+    fecha: String,
+    horaInicio: String,
+    horaFin: String,
+    minutesBefore: Int
+)
+```
+
+احسب لحظة الإطلاق كـ `horaInicioReserva - minutesBefore * 60 000 ms`. إذا مرت تلك اللحظة بالفعل، فلن يتم ضبط أي إنذار. بخلاف ذلك، فإنه ينشئ `PendingIntent` استهداف `NotificationReceiver` ويسجله في `AlarmManager.setExactAndAllowWhileIdle` (API 23+) أو `setExact` في الإصدارات الأقدم. إن `requestCode` من `PendingIntent` هو `reservaId`، لذا فإن كل حجز له إنذار مستقل خاص به.
+
+**إلغاء تذكير:**
+
+```kotlin
+fun cancelScheduledNotification(context: Context, reservaId: Int)
+```
+
+أعد بناء `PendingIntent` بنفس `reservaId` واتصل بـ `AlarmManager.cancel`. يتم استدعاؤه عند إلغاء الحجز من `ReservasScreen`.
+
+**إعادة جدولة التذكير التالي:**
+
+```kotlin
+suspend fun rescheduleNextReservationNotification(context: Context, userId: Int)
+```
+
+الوظيفة `suspend` التي تستشير الحجوزات المستقبلية للمستخدم، وتقوم بالفرز حسب وقت البدء وتعيين المنبه للأقرب. يتم استدعاؤه بعد إنشاء الحجز أو إلغائه للحفاظ على تذكير الحجز التالي نشطًا دائمًا.
+
+### استقبال الإخطارات
+
+`BroadcastReceiver` الذي يستقبل `Intent` للإنذار عندما يقوم النظام بتشغيله. إنشاء ونشر الإخطار:
+
+- العنوان: `"Trainium — Recordatorio de reserva"`
+- الجسم: `"<nombre máquina>: HH:mm – HH:mm"`
+- الأولوية: `PRIORITY_HIGH`
+- الإلغاء التلقائي عند اللمس
+
+`notificationId` هو `reservaId`، لذلك لا تتداخل التنبيهات المعلقة المتعددة.
+
+### مدير إعدادات الإشعارات
+
+يستمر كل من الإشعار المسبق الذي اختاره المستخدم وحالة تنشيط الإشعارات في DataStore:
+
+```kotlin
+class NotificationSettingsManager(private val context: Context) {
+    val minutesBefore: Flow<Int>               // antelación actual (default: 30)
+    val notificationsEnabled: Flow<Boolean>    // activadas/desactivadas (default: true)
+
+    suspend fun setMinutesBefore(minutes: Int)
+    suspend fun setNotificationsEnabled(enabled: Boolean)
+
+    companion object {
+        const val DEFAULT_MINUTES = 30
+        val OPTIONS = listOf(10, 15, 30, 60, 120)
+    }
+}
+```
+
+## التكوين من واجهة المستخدم
+
+تم ضبط تفضيل الإشعارات على `EditProfileScreen`، في قسم "الإشعارات". هناك نوعان من الضوابط:
+
+- **التبديل:** يقوم بتنشيط أو إلغاء تنشيط إشعارات الحجز على مستوى العالم. تستمر القيمة مع `notifManager.setNotificationsEnabled(enabled)`. 
+- **الرقائق مقدماً:** مجموعة `FilterChip` بالخيارات المتاحة (10، 15، 30، 60، 120 دقيقة). يؤدي تحديد خيار إلى استمرار القيمة مع `notifManager.setMinutesBefore(minutes)`. يتم عرضها فقط في حالة تشغيل الإشعارات.
+
+## الأذونات في البيان
+
+```xml
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+<receiver
+    android:name=".NotificationReceiver"
+    android:exported="false" />
+```
+
+يتم طلب الإذن `POST_NOTIFICATIONS` في وقت التشغيل على Android 13+. إذا رفض المستخدم ذلك، يستمر نظام الحجز في العمل بشكل طبيعي ولكن لا يتم إرسال أي إشعارات.
+
+## دورة حياة التذكير
+
+```
+Usuario crea reserva
+    → ReservasScreen / MaquinasScreen
+    → NotificationHelper.rescheduleNextReservationNotification()
+        → Consulta reservas futuras del usuario
+        → scheduleReservationNotification() con la próxima reserva
+            → AlarmManager programa alarma exacta
+
+Cuando llega la hora - minutesBefore:
+    → AlarmManager dispara el Intent
+    → NotificationReceiver.onReceive()
+        → Muestra notificación al usuario
+
+Usuario cancela reserva
+    → NotificationHelper.cancelScheduledNotification(reservaId)
+    → NotificationHelper.rescheduleNextReservationNotification()
+        → Se reprograma con la siguiente reserva futura
+```

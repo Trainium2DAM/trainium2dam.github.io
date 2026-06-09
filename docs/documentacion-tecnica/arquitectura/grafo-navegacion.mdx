@@ -1,0 +1,92 @@
+---
+title: Grafo de navegación
+sidebar_position: 2
+---
+
+# Grafo de navegación
+
+El grafo de navegación se declara de forma centralizada en `MainActivity.kt` mediante un `NavHost`. El destino de inicio es siempre `splash`.
+
+## Rutas definidas
+
+| Ruta | Composable | Argumentos | Accesible desde |
+|---|---|---|---|
+| `splash` | `SplashVideoScreen` | ninguno | Inicio de la app |
+| `loading` | Pantalla de carga intermedia | ninguno | `splash` (al completar el vídeo) |
+| `main` | `MainScreen` | ninguno | `loading` |
+| `login` | `LoginScreen` | ninguno | `main` |
+| `register` | `RegisterScreen` | ninguno | `login` |
+| `forgot` | `ForgotPasswordScreen` | ninguno | `login` |
+| `profile/{idUsuario}` | `ProfileScreen` | `Int` | `login` / `loading` (sesión guardada) |
+| `edit_profile/{idUsuario}` | `EditProfileScreen` | `Int` | `profile` |
+| `historial/{idUsuario}` | `HistorialScreen` | `Int` | `edit_profile` |
+| `premium_selection/{idUsuario}` | `PremiumSelectionScreen` | `Int` | `profile` / `edit_profile` |
+| `maquinas/{isAdmin}/{idUsuario}` | `MaquinasScreen` | `Int`, `Int` | `profile` |
+| `reservas/{isAdmin}/{idUsuario}` | `ReservasScreen` | `Int`, `Int` | `profile` |
+| `platos/{isAdmin}/{idUsuario}` | `PlatosScreen` | `Int`, `Int` | `profile` |
+| `registro/{idUsuario}` | `RegistroScreen` | `Int` | `profile` |
+
+## Flujo de navegación principal
+
+```
+[splash]
+    |
+    v (onVideoFinished → popUpTo splash inclusive)
+[loading]  ─── sesión válida guardada ──────────────────────────> [profile/{idUsuario}]
+    |
+    v (sin sesión)
+[main]
+    |
+    v (onNavigateToLogin)
+[login]
+    |---> [register] (onNavigateToRegister)
+    |---> [forgot]   (onNavigateToForgot)
+    |
+    v (onLoginSuccess: idUsuario)
+[profile/{idUsuario}]
+    |---> [maquinas/{isAdmin}/{idUsuario}]     (onNavigateToMaquinas)
+    |---> [platos/{isAdmin}/{idUsuario}]       (onNavigateToPlatos)
+    |---> [registro/{idUsuario}]               (onNavigateToRegistroPeso)
+    |---> [reservas/{isAdmin}/{idUsuario}]     (onNavigateToReservas)
+    |---> [edit_profile/{idUsuario}]           (onNavigateToEditProfile)
+    |---> [premium_selection/{idUsuario}]      (onNavigateToPremium)
+    |---> [main] popUpTo(0)                    (onLogout)
+         |
+         v (edit_profile)
+    [edit_profile/{idUsuario}]
+         |---> [historial/{idUsuario}]           (onNavigateToHistorial)
+         |---> [premium_selection/{idUsuario}]   (onNavigateToPremium)
+```
+
+## Pantalla de carga (loading)
+
+La ruta `loading` actúa como intermediaria entre el splash y el resto de la app. Al entrar en `loading`, se comprueba si existe una sesión guardada válida en `SecureSessionManager`. Si la hay, navega directamente a `profile/{idUsuario}` recuperando el ID del usuario de la sesión. Si no existe sesión, navega a `main`.
+
+Este comportamiento permite que los usuarios autenticados no tengan que volver a hacer login en cada arranque de la app.
+
+## Gestión del back stack
+
+El destino `splash` se elimina del back stack al navegar hacia `loading` mediante `popUpTo("splash") { inclusive = true }`, evitando que el usuario pueda volver a la pantalla de vídeo con el botón Atrás.
+
+Al hacer logout desde `ProfileScreen`, se ejecuta `popUpTo(0)` para limpiar completamente el back stack antes de navegar a `main`, lo que impide el acceso a pantallas protegidas mediante el botón Atrás del sistema. Además, `SecureSessionManager.cerrarSesion()` borra los datos de sesión persistidos.
+
+## Paso de booleanos como enteros
+
+Navigation Compose no soporta `Boolean` como tipo de argumento de navegación. Por ello, el campo `isAdmin` se transporta como `Int` (0 o 1) y se convierte mediante comparación al recuperarlo del `Bundle`:
+
+```kotlin
+val isAdmin = backStackEntry.arguments?.getInt("isAdmin") == 1
+```
+
+Al navegar, la conversión inversa se realiza con el operador ternario:
+
+```kotlin
+navController.navigate("maquinas/${if (isAdmin) 1 else 0}/$idUsuario")
+```
+
+## Gestión de barras del sistema
+
+`MainActivity.kt` reacciona a los cambios de ruta mediante `SideEffect` para adaptar el color y el estilo de las barras de estado y navegación del sistema:
+
+- En la ruta `splash`: fondo blanco, iconos oscuros, barra de navegación visible.
+- En el resto de rutas: fondo adaptado al tema (oscuro `#0B1426` / claro `#F0F4FF`), iconos según el tema, barra de navegación oculta (se muestra con deslizamiento).

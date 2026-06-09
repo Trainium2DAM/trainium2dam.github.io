@@ -1,0 +1,90 @@
+---
+title: Suscripcion Premium
+sidebar_position: 4
+---
+# Премиум-подписка
+
+## PremiumSelectionScreen
+
+Управляйте процессом заключения договоров и продления подписки Premium. Процесс завершается на одном экране с выбором плана и способа оплаты.
+
+### Доступны планы
+
+| План | Цена | Продолжительность | 
+|---|---|---| 
+| Ежемесячно | 9,99 евро | 1 месяц | 
+| Полугодовой | 49,99 евро | 6 месяцев | 
+| Ежегодный | 89,99 евро | 12 месяцев |
+
+Планы определяются как список объектов `PlanInfo` в `PremiumSelectionViewModel`:
+
+```kotlin
+data class PlanInfo(val nombre: String, val precio: Double, val meses: Int)
+
+val planes = listOf(
+    PlanInfo("Mensual", 9.99, 1),
+    PlanInfo("Semestral", 49.99, 6),
+    PlanInfo("Anual", 89.99, 12)
+)
+```
+
+### Способы оплаты
+
+- **Кредитная/дебетовая карта:** Отображает форму с полями номера карты (от 13 до 16 цифр, цифровая клавиатура), срока действия и CVV (3 цифры). ViewModel проверяет формат трех полей перед обработкой платежа. 
+- **Bizum:** Не требует дополнительных полей, просто подтвердите выбор.
+
+### Проверка карты
+
+Перед обработкой платежа по карте ViewModel выполняет `validateCard()`, который проверяет:
+
+1. Номер карты, содержащий от 13 до 16 цифр. 
+2. CVV ровно из 3 цифр. 
+3. Срок годности в действительном и не просроченном формате.
+
+Если какая-либо проверка не удалась, выдается код ошибки (`invalid_card_number`, `invalid_cvv`, `invalid_expiry_date`, `card_expired`), который экран преобразует в сообщение, расположенное через `Toast`.
+
+### Продление подписки
+
+Если у пользователя уже активна подписка Premium, `PremiumSelectionViewModel.loadUser(id)` обнаруживает продление (`esRenovacion = true`) и восстанавливает `fechaFinActual`. При расчете дат нового периода дата начала продления устанавливается на день после `fechaFinActual`, чтобы не было дублирования или потерянных дней:
+
+```kotlin
+fun calculateDates() {
+    val plan = planes.getOrNull(planSeleccionado) ?: return
+    val cal = Calendar.getInstance()
+    if (esRenovacion && !fechaFinActual.isNullOrBlank()) {
+        val fechaActual = AppConfig.FORMAT_ISO_DATE.parse(fechaFinActual) ?: Date()
+        cal.time = fechaActual
+        fechaInicioCalculada = fechaFinActual
+    } else {
+        cal.time = Date()
+        fechaInicioCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+    }
+    cal.add(Calendar.MONTH, plan.meses)
+    fechaFinCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+}
+```
+
+### Обработка платежей
+
+При нажатии кнопки подтверждения приложение выполняет следующую последовательность действий:
+
+1. **Запись платежа:** вставляет новую запись в таблицу `pagos` с `id_usuario`, выбранной суммой плана, текущей датой, типом плана и способом оплаты.
+
+2. **Активировать подписку:** Обновляет запись пользователя в таблице `usuarios`:
+- `premium = true`
+- `fecha_ini_prem` = расчетная дата начала (`yyyy-MM-dd`)
+- `fecha_fin_prem` = расчетная дата начала + количество месяцев в плане
+
+После успешной обработки отображается диалоговое окно подтверждения и вызывается `onSuccess` для закрытия экрана.
+
+### История платежей
+
+Платежи, записанные в таблице `pagos`, просматриваются `HistorialScreen`, который перечисляет их в порядке убывания `fecha_pago`. В каждой записи указан тип плана, способ оплаты, сумма, дата и предполагаемая дата окончания подписки (рассчитывается локально на основе типа плана).
+
+## Индикатор оставшихся дней на ProfileScreen
+
+`ProfileViewModel` вычисляет количество оставшихся дней подписки Premium на основе поля пользователя `fechaFin`. Результат отображается как `diasRestantes: Int` и отображается в `ProfileScreen`:
+
+- Если `diasRestantes > 7`: отображается золотым цветом, без срочности. 
+- Если `diasRestantes` находится в диапазоне от 0 до 7: он отображается красным цветом как предупреждение о предстоящем истечении срока действия. 
+- Если `diasRestantes == 0`: вместо числа отображается буква «Сборы сегодня».

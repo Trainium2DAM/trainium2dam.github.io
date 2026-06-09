@@ -1,0 +1,270 @@
+---
+title: Pantallas
+sidebar_position: 1
+---
+# Pantalles
+
+Aquest apartat descriu cada component de nivell de pantalla, les seves responsabilitats, els paràmetres que rep i els efectes secundaris que produeix.
+
+---
+
+## SplashVideoScreen
+
+**Fichero:** `SplashVideoScreen.kt` 
+**Ruta:** `splash`
+
+Mostra una pantalla de benvinguda amb reproducció de vídeo introductori. El vídeo es carrega des de `res/raw/video_app.mp4` mitjançant `VideoView` integrat a Compose amb `AndroidView`.
+
+**Comportament:** 
+- Apareix amb un fade-in de 500 ms al començament. 
+- Després de 2 segons, apareix l'indicador de progrés i el branding a la zona inferior. 
+- Navega automàticament a `loading` en completar-se el vídeo (`OnCompletionListener`) o després d'un timeout de 13 segons si el vídeo no s'acaba. 
+- El fons és blanc fix independentment del tema del sistema.
+
+**Paràmetres:**
+
+| Paràmetre | Tipus | Descripció | 
+|---|---|---| 
+| `onVideoFinished` | `() -> Unit` | Callback invocat en acabar el vídeo |
+
+---
+
+## LoadingScreen (pantalla de càrrega)
+
+**Ruta:** `loading`
+
+Pantalla intermèdia que comprova si hi ha una sessió persistida vàlida a `SecureSessionManager`. No té un composable propi, la lògica s'executa directament al composable de la ruta `loading` del NavHost.
+
+**Comportament:** 
+- Llegeix la sessió desada mitjançant `SecureSessionManager.obtenerSesion()`. 
+- Si hi ha sessió vàlida, navega directament a `profile/{idUsuario}`. 
+- Si no hi ha sessió, navegueu a `main`.
+
+---
+
+## Pantalla principal
+
+**Fichero:** `MainScreen.kt` 
+**Ruta:** `main`
+
+Pantalla de benvinguda per a usuaris no autenticats. Mostra el logotip de Trainium, l'eslògan i un botó d'accés al login. Inclou el selector de tema a la part superior dreta.
+
+**Paràmetres:**
+
+| Paràmetre | Tipus | Descripció | 
+|---|---|---| 
+| `isDarkTheme` | `Boolean` | Controla el tema visual actiu 
+| `onToggleTheme` | `() -> Unit` | Alterna entre tema clar i fosc | 
+| `onNavigateToLogin` | `() -> Unit` | Navega a la pantalla de login |
+
+---
+
+## Pantalla d'inici de sessió
+
+**Fichero:** `LoginScreen.kt` 
+**Ruta:** `login` 
+**ViewModel:** `LoginViewModel`
+
+Gestiona l´autenticació d´usuaris existents mitjançant DNI i contrasenya.
+
+**Flux d'autenticació:** 
+1. L'usuari introdueix el DNI i la contrasenya. 
+2. El ViewModel consulta `AuthRepository.getUserByDni(dni)`. 
+3. Si hi ha un registre i la contrasenya coincideix, es truca a `SecureSessionManager.iniciarSesion(...)` per persistir la sessió. 
+4. S'invoca `onLoginSuccess` amb les dades de l'usuari. L'app navega a `profile/{idUsuario}`; les dades de perfil (nom, admin, premium) es carreguen fresques des de Supabase a `ProfileViewModel`. 
+5. Si les credencials són incorrectes, es mostra un missatge d'error a la pantalla.
+
+**Paràmetres:**
+
+| Paràmetre | Tipus | Descripció | 
+|---|---|---| 
+| `isDarkTheme` | `Boolean` | Controla el tema visual actiu 
+| `onBack` | `() -> Unit` | Torna a `MainScreen` | 
+| `onNavigateToRegister` | `() -> Unit` | Navega al registre | 
+| `onNavigateToForgot` | `() -> Unit` | Navega a la recuperació de contrasenya | 
+| `onLoginSuccess` | `(String, Int, Int, Int) -> Unit` | Callback amb (nom, isAdmin, idUsuari, isPremium). La navegació utilitza només idUsuari; la resta es carrega al ViewModel de ProfileScreen. |
+
+---
+
+## Pantalla de registre
+
+**Fichero:** `RegisterScreen.kt` 
+**Ruta:** `register` 
+**ViewModel:** `RegisterViewModel`
+
+Formulari d´alta de nous usuaris. Recull nom, DNI, email, contrasenya i telèfon, i delega a `AuthRepository.insertUser(...)`.
+
+**Validacions implementades:** 
+- Tots els camps obligatoris han d'estar farcits. 
+- El DNI ja no pot estar registrat (comprovació prèvia amb `AuthRepository.userExistsByDni`). 
+- El nou usuari s'insereix amb `admin=0` i `premium=false` per defecte.
+
+**Paràmetres:**
+
+| Paràmetre | Tipus | Descripció | 
+|---|---|---| 
+| `isDarkTheme` | `Boolean` | Controla el tema visual actiu 
+| `onBack` | `() -> Unit` | Torna a `LoginScreen` |
+
+---
+
+## He oblidat la pantalla de la contrasenya
+
+**Fichero:** `ForgotPasswordScreen.kt` 
+**Ruta:** `forgot` 
+**ViewModel:** `ForgotPasswordViewModel`
+
+Flux de recuperació de contrasenya en dos passos:
+
+**Pas 1:** L'usuari introdueix el DNI i el correu electrònic. S'anomena `AuthRepository.verifyCredentials(dni, email)` per verificar que el parell existeix. Si és correcte, s'avança al pas 2.
+
+**Pas 2:** L'usuari introdueix la nova contrasenya i la confirmació. Si coincideixen, el camp `contraseniaHash` s'actualitza mitjançant `AuthRepository.updatePassword(userId, newPass)`.
+
+**Paràmetres:**
+
+| Paràmetre | Tipus | Descripció | 
+|---|---|---| 
+| `isDarkTheme` | `Boolean` | Controla el tema visual actiu 
+| `onBack` | `() -> Unit` | Torna a `LoginScreen` |
+
+---
+
+## Pantalla de perfil
+
+**Fichero:** `ProfileScreen.kt` 
+**Ruta:** `profile/{idUsuario}` 
+**ViewModel:** `ProfileViewModel`
+
+Hub principal de l'aplicació després del login. Mostra l'avatar de l'usuari, el nom, el badge de Premium/Admin i els botons d'accés a cada secció.
+
+**Funcionalitat en carregar:** 
+- Recupereu les dades actualitzades de l'usuari des de Supabase (nom, foto, estat Premium, rol d'administrador). 
+- Si l'usuari és Premium, calcula els dies restants de subscripció (`ProfileViewModel.diasRestantes`) a partir del camp `fechaFin` del model `Usuario` i els mostra al badge. Si la subscripció venç avui, mostra "Vence avui". Si queden 7 dies o menys, l'indicador es mostra en vermell com a avís. 
+- Comprova si hi ha alguna reserva cancel·lada automàticament per manteniment de maquinària per a la data actual. Si és així, mostra un `AlertDialog` informatiu **una única vegada per sessió** (controlat per la variable global `avisoMostrado`).
+
+**Icones de capçalera:** 
+El `ProfileScreen` inclou a la capçalera una icona d'idioma (globus terraqüi), una icona de tema (sol/lluna) i una icona de paràmetres que navega a `edit_profile`.
+
+**Botons de navegació disponibles:**
+
+| Botó | Disponible per a | Destinació | 
+|---|---|---| 
+| Màquines | Tots | `maquinas/{isAdmin}/{idUsuario}` | 
+| Les meves reserves | Tots | `reservas/{isAdmin}/{idUsuario}` | 
+| Plats | Tots | `platos/{isAdmin}/{idUsuario}` | 
+| Registre de pes | Tots | `registro/{idUsuario}` | 
+| Premium | Tots | `premium_selection/{idUsuario}` | 
+| Tancar sessió | Tots | `main` (popUpTo 0) + `SecureSessionManager.cerrarSesion()` |
+
+**Paràmetres:**
+
+| Paràmetre | Tipus | Descripció | 
+|---|---|---| 
+| `userId` | `Int` | ID de l'usuari a la base de dades | 
+| `isPremium` | `Boolean` | Estat de subscripció Premium (complementari a què carrega el ViewModel) | 
+| `darkTheme` | `Boolean` | Controla el tema visual actiu 
+| `onToggleTheme` | `() -> Unit` | Alterna entre tema clar i fosc | 
+| `onToggleLanguage` | `() -> Unit` | Obre el selector d'idioma | 
+| `onLogout` | `() -> Unit` | Callback de tancament de sessió | 
+| `onNavigateToMaquinas` | `() -> Unit` | Navega al catàleg de màquines | 
+| `onNavigateToPlatos` | `() -> Unit` | Navega al catàleg de plats | 
+| `onNavigateToRegistroPeso` | `() -> Unit` | Navega al registre de pes | 
+| `onNavigateToReservas` | `() -> Unit` | Navega a les reserves | 
+| `onNavigateToEditProfile` | `() -> Unit` | Navega a l'edició del perfil | 
+| `onNavigateToPremium` | `() -> Unit` | Navega a la selecció de pla Premium |
+
+---
+
+## Edita la pantalla de perfil
+
+**Fichero:** `EditProfileScreen.kt` 
+**Ruta:** `edit_profile/{idUsuario}` 
+**ViewModel:** `EditProfileViewModel`
+
+Permet a lusuari modificar el seu nom, email, telèfon, contrasenya i foto de perfil. La foto es selecciona de la galeria del dispositiu mitjançant `ActivityResultContracts.GetContent()` i es converteix a Base64 mitjançant `ImageUtils.uriToBase64`. En desar, delega a `UsuarioRepository.update(...)`.
+
+**Secció de notificacions:** La pantalla inclou una secció de configuració de notificacions de reserves amb dos controls: 
+- Un `Switch` per activar o desactivar les notificacions globalment (`NotificationSettingsManager.setNotificationsEnabled`). 
+- Un grup de `FilterChip` amb les opcions d'antelació disponibles (10, 15, 30, 60 i 120 minuts) visible només quan les notificacions estan activades. La preferència es persisteix amb `NotificationSettingsManager.setMinutesBefore(minutes)`.
+
+**Paràmetres:**
+
+| Paràmetre | Tipus | Descripció | 
+|---|---|---| 
+| `idUsuario` | `Int` | ID de l'usuari que voleu editar | 
+| `isDarkTheme` | `Boolean` | Controla el tema visual actiu 
+| `onBack` | `() -> Unit` | Torna a `ProfileScreen` | 
+| `onNavigateToHistorial` | `(Int) -> Unit` | Navega a l'historial de pagaments | 
+| `onNavigateToPremium` | `() -> Unit` | Navega a la selecció de pla Premium |
+
+---
+
+## Pantalla de Maquinas
+
+**Fichero:** `MaquinasScreen.kt` 
+**Ruta:** `maquinas/{isAdmin}/{idUsuario}` 
+**ViewModel:** `MaquinasViewModel`
+
+Catàleg de maquinària del gimnàs amb funcionalitat de reserva per a usuaris estàndard i gestió de manteniment per a administradors. Inclou validació de durada màxima de 60 minuts per reserva. En crear una reserva, programa automàticament un recordatori mitjançant `NotificationHelper`.
+
+La documentació detallada es troba a [Funcionalidades - Máquinas y reservas](/docs/funcionalidades/maquinas-reservas).
+
+---
+
+## Pantalla de reserves
+
+**Fichero:** `ReservasScreen.kt` 
+**Ruta:** `reservas/{isAdmin}/{idUsuario}` 
+**ViewModel:** `ReservasViewModel`
+
+Llistat de reserves amb sistema de filtratge per cinc criteris: Properes, Avui, Passades, Totes i Data. Inclou botó d'exportació al calendari del dispositiu per cada reserva i gestió de notificacions en cancel·lar. La documentació detallada es troba a [Funcionalidades - Máquinas y reservas](/docs/funcionalidades/maquinas-reservas).
+
+---
+
+## PlatsScreen
+
+**Fichero:** `PlatosScreen.kt` 
+**Ruta:** `platos/{isAdmin}/{idUsuario}` 
+**ViewModel:** `PlatosViewModel`
+
+Catàleg de plats nutricionals. La documentació detallada es troba a [Funcionalidades - Platos y nutrición](/docs/funcionalidades/platos-nutricion).
+
+---
+
+## Pantalla de registre
+
+**Fichero:** `RegistroScreen.kt` 
+**Ruta:** `registro/{idUsuario}` 
+**ViewModel:** `RegistroViewModel`
+
+Control de pes corporal amb gràfic devolució. La documentació detallada es troba a [Funcionalidades - Registro de peso](/docs/funcionalidades/registro-peso).
+
+---
+
+## Pantalla Historial
+
+**Fichero:** `HistorialScreen.kt` 
+**Ruta:** `historial/{idUsuario}` 
+**ViewModel:** `HistorialViewModel`
+
+Mostra l'historial de pagament de l'usuari ordenat per data descendent. Els pagaments es carreguen des de `PagoRepository.getByUser(idUsuario)`.
+
+Cada ítem de la llista mostra el concepte (tipus de pla), el mètode de pagament, l'import i la data. En cas derror de connectivitat es mostra un missatge derror amb botó de reintent. Mentre es carreguen les dades es mostra un skeleton list.
+
+**Paràmetres:**
+
+| Paràmetre | Tipus | Descripció | 
+|---|---|---| 
+| `idUsuario` | `Int` | ID de l'usuari el historial del qual es consulta | 
+| `isDarkTheme` | `Boolean` | Controla el tema visual actiu 
+| `onBack` | `() -> Unit` | Torna a `EditProfileScreen` |
+
+---
+
+## Pantalla de selecció premium
+
+**Fichero:** `PremiumSelectionScreen.kt` 
+**Ruta:** `premium_selection/{idUsuario}` 
+**ViewModel:** `PremiumSelectionViewModel`
+
+Pantalla de contractació de subscripció Premium. La documentació detallada es troba a [Funcionalidades - Suscripción Premium](/docs/funcionalidades/suscripcion-premium).

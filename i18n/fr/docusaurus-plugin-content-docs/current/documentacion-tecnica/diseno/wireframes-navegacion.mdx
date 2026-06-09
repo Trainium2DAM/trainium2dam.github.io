@@ -1,0 +1,64 @@
+---
+title: Wireframes y flujos de navegacion
+sidebar_position: 3
+---
+# Wireframes et flux de navigation
+
+Cette section rassemble la conception des wireframes de référence utilisés lors du développement et les principaux flux utilisateurs qui définissent l'expérience applicative.
+
+## Carte d'écran
+
+![Mapa de pantallas](./img/mapa-pantallas.png)
+
+La structure de navigation de Trainium pivote sur la **barre de navigation inférieure** comme élément central pour accéder aux principales fonctionnalités. La ligne visuelle de l'application est sombre, professionnelle et monochrome en bleu.
+
+## Écrans de flux d'authentification
+
+| Écran | Objectif | Accédez à | 
+|---|---|---| 
+| ![Sistema de autenticación](./img/auth-system.png) Authentification | Point d'entrée. Connectez-vous ou accédez au registre. | Inscription ou tableau de bord | 
+| ![Registro de usuario](./img/register.png) Inscription | Collecte des données initiales de l'utilisateur (identifiant, nom, email, téléphone, mot de passe). | Sélection du sexe | 
+| ![Selección de género](./img/gender.png) Sélection du sexe | Étape de personnalisation du profil. | Tableau de bord |
+
+## Écrans principaux (authentifiés)
+
+| Écran | Objectif | Accédez à | 
+|---|---|---| 
+| ![Pantalla principal](./img/machine-booking.png) Tableau de bord | Accès rapide aux réservations, au suivi du poids et du régime. | Réserve, enregistrement de poids, régimes | 
+| ![Selección de máquinas](./img/seleccionmaquina.png) Catalogue de machines | Liste et réservation des machines de salle de sport. | Confirmation de réservation | 
+| ![Seguimiento de peso](./img/progress-tracking.png) Suivi | Contrôle du poids, graphique d'évolution, IMC et pourcentage de graisse. | Tableau de bord | 
+| ![Planes de dieta](./img/diet-plans.png) Alimentation | Plat du jour avec macronutriments et ingrédients. | Tableau de bord |
+
+## Flux d'abonnement Premium
+
+| Étape | Écran | Actions | 
+|---|---|---| 
+| 1 | ![Suscripción Premium](./img/premium-subscription.png) Forfaits | Sélection de forfaits (Mensuel 9,99 €, Semestriel 49,99 €, Annuel 89,99 €) | 
+| 2 | ![Métodos de pago](./img/opcionespago.png) Paiement | Sélection de méthode (Card, Bizum) | 
+| 3 | ![Confirmación de pago](./img/confirmacionpago.png) Confirmation | Examen sommaire et confirmation finale | 
+| 4 | — | Abonnement actif. Accès aux fonctionnalités Premium. |
+
+## Flux de réserve de machine
+
+| Étape | Écran | Actions | 
+|---|---|---| 
+| 1 | Tableau de bord | Appuyez sur « Réserver » sur la catégorie d'exercice souhaitée | 
+| 2 | Catalogue de machines | Sélectionnez la machine spécifique pour la session | 
+| 3 | — | Sélectionnez la date et l'heure à l'aide des boîtes de dialogue de calendrier et d'horloge | 
+| 4 | ![Confirmación de reserva](./img/confirmacionreserva.png) Confirmation | Réservation enregistrée dans le système |
+
+## Accessibilité et convivialité
+
+L'interface applique les critères de conception suivants :
+
+**Convivialité :**
+- Retour immédiat via des barres de progression et des graphiques d'évolution du poids. 
+- Barre de navigation inférieure fixe et prévisible qui réduit la courbe d'apprentissage. 
+- Regrouper les informations dans des cartes avec des titres clairs pour une analyse visuelle facile. 
+- Accès rapide aux fonctions les plus utilisées depuis le tableau de bord.
+
+**Accessibilité :**
+- Contraste de couleurs élevé : texte blanc sur fond sombre dans le thème sombre, texte bleu foncé sur fond clair dans le thème clair. 
+- Éléments tactiles de taille généreuse (minimum 48 dp) et bien espacés. 
+- Étiquettes descriptives et espaces réservés dans tous les champs du formulaire. 
+- Indicateurs d'état visuels avec légende textuelle (pas seulement en couleur).

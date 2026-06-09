@@ -1,0 +1,73 @@
+---
+title: Firebase Auth y Data Connect
+sidebar_position: 2
+---
+# Firebase Auth y Data Connect
+
+## Autenticación Firebase
+
+O SDK de autenticación de Firebase declárase como unha dependencia (`libs.firebase.auth`) e inclúese na BOM de Firebase. Non obstante, na versión actual da aplicación, o fluxo de autenticación principal non se delega en Firebase Auth: o inicio de sesión implícase mediante unha consulta directa á táboa Supabase `usuarios` comparando o ID e o contrasinal.
+
+Firebase Auth está dispoñible para a eventual migración do sistema de autenticación a un fluxo estándar baseado en JWT (correo electrónico/contrasinal, OAuth, etc.) sen necesidade de engadir dependencias adicionais.
+
+## DataConnectClient
+
+`DataConnectClient.kt` implementa un cliente HTTP manual para invocar o punto final de Firebase Data Connect. A diferenza do SDK Supabase, non hai ningún SDK de Kotlin para Data Connect dispoñible neste contexto, polo que `HttpURLConnection` úsase directamente.
+
+### Configuración do punto final
+
+```kotlin
+object DataConnectClient {
+    private const val API_KEY = "<api-key-de-ejemplo>..."
+    private const val APP_ID = "<app-id-de-ejemplo>..."
+    private const val ENDPOINT = 
+        "https://europe-southwest1-dataconnect.googleapis.com/v1beta/projects/tu-proyecto.../connectors/default:executeGraphql" +
+        "/locations/europe-southwest1/services/tu-proyecto.../connectors/default:executeGraphql"
+}
+```
+
+O subdominio rexional `europe-southwest1-dataconnect.googleapis.com` é necesario. Usar o dominio xenérico `dataconnect.googleapis.com` devolve o HTTP 404 cando o servizo está implantado nunha rexión distinta de `us-central1`.
+
+### Firma do metodo execute
+
+```kotlin
+suspend fun execute(
+    query: String,
+    variables: Map<String, Any?> = emptyMap(),
+    operationName: String? = null
+): JSONObject?
+```
+
+| Parámetro | Tipo | Descrición | 
+|---|---|---| 
+| `query` | `String` | Consulta GraphQL ou mutación en formato de cadea | 
+| `variables` | `Map<String, Any?>` | Variables de operación GraphQL (opcional) | 
+| `operationName` | `String?` | Nome da operación cando o documento contén varios (opcional) |
+
+**Valor de retorno:** `JSONObject` coa resposta da API completa (incluíndo o obxecto `data`) ou `null` se se produciu un erro de rede ou a resposta HTTP non tivo éxito (código fóra do intervalo 200–299).
+
+### Cabeceiras HTTP enviadas
+
+| Cabeceira | Valor | 
+|---|---| 
+| `Content-Type` | `application/json` | 
+| `x-goog-api-key` | Clave da API do proxecto Firebase | 
+| `x-firebase-gmpid` | ID do proxecto Firebase da aplicación |
+
+### Solicitar estrutura corporal
+
+```json
+{
+  "query": "query GetUsuarios { usuarios { id nombre } }",
+  "variables": {
+    "id": 42
+  },
+  "operationName": "GetUsuarios"
+}
+```
+
+Os campos `variables` e `operationName` omítense do corpo se non se proporcionan.
+
+### Xestión de erros
+
+Os erros de rede (`IOException`, `SocketTimeoutException`, etc.) captúranse cun bloque `catch(Exception)` e rexístranse con `Log.e("DataConnect", ...)`. Nese caso, o método devolve `null`. Os erros HTTP (resposta con código fóra do intervalo 200–299) lense desde o `errorStream` da conexión e tamén se rexistran antes de devolver `null`.

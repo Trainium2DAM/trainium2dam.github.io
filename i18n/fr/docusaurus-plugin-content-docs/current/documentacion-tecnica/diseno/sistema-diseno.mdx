@@ -1,0 +1,130 @@
+---
+title: Sistema diseño
+sidebar_position: 1
+---
+# Système de conception
+
+## Palette de couleurs
+
+La palette Trainium est définie sur `ui/theme/Color.kt`. Il s’ensuit une esthétique sombre et monochrome avec le bleu électrique comme couleur d’accent.
+
+### Tonalités de base (indépendantes du thème)
+
+| Jeton | Valeur HEX | Utilisation principale | 
+|---|---|---| 
+| `BlueDark` | `#0B1426` | Fond de thème sombre | 
+| `BlueMid` | `#121F3D` | Surface du thème sombre | 
+| `BlueDeep` | `#162347` | Surface de variante de thème sombre | 
+| `BlueAccent` | `#2196F3` | Couleur primaire des actions (boutons, bordures actives) | 
+| `BlueElectric` | `#448AFF` | Boutons CTA dégradés | 
+| `BlueSoft` | `#64B5F6` | Textes secondaires et sous-titres en thème sombre | 
+| `BlueGlow` | `#332196F3` | Effets de lueur et d'ombre avec transparence | 
+| `BlueLight` | `#BBDEFB` | Fonds doux dans le thème clair | 
+| `WhiteSoft` | `#F0F4FF` | Fond de thème clair |
+
+### Schéma de couleurs du thème sombre
+
+| Matériau du rouleau 3 | Jeton | Valeur HEX | 
+|---|---|---| 
+| `primary` | `DarkPrimary` | `#448AFF` | 
+| `onPrimary` | `DarkOnPrimary` | `#001E5F` | 
+| `primaryContainer` | `DarkPrimaryContainer` | `#1A3A6E` | 
+| `background` | `DarkBackground` | `#0B1426` | 
+| `surface` | `DarkSurface` | `#121F3D` | 
+| `surfaceVariant` | `DarkSurfaceVariant` | `#1A2D54` | 
+| `error` | `DarkError` | `#FF6B6B` |
+
+### Schéma de couleurs du thème clair
+
+| Matériau du rouleau 3 | Jeton | Valeur HEX | 
+|---|---|---| 
+| `primary` | `LightPrimary` | `#1565C0` | 
+| `onPrimary` | `LightOnPrimary` | `#FFFFFF` | 
+| `primaryContainer` | `LightPrimaryContainer` | `#D0E4FF` | 
+| `background` | `LightBackground` | `#F0F4FF` | 
+| `surface` | `LightSurface` | `#FFFFFF` | 
+| `surfaceVariant` | `LightSurfaceVariant` | `#E3ECFA` | 
+| `error` | `LightError` | `#D32F2F` |
+
+## Typographie
+
+L'échelle de police est définie sur `ui/theme/Type.kt` et utilise `FontFamily.SansSerif` (la police sans empattement par défaut du système Android, généralement Roboto) pour tous les niveaux.
+
+| Niveau | Poids | Tamaño | Interletraje | 
+|---|---|---|---| 
+| `displayLarge` | Noir (900) | 34 pages | -0,25 sp | 
+| `headlineLarge` | Gras (700) | 28 sp | 0 sp | 
+| `headlineMedium` | Gras (700) | 24 heures | 0 sp | 
+| `titleLarge` | Semi-gras (600) | 20 heures | 0,15 sp | 
+| `titleMedium` | Semi-gras (600) | 16 étapes | 0,15 sp | 
+| `bodyLarge` | Normale (400) | 16 étapes | 0,5 sp | 
+| `bodyMedium` | Normale (400) | 14 étapes | 0,25 sp | 
+| `labelLarge` | Gras (700) | 14 étapes | 1,2 vitesse | 
+| `labelMedium` | Moyen (500) | 12 étapes | 0,5 sp | 
+| `labelSmall` | Moyen (500) | 11 étapes | 0,5 sp |
+
+Le `labelLarge` avec `letterSpacing = 1.2 sp` est utilisé sur les boutons CTA (tels que « COMMENCER MAINTENANT », « CONTINUER ») pour donner l'effet de texte étendu caractéristique de l'interface.
+
+## Formes
+
+Le système de forme personnalisé `PremiumShapes` remplace le schéma de coin par défaut Material 3 :
+
+| Niveau | Radio de sport | 
+|---|---| 
+| `small` | 10 points de vue | 
+| `medium` | 16 points de vue | 
+| `large` | 22 points de vue | 
+| `extraLarge` | 28 points de vue |
+
+Ces rayons plus généreux que les valeurs par défaut de Material 3 contribuent à l'aspect arrondi haut de gamme des cartes et des boutons.
+
+## Gestion des thèmes
+
+Le thème est géré en deux couches :
+
+**MaterialTheme (`ui/theme/Theme.kt`) :** Définit le composable `Trainium2Theme` qui applique le `ColorScheme`, le `Typography` et le `Shapes` selon le paramètre `darkTheme`.
+
+**ThemeManager (`ThemeManager.kt`) :** Conserve les préférences de l'utilisateur dans le DataStore. La préférence est lue comme un `Flow<Boolean?>` et collectée dans `MainActivity.kt` avec `collectAsState(initial = null)`. La valeur initiale `null` signifie que la préférence n'a pas encore été lue sur le disque ; dans ce cas, le thème système (`isSystemInDarkTheme()`) est utilisé.
+
+```kotlin
+val savedDarkMode by themeManager.isDarkMode.collectAsState(initial = null)
+val systemTheme = isSystemInDarkTheme()
+var isDarkTheme by remember(savedDarkMode) {
+    mutableStateOf(savedDarkMode ?: systemTheme)
+}
+```
+
+## Dégradés d'arrière-plan
+
+Tous les écrans utilisent des dégradés verticaux au lieu d'arrière-plans plats. Le dégradé varie en fonction du thème actif :
+
+**Thème sombre :**
+```kotlin
+Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
+// #0B1426 → #121F3D → #162347
+```
+
+**Thème clair :**
+```kotlin
+Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
+```
+
+## Animations d'entrée
+
+Tous les écrans implémentent des animations d'entrée échelonnées à l'aide de `LaunchedEffect(Unit)` + `animateFloatAsState`. Le modèle standard est le suivant :
+
+```kotlin
+var elementoVisible by remember { mutableStateOf(false) }
+val alpha by animateFloatAsState(
+    targetValue = if (elementoVisible) 1f else 0f,
+    animationSpec = tween(durationMillis = 500),
+    label = "elemento_alpha"
+)
+
+LaunchedEffect(Unit) {
+    delay(100)
+    elementoVisible = true
+}
+```
+
+Les éléments sont révélés séquentiellement avec des délais de 100 à 300 ms entre chacun, créant un effet d'apparence en cascade.

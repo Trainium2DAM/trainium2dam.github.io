@@ -1,0 +1,44 @@
+---
+title: Registro de peso
+sidebar_position: 3
+---
+# Enregistrement de poids
+
+## Écran d'enregistrement
+
+Il permet à l'utilisateur d'enregistrer son poids corporel quotidien et de visualiser l'évolution dans le temps à l'aide d'un graphique linéaire dessiné avec l'API `Canvas` de Compose.
+
+### Téléchargement de données
+
+Lors de l'initialisation de l'écran, la table Supabase `peso_usuario` est consultée en filtrant par `id_usuario` et en classant les résultats par ordre croissant de date. Les registres sont stockés dans l'état `registros: List<PesoUsuario>`.
+
+### Restriction d'une inscription par jour
+
+L'écran vérifie si un enregistrement existe déjà pour la date du jour (`fechaHoy`) avant d'afficher le champ de saisie. La variable `yaExisteHoy` est calculée en comparant la date de chaque enregistrement avec la date système :
+
+```kotlin
+val fechaHoy = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+val yaExisteHoy = registros.any { it.fecha == fechaHoy }
+```
+
+Si un enregistrement existe déjà pour aujourd'hui, le champ de saisie est masqué et un message d'information s'affiche. Cette restriction est exclusivement au niveau de l'interface utilisateur, il n'y a pas de restriction `UNIQUE` dans la base de données pour cette combinaison de colonnes.
+
+### Insertion d'un nouvel enregistrement
+
+L'utilisateur saisit le poids dans le champ de texte (accepte les valeurs décimales) et appuie sur le bouton de confirmation. Un `insert` est exécuté dans Supabase avec le `id_usuario`, la valeur du poids et la date du jour.
+
+### Modification d'un enregistrement existant
+
+Chaque ligne de la liste comprend un bouton d'édition qui active le mode d'édition en ligne (`editandoId`). Lors de la validation, un `update` est exécuté dans Supabase sur l'enregistrement identifié par son `id`.
+
+### Supprimer un enregistrement
+
+Le bouton Supprimer pour chaque ligne exécute un `delete` dans Supabase filtrant par `id` de l'enregistrement.
+
+### Graphique d'évolution
+
+Le graphique est dessiné avec le `Canvas` de Jetpack Compose. L'implémentation normalise les valeurs de poids dans la plage `[0, 1]` par rapport au minimum et au maximum de l'historique, les mappe aux coordonnées de pixels sur le canevas et les joint avec des lignes à l'aide de `drawPath`. Chaque point est représenté par un cercle plein.
+
+L'axe horizontal représente le temps (les entrées sont classées chronologiquement) et l'axe vertical représente le poids en kilogrammes. Les valeurs minimales et maximales sont affichées sous forme d'étiquettes de texte aux extrémités de l'axe.
+
+Si l'historique contient moins de deux points, le graphique n'est pas rendu (il faut au moins deux points pour tracer une ligne).

@@ -1,0 +1,123 @@
+---
+title: Generacion del APK
+sidebar_position: 1
+---
+# جيل APK
+
+## APK التصحيح
+
+يتم إنشاء ملف APK debug تلقائيًا عند تشغيل التطبيق من Android Studio أو من خلال برنامج Gradle:
+
+```bash
+./gradlew assembleDebug
+```
+
+يتم إنشاء قطعة أثرية في:
+```
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+يحمل ملف APK debug توقيع تصحيح Android Studio ولا يمكن توزيعه على Google Play. إنها مناسبة للاختبار الداخلي والتثبيت المباشر على الأجهزة التي تستخدم `adb`.
+
+## إصدار APK
+
+لإنشاء ملف APK موقّع مناسب للتوزيع:
+
+### 1. قم بإنشاء مخزن مفاتيح
+
+إذا لم يكن لديك مخزن مفاتيح للتوقيع:
+
+```bash
+keytool -genkey -v \
+  -keystore trainium-release-key.jks \
+  -alias trainium \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 10000
+```
+
+### 2. قم بتكوين تسجيل الدخول في build.gradle.kts
+
+أضف تكوين `signingConfigs` إلى `app/build.gradle.kts`:
+
+```kotlin
+android {
+    signingConfigs {
+        create("release") {
+            storeFile = file("../trainium-release-key.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = "trainium"
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+}
+```
+
+يوصى بقراءة كلمات المرور من متغيرات البيئة (`System.getenv`) بدلاً من تضمينها في نص عادي في ملف البناء.
+
+### 3. قم بإنشاء ملف APK الموقع
+
+```bash
+./gradlew assembleRelease
+```
+
+يتم إنشاء قطعة أثرية في:
+```
+app/build/outputs/apk/release/app-release.apk
+```
+
+##التصغير والتشويش
+
+في التكوين الحالي، `isMinifyEnabled = false` في الكتلة `release`. وهذا يعني أن الكود لم يتم تصغيره أو تشويشه بواسطة R8/ProGuard. بالنسبة لتوزيع الإنتاج، يوصى بتمكين التصغير:
+
+```kotlin
+release {
+    isMinifyEnabled = true
+    proguardFiles(
+        getDefaultProguardFile("proguard-android-optimize.txt"),
+        "proguard-rules.pro"
+    )
+}
+```
+
+عند تمكين التصغير باستخدام Supabase و`kotlinx.serialization`، من الضروري إضافة قواعد ProGuard المقابلة للحفاظ على الفئات القابلة للتسلسل. الملف `proguard-rules.pro` المتضمن في المشروع فارغ في هذا الإصدار.
+
+## التثبيت عبر بنك التنمية الآسيوي
+
+لتثبيت APK مباشرة على جهاز متصل:
+
+```bash
+adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
+إذا كانت هناك أجهزة متعددة متصلة، فحدد الوجهة:
+
+```bash
+adb -s <device-serial> install app-debug.apk
+```
+
+للحصول على قائمة الأجهزة المتصلة:
+
+```bash
+adb devices
+```
+
+## متطلبات الجهاز المستهدف
+
+| المتطلبات | القيمة | 
+|---|---| 
+| الحد الأدنى من واجهة برمجة التطبيقات | 24 (أندرويد 7.0 نوجا) | 
+| الهدف API | 36 | 
+| العمارة | Arm64-v8a، Armeabi-v7a، x86_64 (حسب الجهاز) | 
+| أذونات التثبيت | الإنترنت، ACCESS_NETWORK_STATE | 
+| اتصال بالإنترنت | إلزامية لتشغيل التطبيق |

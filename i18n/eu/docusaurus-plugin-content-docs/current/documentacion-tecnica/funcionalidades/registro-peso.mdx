@@ -1,0 +1,44 @@
+---
+title: Registro de peso
+sidebar_position: 3
+---
+# Pisu-erregistroa
+
+## Erregistro pantaila
+
+Erabiltzaileari bere eguneroko gorputz-pisua erregistratzeko eta denboran zehar izandako bilakaera ikusteko aukera ematen dio Compose-ren `Canvas` APIarekin marraztutako lerro-grafiko bat erabiliz.
+
+### Datuen igoera
+
+Pantaila hastean, Supabase taula `peso_usuario` kontsultatzen da, `id_usuario` arabera iragazten eta emaitzak dataren arabera goranzko ordenan ordenatuz. Erregistroak `registros: List<PesoUsuario>` egoeran gordetzen dira.
+
+### Egunean izena emateko murrizketa
+
+Pantailak uneko datarako (`fechaHoy`) erregistro bat dagoen ala ez egiaztatzen du sarrera-eremua bistaratu aurretik. `yaExisteHoy` aldagaia erregistro bakoitzaren data sistemaren datarekin alderatuz kalkulatzen da:
+
+```kotlin
+val fechaHoy = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+val yaExisteHoy = registros.any { it.fecha == fechaHoy }
+```
+
+Gaurko erregistro bat badago, sarrera-eremua ezkutatu egingo da eta informazio-mezu bat bistaratuko da. Murrizketa hau UI mailan dago soilik, datu-basean ez dago `UNIQUE` murrizketarik zutabeen konbinazio honetarako.
+
+### Disko berri bat txertatzea
+
+Erabiltzaileak testu-eremuan pisua sartzen du (balio hamartarrak onartzen ditu) eta berresteko botoia sakatzen du. Supabasen `insert` `id_usuario`, pisuaren balioarekin eta uneko datarekin exekutatzen da.
+
+### Lehendik dagoen erregistro bat editatzen
+
+Zerrendako errenkada bakoitzak lineako edizio modua aktibatzen duen editatzeko botoi bat dauka (`editandoId`). Konpromisoan, `update` bat exekutatzen da Supabase-n bere `id`-k identifikatutako erregistroan.
+
+### Erregistro bat ezabatzen
+
+Errenkada bakoitzeko ezabatzeko botoiak `delete` bat exekutatzen du Supabasen erregistroaren `id` arabera iragazten.
+
+### Bilakaera grafikoa
+
+Grafikoa Jetpack Compose-ren `Canvas`rekin marraztuta dago. Inplementazioak pisu-balioak `[0, 1]` barrutian normalizatzen ditu historiaren gutxieneko eta maximoarekiko, mihisean pixeleko koordenatuekin mapatzen ditu eta lerroekin elkartzen ditu `drawPath` erabiliz. Puntu bakoitza zirkulu bete batez irudikatzen da.
+
+Ardatz horizontalak denbora adierazten du (sarrerak kronologikoki antolatuta daude) eta ardatz bertikalak pisua kilogramotan adierazten du. Gutxieneko eta gehienezko balioak testu-etiketa gisa bistaratzen dira ardatzaren muturretan.
+
+Historiak bi puntu baino gutxiago baditu, grafikoa ez da errendatuko (lerro bat marrazteko gutxienez bi puntu behar dira).

@@ -1,0 +1,239 @@
+---
+title: Modelos de datos
+sidebar_position: 1
+---
+# Datu ereduak
+
+`models` paketeko datu-klase guztiak `@Serializable` edo `kotlinx.serialization`-rekin adierazita daude. Lehenespenez aldaezinak dira eta Supabase erantzunak deserializatzeko eta txertatzeko eta eguneratzeko eskaeren gorputzak serializatzeko erabiltzen dira.
+
+---
+
+## Erabiltzailea
+
+**Fichero:** `models/Usuario.kt` 
+**Tabla Supabase:** `usuarios`
+
+```kotlin
+@Serializable
+data class Usuario(
+    @SerialName("id")
+    val id: Int = 0,
+    val nombre: String,
+    val dni: String,
+    val contraseniaHash: String,
+    val admin: Int,
+    val premium: Boolean,
+    val email: String? = null,
+    val telefono: String? = null,
+    val foto: String? = null,
+    @SerialName("fecha_ini_prem")
+    val fechaInicio: String? = null,
+    @SerialName("fecha_fin_prem")
+    val fechaFin: String? = null
+)
+```
+
+| Eremua | Mota | Deusezgarria | Deskribapena | 
+|---|---|---|---| 
+| `id` | `Int` | Ez | PK autoincremental (lehenetsia 0 txertatzean) | 
+| `nombre` | `String` | Ez | Izen osoa | 
+| `dni` | `String` | Ez | Saio-hasteko kredentzial gisa erabilitako NAN | 
+| `contraseniaHash` | `String` | Ez | Pasahitza (testu arrunta bertsio honetan) | 
+| `admin` | `Int` | Ez | 0 = erabiltzailea, 1 = administratzailea | 
+| `premium` | `Boolean` | Ez | Harpidetzaren egoera | 
+| `email` | `String?` | Bai | Posta elektronikoa | 
+| `telefono` | `String?` | Bai | Harremanetarako telefono zenbakia | 
+| `foto` | `String?` | Bai | Profileko irudia Base64 | 
+| `fechaInicio` | `String?` | Bai | Premium harpidetzaren hasiera-data (`yyyy-MM-dd`) | 
+| `fechaFin` | `String?` | Bai | Premium harpidetzaren amaiera-data (`yyyy-MM-dd`) |
+
+`fechaInicio` eta `fechaFin` eremuak `ProfileViewModel`-n irakurtzen dira Premium harpidetzaren gainerako egunak kalkulatzeko eta `ProfileScreen`-n bistaratzeko.
+
+---
+
+##SaioDatuak
+
+**Fichero:** `models/SesionData.kt`
+
+```kotlin
+data class SesionData(
+    val userId: Int,
+    val userName: String,
+    val isAdmin: Boolean,
+    val isPremium: Boolean,
+    val token: String = ""
+)
+```
+
+`SecureSessionManager`-k erabilitako eredua erabiltzaileak iraun duen saioa irudikatzeko. Ez dago `@Serializable`-rekin ohartaturik ez dagoelako JSON-n serializatuta; eremuz eremu gordetzen da `SharedPreferences`-n.
+
+---
+
+## Makina
+
+**Fichero:** `models/Maquina.kt` 
+**Tabla Supabase:** `maquinas`
+
+```kotlin
+@Serializable
+data class Maquina(
+    val id: Int,
+    val nombre: String,
+    val tipo: String? = null,
+    val estado: Int = 0,
+    val descripcion: String? = null,
+    val operativa: Boolean = true,
+    val foto: String? = null,
+    val mantenimiento_desde: String? = null,
+    val mantenimiento_hasta: String? = null
+)
+```
+
+| Eremua | Mota | Deusezgarria | Deskribapena | 
+|---|---|---|---| 
+| `id` | `Int` | Ez | PK autoincremental | 
+| `nombre` | `String` | Ez | Makinaren izena | 
+| `tipo` | `String?` | Bai | Ariketa Kategoria | 
+| `estado` | `Int` | Ez | Egoera-eremu generikoa (balio lehenetsia 0) | 
+| `descripcion` | `String?` | Bai | Deskribapen zehatza | 
+| `operativa` | `Boolean` | Ez | `true` = erreserbak egiteko erabilgarri | 
+| `foto` | `String?` | Bai | Makinaren irudia Base64 | 
+| `mantenimiento_desde` | `String?` | Bai | Mantentze-aldiaren hasiera (`yyyy-MM-dd HH:mm`) | 
+| `mantenimiento_hasta` | `String?` | Bai | Mantentze-aldiaren amaiera (`yyyy-MM-dd HH:mm`) |
+
+---
+
+## Erreserba
+
+**Fichero:** `models/Reserva.kt` 
+**Tabla Supabase:** `reservas`
+
+```kotlin
+@Serializable
+data class Reserva(
+    val id: Int? = null,
+    @SerialName("id_usuario") val idUsuario: Int,
+    @SerialName("id_maquina") val idMaquina: Int,
+    val fecha: String,
+    @SerialName("hora_inicio") val horaInicio: String,
+    @SerialName("hora_fin") val horaFin: String,
+    val estado: Boolean = true
+)
+```
+
+| Eremua | Mota | Deusezgarria | Deskribapena | 
+|---|---|---|---| 
+| `id` | `Int?` | Bai | PK (txertatzeko nulua, Supabasek esleitutakoa) | 
+| `idUsuario` | `Int` | Ez | FK → erabiltzaileak.id | 
+| `idMaquina` | `Int` | Ez | FK → makinak.id | 
+| `fecha` | `String` | Ez | Erreserba data (`yyyy-MM-dd`) | 
+| `horaInicio` | `String` | Ez | Hasiera ordua (`HH:mm`) | 
+| `horaFin` | `String` | Ez | Amaiera-ordua (`HH:mm`). Gehienez 60 minutu `horaInicio` | 
+| `estado` | `Boolean` | Ez | `true` = aktibo, `false` = bertan behera |
+
+## ErreserbaConDetalles
+
+Kapsulatutako erlazioak dituzten kontsultetarako datu-klase hedatua (PostgREST JOIN inplizitua).
+
+```kotlin
+@Serializable
+data class ReservaConDetalles(
+    val id: Int,
+    val fecha: String,
+    @SerialName("hora_inicio") val horaInicio: String,
+    @SerialName("hora_fin") val horaFin: String,
+    val estado: Boolean,
+    @SerialName("usuarios") val usuario: Usuario? = null,
+    @SerialName("maquinas") val maquina: Maquina? = null
+)
+```
+
+`"*, usuarios(*), maquinas(*)"` zutabearekin lortzen da.
+
+---
+
+## Platon
+
+**Fichero:** `models/Plato.kt` 
+**Tabla Supabase:** `platos`
+
+```kotlin
+@Serializable
+data class Plato(
+    val id: Int? = null,
+    @SerialName("id_usuario") val idUsuario: Int? = null,
+    val nombre: String,
+    val descripcion: String? = null,
+    val calorias: Double? = null,
+    @SerialName("imagen_url") val imagenUrl: String? = null,
+    @SerialName("fecha_subida") val fechaSubida: String? = null,
+    val visibilidad: Boolean = true,
+    val tiempo: String? = null,
+    val aceptado: Boolean = false
+)
+```
+
+| Eremua | Mota | Deusezgarria | Deskribapena | 
+|---|---|---|---| 
+| `id` | `Int?` | Bai | PK (nulua txertatzean) | 
+| `idUsuario` | `Int?` | Bai | FK → users.id (sistemako plateretarako nulua) | 
+| `nombre` | `String` | Ez | Plateraren izena | 
+| `descripcion` | `String?` | Bai | Errezeta edo deskribapena | 
+| `calorias` | `Double?` | Bai | Kaloriak anoa bakoitzeko | 
+| `imagenUrl` | `String?` | Bai | Irudiaren Base64 Katea | 
+| `fechaSubida` | `String?` | Bai | Sorkuntza denbora-zigilua | 
+| `visibilidad` | `Boolean` | Ez | `true` = katalogoan ikusgai | 
+| `tiempo` | `String?` | Bai | Testu librean prestatzeko denbora (adibidez, `"30 minutos"`) | 
+| `aceptado` | `Boolean` | Ez | `false` = administratzaileak moderatzeko zain |
+
+---
+
+## PesoUsuario
+
+**Fichero:** `models/PesoUsuario.kt` 
+**Tabla Supabase:** `peso_usuario`
+
+```kotlin
+@Serializable
+data class PesoUsuario(
+    val id: Int? = null,
+    @SerialName("id_usuario") val idUsuario: Int,
+    val peso: Double,
+    val fecha: String
+)
+```
+
+| Eremua | Mota | Deusezgarria | Deskribapena | 
+|---|---|---|---| 
+| `id` | `Int?` | Bai | PK (nulua txertatzean) | 
+| `idUsuario` | `Int` | Ez | FK → erabiltzaileak.id | 
+| `peso` | `Double` | Ez | Pisua kilogramotan | 
+| `fecha` | `String` | Ez | Izena emateko data (`yyyy-MM-dd`) |
+
+---
+
+## Ordaindu
+
+**Fichero:** `models/Pago.kt` 
+**Tabla Supabase:** `pagos`
+
+```kotlin
+@Serializable
+data class Pago(
+    val id: Int? = null,
+    @SerialName("id_usuario") val idUsuario: Int,
+    val monto: Double,
+    @SerialName("fecha_pago") val fechaPago: String,
+    val tipo: String,
+    @SerialName("metodo_pago") val metodoPago: String
+)
+```
+
+| Eremua | Mota | Deusezgarria | Deskribapena | 
+|---|---|---|---| 
+| `id` | `Int?` | Bai | PK (nulua txertatzean) | 
+| `idUsuario` | `Int` | Ez | FK → erabiltzaileak.id | 
+| `monto` | `Double` | Ez | Zenbatekoa eurotan | 
+| `fechaPago` | `String` | Ez | Ordainketa data (`yyyy-MM-dd`) | 
+| `tipo` | `String` | Ez | Modalitatea: Hilerokoa, Semestralekoa, Urtekoa | 
+| `metodoPago` | `String` | Ez | Metodoa: Txartela, Bizum |

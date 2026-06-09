@@ -1,0 +1,90 @@
+---
+title: Suscripcion Premium
+sidebar_position: 4
+---
+# Premium Harpidetza
+
+## PremiumSelectionScreen
+
+Kudeatu Premium harpidetza kontratatzeko eta berritzeko fluxua. Prozesua pantaila bakarrean burutzen da planaren eta ordainketa-metodoaren aukeraketarekin.
+
+### Planak eskuragarri
+
+| Plana | Prezioa | Iraupena | 
+|---|---|---| 
+| Hilero | 9,99 € | 1 hilabete | 
+| Semestral | 49,99 € | 6 hilabete | 
+| Urtekoa | 89,99 € | 12 hilabete |
+
+Planak `PlanInfo` objektuen zerrenda gisa definitzen dira `PremiumSelectionViewModel`-n:
+
+```kotlin
+data class PlanInfo(val nombre: String, val precio: Double, val meses: Int)
+
+val planes = listOf(
+    PlanInfo("Mensual", 9.99, 1),
+    PlanInfo("Semestral", 49.99, 6),
+    PlanInfo("Anual", 89.99, 12)
+)
+```
+
+### Ordainketa metodoak
+
+- **Kreditu/zordunketa txartela:** Inprimaki bat bistaratzen du eremuen txartelaren zenbakia (13 eta 16 zifra artean, zenbakizko teklatua), iraungitze data eta CVV (3 digitu). ViewModel-ek hiru eremuen formatua balioztatzen du ordainketa prozesatu aurretik. 
+- **Bizum:** Ez du eremu gehigarririk behar, berretsi hautapena besterik ez.
+
+### Txartela baliozkotzea
+
+Txartelaren ordainketa prozesatu aurretik ViewModel-ek `validateCard()` exekutatzen du, eta honek egiaztatzen du:
+
+1. 13 eta 16 zifra arteko txartelaren zenbakia. 
+2. Zehazki 3 zifrako CVV. 
+3. Iraungitze-data baliozko eta iraungi gabeko formatuan.
+
+Balidazioren batek huts egiten badu, errore-kode bat igortzen da (`invalid_card_number`, `invalid_cvv`, `invalid_expiry_date`, `card_expired`) eta pantailak `Toast` bidez kokatutako mezu batean itzultzen du.
+
+### Harpidetza berritzea
+
+Erabiltzaileak Premium aktibo badu dagoeneko, `PremiumSelectionViewModel.loadUser(id)`-k berritzea detektatzen du (`esRenovacion = true`) eta `fechaFinActual` berreskuratzen du. Epe berriaren datak kalkulatzean, berritzearen hasiera-data `fechaFinActual` osteko egunean ezartzen da, ez dadin gainjartzerik edo egun galdurik egon:
+
+```kotlin
+fun calculateDates() {
+    val plan = planes.getOrNull(planSeleccionado) ?: return
+    val cal = Calendar.getInstance()
+    if (esRenovacion && !fechaFinActual.isNullOrBlank()) {
+        val fechaActual = AppConfig.FORMAT_ISO_DATE.parse(fechaFinActual) ?: Date()
+        cal.time = fechaActual
+        fechaInicioCalculada = fechaFinActual
+    } else {
+        cal.time = Date()
+        fechaInicioCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+    }
+    cal.add(Calendar.MONTH, plan.meses)
+    fechaFinCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+}
+```
+
+### Ordainketa prozesatzea
+
+Berresteko botoia sakatzen duzunean, aplikazioak sekuentzia hau exekutatzen du:
+
+1. **Erregistratu ordainketa:** Erregistro berri bat txertatzen du `pagos` taulan `id_usuario`, hautatutako planaren zenbatekoa, uneko data, plan mota eta ordainketa-metodoa.
+
+2. **Aktibatu harpidetza:** Erabiltzailearen erregistroa eguneratzen du `usuarios` taulan:
+- `premium = true`
+- `fecha_ini_prem` = kalkulatutako hasiera-data (`yyyy-MM-dd`)
+- `fecha_fin_prem` = kalkulatutako hasiera data + planeko hilabete kopurua
+
+Arrakastaz prozesatzen denean, berrespen-elkarrizketa bat bistaratzen da eta `onSuccess` deitzen da pantaila ixteko.
+
+### Ordainketen historia
+
+`pagos` taulan erregistratutako ordainketak `HistorialScreen`k kontsultatzen ditu, eta `fecha_pago`k beheranzko ordenan zerrendatzen ditu. Sarrera bakoitzak plan mota, ordainketa-metodoa, zenbatekoa, data eta harpidetzaren amaiera-data estimatua (plan motatik lokalean kalkulatuta) erakusten ditu.
+
+## Egun falta diren adierazlea ProfileScreen-en
+
+`ProfileViewModel` Premium harpidetzaren gainerako egunak kalkulatzen ditu erabiltzailearen `fechaFin` eremutik. Emaitza `diasRestantes: Int` gisa bistaratzen da eta `ProfileScreen` moduan bistaratzen da:
+
+- `diasRestantes > 7` bada: urrez ageri da, premiarik gabe. 
+- `diasRestantes` 0 eta 7 artean badago: gorriz agertzen da hurrengo iraungitzearen abisu gisa. 
+- `diasRestantes == 0` bada: "Gaurko kuotak" literala agertzen da zenbakiaren ordez.

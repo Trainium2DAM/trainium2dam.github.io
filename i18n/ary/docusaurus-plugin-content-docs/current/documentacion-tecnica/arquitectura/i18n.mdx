@@ -1,0 +1,103 @@
+---
+title: Internacionalización (i18n)
+sidebar_position: 4
+---
+# التدويل (i18n)
+
+يطبق Trainium نظام التدويل الخاص به في Compose والذي يسمح بتغيير لغة الواجهة في وقت التشغيل دون إعادة تشغيل التطبيق، استنادًا إلى `CompositionLocal`.
+
+## بنية النظام
+
+يتكون النظام من خمسة ملفات في الحزمة `data/i18n/`:
+
+| ملف | المسؤولية | 
+|---|---| 
+| `AppLanguage.kt` | التعداد باللغات المدعومة الـ 12 وحلها من `Locale` | 
+| `AppStrings.kt` | فئة البيانات مع كافة القيم الحرفية لواجهة المستخدم كخصائص `String` | 
+| `LocalStrings.kt` | `CompositionLocal` + الدالة `stringsForLanguage()` | 
+| `LanguageManager.kt` | ثبات اللغة في DataStore | 
+| `LanguagePickerDialog.kt` | مربع حوار اختيار اللغة (مكون مرئي) |
+
+تحتوي ملفات السلسلة (`StringsEs.kt`، `StringsEn.kt`، وما إلى ذلك) على مثيلات محددة لـ `AppStrings` لكل لغة.
+
+## اللغات المدعومة
+
+| التعداد | كوديجو ​​| الاسم الأصلي | 
+|---|---|---| 
+| `SPANISH` | `es` | الاسبانية | 
+| `ENGLISH` | `en` | الإنجليزية | 
+| `VALENCIAN` | `ca-VALENCIA` | فالنسيا | 
+| `CATALAN` | `ca` | كاتالا | 
+| `FRENCH` | `fr` | الفرنسية | 
+| `MOROCCAN_ARABIC` | `ar-MA` | الدارجة | 
+| `BASQUE` | `eu` | يوسكارا | 
+| `GALICIAN` | `gl` | جاليجو | 
+| `GERMAN` | `de` | الألمانية | 
+| `PORTUGUESE` | `pt` | البرتغالية | 
+| `RUSSIAN` | `ru` | Русский | 
+| `CHINESE` | `zh` | 中文 |
+
+## كشف اللغة وحلها
+
+لترتيب التطبيق، `MainActivity` لاحظ `Flow<AppLanguage?>` من `LanguageManager`:
+
+- إذا كان المستخدم قد قام بالفعل بتحديد لغة يدويًا (قيمة غير فارغة)، فسيتم استخدامها. 
+- إذا كانت القيمة `null` (التشغيل الأول أو التفضيل الموضح)، يتم استدعاء `detectSystemLanguage()`، والذي يقوم بتعيين `Locale` الخاص بالنظام إلى أقرب `AppLanguage`. إذا كان النظام يستخدم لغة غير مدعومة، فإن الخيار الاحتياطي هو `SPANISH`.
+
+```kotlin
+val resolvedLanguage by remember(savedLanguage) {
+    derivedStateOf {
+        savedLanguage ?: languageManager.detectSystemLanguage()
+    }
+}
+
+val currentStrings = remember(resolvedLanguage) {
+    stringsForLanguage(resolvedLanguage)
+}
+
+CompositionLocalProvider(LocalStrings provides currentStrings) {
+    // toda la jerarquía de composables
+}
+```
+
+## الوصول إلى السلاسل في المواد المركبة
+
+أي شيء قابل للتركيب داخل `CompositionLocalProvider` يصل إلى سلاسل اللغة النشطة باستخدام:
+
+```kotlin
+val strings = LocalStrings.current
+Text(strings.login)
+```
+
+ليس من الضروري تمرير السلاسل كمعلمات: `CompositionLocal` ينشرها تلقائيًا إلى التسلسل الهرمي بأكمله.
+
+## تغيير اللغة في وقت التشغيل
+
+يقوم المستخدم بفتح المحدد بالضغط على أيقونة الكرة الأرضية (`Icons.Default.Language`) المتوفرة على الشاشات الرئيسية. `LanguagePickerDialog` يعرض قائمة اللغات بأسمائها الأصلية. عند التأكيد:
+
+```kotlin
+scope.launch { languageManager.setLanguage(selectedLanguage) }
+```
+
+`LanguageManager.setLanguage` يكتب رمز اللغة إلى DataStore. تقوم المراقبة `Flow` `MainActivity` بإخراج القيمة الجديدة، وتغييرات `resolvedLanguage`، وإعادة حساب `currentStrings`، وإعادة تكوين `CompositionLocalProvider`. يكون التغيير فوريًا ومرئيًا عبر الواجهة دون الحاجة إلى إعادة تشغيل التطبيق.
+
+## مدير اللغة
+
+```kotlin
+class LanguageManager(private val context: Context) {
+    val currentLanguage: Flow<AppLanguage?>
+    suspend fun setLanguage(language: AppLanguage)
+    fun detectSystemLanguage(): AppLanguage
+}
+```
+
+`currentLanguage` يخرج `null` حتى يقوم المستخدم باختيار لغة لأول مرة. `detectSystemLanguage()` هي دالة متزامنة تقوم بتعيين `Locale.getDefault()` إلى `AppLanguage` المقابل.
+
+## إضافة لغة جديدة
+
+لإضافة دعم للغة إضافية:
+
+1. قم بإضافة إدخال جديد في التعداد `AppLanguage` مع `code`، `displayName` و `nativeName`. 
+2. أضف الكشف عن هذا الرمز في الكتلة `when` من `AppLanguage.fromLocale()`. 
+3. قم بإنشاء كائن جديد `StringsXx` يقوم بإنشاء مثيل `AppStrings` بكل الترجمات. 
+4. أضف الحالة في الدالة `stringsForLanguage()` لـ `LocalStrings.kt`.

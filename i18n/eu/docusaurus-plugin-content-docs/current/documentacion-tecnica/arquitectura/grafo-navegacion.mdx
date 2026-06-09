@@ -1,0 +1,91 @@
+---
+title: Grafo de navegación
+sidebar_position: 2
+---
+# Nabigazio grafikoa
+
+Nabigazio grafikoa `MainActivity.kt`-n zentralki adierazten da `NavHost` erabiliz. Hasierako helmuga `splash` da beti.
+
+## Definitutako ibilbideak
+
+| Ruta | Konposagarria | Argumentuak | Irisgarritik | 
+|---|---|---|---| 
+| `splash` | `SplashVideoScreen` | ninguno | Aplikazioaren hasiera | 
+| `loading` | Pantalla de carga intermedia | ninguno | `splash` (bideoa osatuz) | 
+| `main` | `MainScreen` | ninguno | `loading` | 
+| `login` | `LoginScreen` | ninguno | `main` | 
+| `register` | `RegisterScreen` | ninguno | `login` | 
+| `forgot` | `ForgotPasswordScreen` | ninguno | `login` | 
+| `profile/{idUsuario}` | `ProfileScreen` | `Int` | `login` / `loading` (sesión guardada) | 
+| `edit_profile/{idUsuario}` | `EditProfileScreen` | `Int` | `profile` | 
+| `historial/{idUsuario}` | `HistorialScreen` | `Int` | `edit_profile` | 
+| `premium_selection/{idUsuario}` | `PremiumSelectionScreen` | `Int` | `profile` / `edit_profile` | 
+| `maquinas/{isAdmin}/{idUsuario}` | `MaquinasScreen` | `Int`, `Int` | `profile` | 
+| `reservas/{isAdmin}/{idUsuario}` | `ReservasScreen` | `Int`, `Int` | `profile` | 
+| `platos/{isAdmin}/{idUsuario}` | `PlatosScreen` | `Int`, `Int` | `profile` | 
+| `registro/{idUsuario}` | `RegistroScreen` | `Int` | `profile` |
+
+## Nabigazio-fluxu nagusia
+
+```
+[splash]
+    |
+    v (onVideoFinished → popUpTo splash inclusive)
+[loading]  ─── sesión válida guardada ──────────────────────────> [profile/{idUsuario}]
+    |
+    v (sin sesión)
+[main]
+    |
+    v (onNavigateToLogin)
+[login]
+    |---> [register] (onNavigateToRegister)
+    |---> [forgot]   (onNavigateToForgot)
+    |
+    v (onLoginSuccess: idUsuario)
+[profile/{idUsuario}]
+    |---> [maquinas/{isAdmin}/{idUsuario}]     (onNavigateToMaquinas)
+    |---> [platos/{isAdmin}/{idUsuario}]       (onNavigateToPlatos)
+    |---> [registro/{idUsuario}]               (onNavigateToRegistroPeso)
+    |---> [reservas/{isAdmin}/{idUsuario}]     (onNavigateToReservas)
+    |---> [edit_profile/{idUsuario}]           (onNavigateToEditProfile)
+    |---> [premium_selection/{idUsuario}]      (onNavigateToPremium)
+    |---> [main] popUpTo(0)                    (onLogout)
+         |
+         v (edit_profile)
+    [edit_profile/{idUsuario}]
+         |---> [historial/{idUsuario}]           (onNavigateToHistorial)
+         |---> [premium_selection/{idUsuario}]   (onNavigateToPremium)
+```
+
+## Kargatzen pantaila
+
+`loading` ibilbideak bitartekari gisa funtzionatzen du splash-aren eta gainerako aplikazioaren artean. `loading` sartzean, `SecureSessionManager`-n gordetako saio baliozkorik dagoen ikusteko egiaztatzen da. Bada, nabigatu zuzenean `profile/{idUsuario}` saioko erabiltzaile IDa berreskuratuz. Saiorik ez badago, joan `main`ra.
+
+Jokabide honi esker, autentifikatu diren erabiltzaileek ez dute berriro saioa hasi behar aplikazioa abiarazten den bakoitzean.
+
+## Atzeko pilaren kudeaketa
+
+`splash` helmuga atzeko pilatik kentzen da `loading`ra nabigatzean `popUpTo("splash") { inclusive = true }` erabiliz, erabiltzaileak atzera botoiarekin bideo-pantailara itzuli ahal izatea eragozten du.
+
+`ProfileScreen`-tik saioa amaitzean, `popUpTo(0)` atzealdeko pila guztiz garbitzeko `main`-ra nabigatu aurretik, babestutako pantailetara sarbidea eragozten da sistemaren Atzera botoiaren bidez. Gainera, `SecureSessionManager.cerrarSesion()` mantentzen diren saioaren datuak garbitzen ditu.
+
+## Boolearrak zenbaki oso gisa pasatzea
+
+Navigation Compose-k ez du onartzen `Boolean` nabigazio-argumentu mota gisa. Beraz, `isAdmin` eremua `Int` gisa garraiatzen da (0 edo 1) eta konparazio bidez bihurtzen da `Bundle`-tik berreskuratzean:
+
+```kotlin
+val isAdmin = backStackEntry.arguments?.getInt("isAdmin") == 1
+```
+
+Nabigatzean, alderantzizko bihurketa operadore ternarioarekin egiten da:
+
+```kotlin
+navController.navigate("maquinas/${if (isAdmin) 1 else 0}/$idUsuario")
+```
+
+## Sistema-barra kudeatzea
+
+`MainActivity.kt`-k ibilbide aldaketen aurrean erreakzionatzen du `SideEffect` sistemaren egoeraren eta nabigazio-barren kolorea eta estiloa egokitzeko:
+
+- `splash` ibilbidean: hondo zuria, ikono ilunak, nabigazio-barra ikusgai. 
+- Gainontzeko ibilbideetan: gaiari egokitutako atzeko planoa (`#0B1426` iluna / argia `#F0F4FF`), gaiaren araberako ikonoak, ezkutuko nabigazio-barra (lerratuz bistaratzen da).

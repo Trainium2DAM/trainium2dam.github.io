@@ -1,0 +1,139 @@
+---
+title: Firebase Data Connect
+sidebar_position: 2
+---
+# Firebase Data Connect
+
+Firebase Data Connect és un servei de Firebase que exposa una API GraphQL sobre una base de dades PostgreSQL gestionada. A Trainium s'utilitza com a backend complementari a Supabase per a determinades operacions.
+
+## Configuracio
+
+El directori `app/dataconnect/` conté els artefactes de configuració de Data Connect:
+
+```
+dataconnect/
+├── dataconnect.yaml           # Configuración del servicio
+├── schema/
+│   └── schema.gql             # Definición del esquema de tipos
+└── default_connector/
+    ├── connector.yaml         # Configuración del conector
+    └── queries.gql            # Queries y mutaciones definidas
+```
+
+### dataconnect.yaml
+
+Defineix el nom del projecte Firebase, la regió i el nom del servei del Data Connect. La regió configurada és `europe-southwest1`.
+
+### connector.yaml
+
+Defineix el nom del connector per defecte (`default`) i associa les volies del fitxer `queries.gql` a aquest connector.
+
+## Esquema GraphQL (schema.gql)
+
+L'esquema defineix sis tipus principals que es corresponen aproximadament amb les taules de Supabase:
+
+### Tipus Màquines
+
+```graphql
+type Maquinas @table(name: "MAQUINAS") {
+  id: Int!
+  nombre: String! @col(dataType: "varchar(100)")
+  tipo: String @col(dataType: "varchar(50)")
+  estado: Int! @default(value: 0)
+  descripcion: String @col(dataType: "text")
+  operativa: Int! @default(value: 1)
+}
+```
+
+### Tipus Usuari
+
+```graphql
+type Usuario @table(name: "USUARIO") {
+  id: Int!
+  nombre: String! @col(dataType: "varchar(100)")
+  dni: String @unique @col(dataType: "varchar(20)")
+  email: String @unique @col(dataType: "varchar(100)")
+  contraseniaHash: String @col(name: "CONTRASEÑA_HASH", dataType: "varchar(255)")
+  telefono: String @col(dataType: "varchar(20)")
+  premium: Boolean @default(value: false)
+  fechaIniPrem: Date @col(name: "FECHA_INI_PREM")
+  fechaFinPrem: Date @col(name: "FECHA_FIN_PREM")
+  fechaReg: Date! @col(name: "FECHA_REG") @default(expr: "request.time")
+  admin: Int! @default(value: 0)
+}
+```
+
+### Tipus Plats
+
+```graphql
+type Platos @table(name: "PLATOS") {
+  id: Int!
+  idUsuario: Usuario
+  nombre: String! @col(dataType: "varchar(100)")
+  descripcion: String @col(dataType: "text")
+  calorias: Float @col(name: "CALORIAS")
+  imagenUrl: String @col(name: "IMAGEN_URL", dataType: "varchar(255)")
+  fechaSubida: Date! @col(name: "FECHA_SUBIDA") @default(expr: "request.time")
+  visibilidad: Boolean @default(value: true)
+}
+```
+
+### Tipus Reserves
+
+```graphql
+type Reservas @table(name: "RESERVAS") {
+  id: Int!
+  idUsuario: Usuario!
+  idMaquina: Maquinas!
+  fecha: Date
+  horaInicio: String @col(name: "HORA_INICIO", dataType: "time")
+  horaFin: String @col(name: "HORA_FIN", dataType: "time")
+  estado: Boolean @default(value: true)
+}
+```
+
+### TipusUserWeight
+
+```graphql
+type PesoUsuario @table(name: "PESO_USUARIO") {
+  id: Int!
+  idUsuario: Usuario!
+  peso: Float! @col(name: "PESO")
+  fecha: Date
+}
+```
+
+### Tipus Pagaments
+
+```graphql
+type Pagos @table(name: "PAGOS") {
+  id: Int!
+  idUsuario: Usuario!
+  monto: Int! @col(name: "monto", dataType: "bigint")
+  fechaPago: Date @col(name: "fecha_pago")
+  tipo: String @col(name: "tipo", dataType: "varchar(50)")
+  metodoPago: String @col(name: "metodo_pago", dataType: "varchar(25)")
+}
+```
+
+## Client HTTP (DataConnectClient.kt)
+
+La comunicació amb Data Connect no utilitza el SDK de Firebase per a Android, sinó un client HTTP manual implementat a `DataConnectClient.kt`. Aquest objecte singleton fa peticions `POST` a l'endpoint REST de Data Connect amb el cos de la query en format JSON.
+
+```kotlin
+object DataConnectClient {
+    private const val API_KEY = "..."
+    private const val APP_ID = "<app-id-de-ejemplo>..."
+    private const val ENDPOINT = "https://europe-southwest1-dataconnect.googleapis.com/v1beta/projects/tu-proyecto.../connectors/default:executeGraphql"
+
+    suspend fun execute(
+        query: String,
+        variables: Map<String, Any?> = emptyMap(),
+        operationName: String? = null
+    ): JSONObject?
+}
+```
+
+L'autenticació amb l'API de Google es fa mitjançant la capçalera `x-goog-api-key`. L'endpoint inclou el subdomini regional `europe-southwest1-dataconnect.googleapis.com`, necessari per evitar respostes 404 quan el servei està desplegat en una regió específica.
+
+El mètode `execute` retorna l'objecte `JSONObject` de la resposta completa o `null` en cas d'error de xarxa o resposta HTTP no exitosa. La trucada s'executa al dispatcher `Dispatchers.IO` mitjançant `withContext`.

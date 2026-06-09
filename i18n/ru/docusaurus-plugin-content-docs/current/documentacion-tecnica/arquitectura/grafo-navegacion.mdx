@@ -1,0 +1,91 @@
+---
+title: Grafo de navegación
+sidebar_position: 2
+---
+# График навигации
+
+Граф навигации объявляется централизованно в `MainActivity.kt` с помощью `NavHost`. Начальным пунктом назначения всегда является `splash`.
+
+## Определенные маршруты
+
+| Рута | Сборный | Аргументы | Доступный дизайн | 
+|---|---|---|---| 
+| `splash` | `SplashVideoScreen` | нингуно | Начало приложения | 
+| `loading` | Промежуточные сумки | нингуно | `splash` (полное видео) | 
+| `main` | `MainScreen` | нингуно | `loading` | 
+| `login` | `LoginScreen` | нингуно | `main` | 
+| `register` | `RegisterScreen` | нингуно | `login` | 
+| `forgot` | `ForgotPasswordScreen` | нингуно | `login` | 
+| `profile/{idUsuario}` | `ProfileScreen` | `Int` | `login` / `loading` (защитная сессия) | 
+| `edit_profile/{idUsuario}` | `EditProfileScreen` | `Int` | `profile` | 
+| `historial/{idUsuario}` | `HistorialScreen` | `Int` | `edit_profile` | 
+| `premium_selection/{idUsuario}` | `PremiumSelectionScreen` | `Int` | `profile` / `edit_profile` | 
+| `maquinas/{isAdmin}/{idUsuario}` | `MaquinasScreen` | `Int`, `Int` | `profile` | 
+| `reservas/{isAdmin}/{idUsuario}` | `ReservasScreen` | `Int`, `Int` | `profile` | 
+| `platos/{isAdmin}/{idUsuario}` | `PlatosScreen` | `Int`, `Int` | `profile` | 
+| `registro/{idUsuario}` | `RegistroScreen` | `Int` | `profile` |
+
+## Основной процесс навигации
+
+```
+[splash]
+    |
+    v (onVideoFinished → popUpTo splash inclusive)
+[loading]  ─── sesión válida guardada ──────────────────────────> [profile/{idUsuario}]
+    |
+    v (sin sesión)
+[main]
+    |
+    v (onNavigateToLogin)
+[login]
+    |---> [register] (onNavigateToRegister)
+    |---> [forgot]   (onNavigateToForgot)
+    |
+    v (onLoginSuccess: idUsuario)
+[profile/{idUsuario}]
+    |---> [maquinas/{isAdmin}/{idUsuario}]     (onNavigateToMaquinas)
+    |---> [platos/{isAdmin}/{idUsuario}]       (onNavigateToPlatos)
+    |---> [registro/{idUsuario}]               (onNavigateToRegistroPeso)
+    |---> [reservas/{isAdmin}/{idUsuario}]     (onNavigateToReservas)
+    |---> [edit_profile/{idUsuario}]           (onNavigateToEditProfile)
+    |---> [premium_selection/{idUsuario}]      (onNavigateToPremium)
+    |---> [main] popUpTo(0)                    (onLogout)
+         |
+         v (edit_profile)
+    [edit_profile/{idUsuario}]
+         |---> [historial/{idUsuario}]           (onNavigateToHistorial)
+         |---> [premium_selection/{idUsuario}]   (onNavigateToPremium)
+```
+
+## Экран загрузки
+
+Маршрут `loading` действует как посредник между заставкой и остальной частью приложения. При вводе `loading` выполняется проверка, существует ли действительный сохраненный сеанс на `SecureSessionManager`. Если да, перейдите непосредственно к `profile/{idUsuario}` и получите идентификатор пользователя сеанса. Если сеанса не существует, перейдите к `main`.
+
+Такое поведение позволяет прошедшим проверку подлинности пользователям не входить в систему заново при каждом запуске приложения.
+
+## Управление обратным стеком
+
+Пункт назначения `splash` удаляется из заднего стека при переходе к `loading` с помощью `popUpTo("splash") { inclusive = true }`, что не позволяет пользователю вернуться к видеоэкрану с помощью кнопки «Назад».
+
+При выходе из `ProfileScreen` выполняется `popUpTo(0)`, чтобы полностью очистить задний стек перед переходом к `main`, предотвращая доступ к защищенным экранам с помощью системной кнопки «Назад». Кроме того, `SecureSessionManager.cerrarSesion()` очищает сохраненные данные сеанса.
+
+## Передача логических значений как целых чисел
+
+Navigation Compose не поддерживает `Boolean` в качестве типа аргумента навигации. Таким образом, поле `isAdmin` транспортируется как `Int` (0 или 1) и преобразуется путем сравнения при получении из `Bundle`:
+
+```kotlin
+val isAdmin = backStackEntry.arguments?.getInt("isAdmin") == 1
+```
+
+При просмотре обратное преобразование выполняется с помощью тернарного оператора:
+
+```kotlin
+navController.navigate("maquinas/${if (isAdmin) 1 else 0}/$idUsuario")
+```
+
+## Управление системной панелью
+
+`MainActivity.kt` реагирует на изменения маршрута, используя `SideEffect` для адаптации цвета и стиля строк состояния и навигации системы:
+
+- На маршруте `splash`: белый фон, темные значки, видимая панель навигации. 
+- В остальных маршрутах: фон адаптированный под тему (темный `#0B1426`/светлый `#F0F4FF`), иконки согласно теме, скрытая панель навигации (отображается скольжением).

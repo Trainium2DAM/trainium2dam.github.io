@@ -1,0 +1,45 @@
+---
+title: Platos y nutricion
+sidebar_position: 2
+---
+# Plats i nutrició
+
+## PlatsScreen
+
+El catàleg nutricional mostra els plats aprovats en un format de targeta única amb navegació seqüencial, semblant a un carrusel lineal. L'usuari veu un plat alhora i pot avançar o recular entre ells.
+
+### Càrrega de dades
+
+En inicialitzar la pantalla es fan dues consultes a Supabase en paral·lel:
+
+**Plats acceptats:** `from("platos").select { filter { eq("visibilidad", true); eq("aceptado", true) } }`. Només es mostren al carrusel els plats que han estat aprovats per un administrador i tenen visibilitat activada.
+
+**Suggeriments pendents (només administrador):** `from("platos").select { filter { eq("aceptado", false) } }`. Els plats pendents de moderació només són visibles per als administradors.
+
+### Visualització del plat
+
+Cada targeta mostra: 
+- Imatge del plat (si `imagen_url` conté un string Base64, es descodifica a `Bitmap` mitjançant `ImageUtils.decodeBase64ToBitmap`). 
+- Nom del plat. 
+- Calories. 
+– Temps de preparació. 
+- Descripció o recepta.
+
+### Suggeriment de plats per l'usuari
+
+Qualsevol usuari pot suggerir un nou plat mitjançant el botó de suggeriment, que obre un diàleg modal amb els camps següents: 
+- Títol (nom del plat) 
+- Recepta o descripció 
+- Temps de preparació 
+- Calories 
+- Foto (seleccionada de la galeria mitjançant `ActivityResultContracts.GetContent()`, convertida a Base64)
+
+El plat s'insereix a Supabase amb `aceptado = false` i `visibilidad = true`. Quedarà pendent de revisió per un administrador.
+
+### Moderació per administrador
+
+L'administrador veu en una secció separada la llista de plats pendents d'aprovació (`aceptado = false`). Per a cada plat pot: 
+- **Acceptar:** Executa `update { set("aceptado", true) }` a Supabase. El plat passa a ser visible al carrusel. 
+- **Rebutjar:** Executa `delete` a Supabase. El plat s'elimina permanentment.
+
+Des del carrusel de plats acceptats, l'administrador també pot suprimir qualsevol plat ja publicat.

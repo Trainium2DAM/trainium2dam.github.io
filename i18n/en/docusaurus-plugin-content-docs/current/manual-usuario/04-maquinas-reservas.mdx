@@ -1,0 +1,88 @@
+---
+title: Máquinas y reservas
+sidebar_position: 4
+---
+
+# Máquinas y reservas
+
+La sección de máquinas te permite consultar el equipamiento disponible en el gimnasio y reservar la máquina que quieres usar en una franja horaria concreta.
+
+---
+
+## Ver el catálogo de máquinas
+
+Pulsa **"Máquinas"** en la pantalla principal para ver la lista completa de equipamiento. Mientras se cargan los datos verás unas tarjetas grises animadas (skeleton loading) que se reemplazan por las tarjetas reales en cuanto llega la información.
+
+Cada tarjeta de máquina muestra:
+
+- **Nombre** de la máquina.
+- **Categoría** de ejercicio (Cardio, Espalda, Pierna, Pecho, etc.).
+- **Descripción** del equipamiento.
+- **Estado actual**, indicado mediante un badge de color:
+
+| Badge | Color | Significado |
+|---|---|---|
+| **Disponible** | Verde | La máquina está operativa y puedes reservarla |
+| **Mantenimiento** | Naranja | Fuera de servicio temporalmente, no se puede reservar |
+
+Cuando una máquina está en mantenimiento, la tarjeta también muestra las **fechas de inicio y fin** del periodo, para que sepas cuándo volverá a estar disponible.
+
+---
+
+## Hacer una reserva
+
+Para reservar una máquina esta debe estar en estado **Disponible**. Pulsa sobre su tarjeta para iniciar el proceso:
+
+### 1. Seleccionar la fecha
+
+Se abrirá un calendario donde puedes elegir el día en que quieres usar la máquina.
+
+### 2. Seleccionar la hora de inicio
+
+Tras elegir la fecha aparecerá un selector de hora. Elige la hora a la que quieres empezar.
+
+### 3. Ajustar la hora de fin (opcional)
+
+La aplicación calcula automáticamente la hora de fin añadiendo **30 minutos** a la hora de inicio. Si lo necesitas puedes ajustar esta hora, pero ten en cuenta que **el máximo permitido por reserva es de 1 hora**. Si intentas reservar más tiempo la app te avisará con un mensaje de error.
+
+### 4. Confirmación automática de disponibilidad
+
+Antes de guardar la reserva, la app comprueba dos condiciones:
+
+- Que la máquina no esté ya reservada por otro usuario en ese tramo horario.
+- Que tú no tengas otra reserva en esa misma franja.
+
+Si hay algún conflicto verás un mensaje explicando el motivo y podrás elegir otra fecha u hora.
+
+### 5. Reserva confirmada
+
+Si no hay conflictos, la reserva se guarda y **se programa automáticamente un recordatorio** para avisarte antes de la hora de inicio. La antelación del recordatorio es la que hayas configurado en Mi Perfil (por defecto, 30 minutos).
+
+En la parte inferior de la pantalla aparecerá un aviso con la opción **"Cancelar"**. Si te has equivocado puedes pulsar ese botón durante unos segundos para deshacer la reserva inmediatamente, sin tener que ir a «Mis Reservas».
+
+:::info
+No es posible tener dos reservas en la misma franja horaria aunque sean en máquinas diferentes. Planifica bien tus sesiones para evitar conflictos.
+:::
+
+---
+
+## Máquinas en mantenimiento
+
+Cuando el administrador pone una máquina en mantenimiento para un periodo determinado, ocurre lo siguiente:
+
+- La máquina aparece con el badge naranja **"Mantenimiento"** y el botón de reserva queda desactivado.
+- Si tenías una reserva en ese periodo, **se cancela automáticamente**.
+- Al abrir la app verás un aviso indicando las máquinas y reservas afectadas.
+
+Una vez que el periodo de mantenimiento termina, la máquina vuelve a aparecer como **Disponible** y puedes volver a reservarla.
+
+---
+
+## Restricciones de reserva
+
+| Restricción | Detalle |
+|---|---|
+| Duración máxima | 1 hora por reserva |
+| Solapamiento de horarios | No puedes tener dos reservas a la misma hora |
+| Máquinas en mantenimiento | No se pueden reservar durante el periodo de mantenimiento |
+| Conexión a internet | Necesaria para consultar disponibilidad y confirmar reservas |

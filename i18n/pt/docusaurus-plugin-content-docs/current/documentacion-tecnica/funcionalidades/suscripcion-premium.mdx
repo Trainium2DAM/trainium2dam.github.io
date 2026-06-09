@@ -1,0 +1,90 @@
+---
+title: Suscripcion Premium
+sidebar_position: 4
+---
+# Assinatura Premium
+
+## Tela de Seleção Premium
+
+Gerenciar o fluxo de contratação e renovação de assinaturas Premium. O processo é concluído em uma única tela com seleção do plano e seleção da forma de pagamento.
+
+### Planos disponíveis
+
+| Plano | Preço | Duração | 
+|---|---|---| 
+| Mensalmente | 9,99€ | 1 mês | 
+| Semestral | 49,99€ | 6 meses | 
+| Anual | 89,99€ | 12 meses |
+
+Os planos são definidos como uma lista de objetos `PlanInfo` em `PremiumSelectionViewModel`:
+
+```kotlin
+data class PlanInfo(val nombre: String, val precio: Double, val meses: Int)
+
+val planes = listOf(
+    PlanInfo("Mensual", 9.99, 1),
+    PlanInfo("Semestral", 49.99, 6),
+    PlanInfo("Anual", 89.99, 12)
+)
+```
+
+### Métodos de pagamento
+
+- **Cartão de crédito/débito:** Exibe um formulário com os campos número do cartão (entre 13 e 16 dígitos, teclado numérico), data de validade e CVV (3 dígitos). O ViewModel valida o formato dos três campos antes de processar o pagamento. 
+- **Bizum:** Não requer campos adicionais, basta confirmar a seleção.
+
+### Validação do cartão
+
+Antes de processar o pagamento com cartão o ViewModel executa `validateCard()`, que verifica:
+
+1. Número do cartão com 13 a 16 dígitos. 
+2. CVV de exatamente 3 dígitos. 
+3. Data de validade em formato válido e não expirado.
+
+Se alguma validação falhar, é emitido um código de erro (`invalid_card_number`, `invalid_cvv`, `invalid_expiry_date`, `card_expired`) que a tela traduz em uma mensagem localizada através de `Toast`.
+
+### Renovação de assinatura
+
+Caso o usuário já tenha Premium ativo, `PremiumSelectionViewModel.loadUser(id)` detecta a renovação (`esRenovacion = true`) e recupera `fechaFinActual`. No cálculo das datas do novo período, a data de início da renovação é definida para o dia seguinte a `fechaFinActual`, para que não haja sobreposição ou dias perdidos:
+
+```kotlin
+fun calculateDates() {
+    val plan = planes.getOrNull(planSeleccionado) ?: return
+    val cal = Calendar.getInstance()
+    if (esRenovacion && !fechaFinActual.isNullOrBlank()) {
+        val fechaActual = AppConfig.FORMAT_ISO_DATE.parse(fechaFinActual) ?: Date()
+        cal.time = fechaActual
+        fechaInicioCalculada = fechaFinActual
+    } else {
+        cal.time = Date()
+        fechaInicioCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+    }
+    cal.add(Calendar.MONTH, plan.meses)
+    fechaFinCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+}
+```
+
+### Processamento de pagamento
+
+Ao pressionar o botão confirmar, o aplicativo executa a seguinte sequência:
+
+1. **Registrar Pagamento:** Insere um novo registro na tabela `pagos` com `id_usuario`, o valor do plano selecionado, data atual, tipo de plano e forma de pagamento.
+
+2. **Ativar assinatura:** Atualiza o registro do usuário na tabela `usuarios`:
+- `premium = true`
+- `fecha_ini_prem` = data de início calculada (`yyyy-MM-dd`)
+- `fecha_fin_prem` = data de início calculada + número de meses do plano
+
+Após o processamento bem-sucedido, uma caixa de diálogo de confirmação é exibida e `onSuccess` é invocado para fechar a tela.
+
+### Histórico de pagamentos
+
+Os pagamentos registados na tabela `pagos` são consultados por `HistorialScreen`, que os lista por ordem decrescente de `fecha_pago`. Cada entrada mostra o tipo de plano, forma de pagamento, valor, data e data estimada de término da assinatura (calculada localmente a partir do tipo de plano).
+
+## Indicador de dias restantes no ProfileScreen
+
+`ProfileViewModel` calcula os dias restantes da assinatura Premium a partir do campo `fechaFin` do usuário. O resultado é exibido como `diasRestantes: Int` e exibido em `ProfileScreen`:
+
+- Se `diasRestantes > 7`: mostrado em dourado, sem urgência. 
+- Se `diasRestantes` estiver entre 0 e 7: é exibido em vermelho como um aviso de expiração próxima. 
+- Se `diasRestantes == 0`: o literal "Deveres hoje" é mostrado em vez do número.

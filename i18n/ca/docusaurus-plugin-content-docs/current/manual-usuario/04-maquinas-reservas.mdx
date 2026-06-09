@@ -1,0 +1,87 @@
+---
+title: Máquinas y reservas
+sidebar_position: 4
+---
+# Màquines i reserves
+
+La secció de màquines et permet consultar l'equipament disponible al gimnàs i reservar la màquina que vols fer servir en una franja horària concreta.
+
+---
+
+## Veure el catàleg de màquines
+
+Fes clic **"Màquines"** a la pantalla principal per veure la llista completa d'equipament. Mentre es carreguen les dades veuràs unes targetes grises animades (skeleton loading) que es reemplacen per les targetes reals quan arriba la informació.
+
+Cada targeta de màquina mostra:
+
+- **Nom** de la màquina. 
+- **Categoria** d'exercici (Cardio, Esquena, Cama, Pit, etc.). 
+- **Descripció** de l'equipament. 
+- **Estat actual**, indicat mitjançant un badge de color:
+
+| Badge | Color | Significat | 
+|---|---|---| 
+| **Disponible** | Verd | La màquina està operativa i la pots reservar | 
+| **Manteniment** | Taronja | Fora de servei temporalment no es pot reservar |
+
+Quan una màquina està en manteniment, la targeta també mostra les dates d'inici i fi del període, perquè sàpigues quan tornarà a estar disponible.
+
+---
+
+## Fer una reserva
+
+Per reservar una màquina aquesta ha d'estar en estat **Disponible**. Clica sobre la targeta per iniciar el procés:
+
+### 1. Seleccionar la data
+
+S'obrirà un calendari on pots triar el dia que vols fer servir la màquina.
+
+### 2. Seleccionar l'hora d'inici
+
+Després de triar la data, apareixerà un selector d'hora. Trieu l'hora que voleu començar.
+
+### 3. Ajustar l'hora de fi (opcional)
+
+L'aplicació calcula automàticament l'hora final afegint **30 minuts** a l'hora d'inici. Si ho necessites pots ajustar aquesta hora, però tingues en compte que **el màxim permès per reserva és de 1 hora**. Si intenteu reservar més temps l'app us avisarà amb un missatge d'error.
+
+### 4. Confirmació automàtica de disponibilitat
+
+Abans de desar la reserva, l'app comprova dues condicions:
+
+- Que la màquina ja no estigui reservada per un altre usuari en aquest tram horari. 
+- Que tu no tinguis cap altra reserva en aquesta mateixa franja.
+
+Si hi ha algun conflicte veuràs un missatge explicant-ne el motiu i podràs triar una altra data o hora.
+
+### 5. Reserva confirmada
+
+Si no hi ha conflictes, la reserva es desa i **es programa automàticament un recordatori** per avisar-vos abans de l'hora d'inici. L'antelació del recordatori és la que heu configurat al meu perfil (per defecte, 30 minuts).
+
+A la part inferior de la pantalla apareixerà un avís amb l'opció **"Cancel·lar"**. Si us heu equivocat podeu prémer aquest botó durant uns segons per desfer la reserva immediatament, sense haver d'anar a «Les meves reserves».
+
+:::info 
+No és possible tenir dues reserves a la mateixa franja horària encara que siguin en màquines diferents. Planifica bé les sessions per evitar conflictes. 
+:::
+
+---
+
+## Màquines en manteniment
+
+Quan l'administrador posa una màquina en manteniment per a un període determinat, passa el següent:
+
+- La màquina apareix amb el badge taronja **"Manteniment"** i el botó de reserva queda desactivat. 
+- Si tenies una reserva en aquest període, **es cancel·la automàticament**. 
+- En obrir l'app veuràs un avís indicant les màquines i les reserves afectades.
+
+Quan el període de manteniment acaba, la màquina torna a aparèixer com a **Disponible** i pots tornar a reservar-la.
+
+---
+
+## Restriccions de reserva
+
+| Restricció | Detall | 
+|---|---| 
+| Durada màxima | 1 hora per reserva | 
+| Solapament dhoraris | No podeu tenir dues reserves a la mateixa hora | 
+| Màquines en manteniment | No es poden fer reserves durant el període de manteniment | 
+| Connexió a internet | Necessària per consultar disponibilitat i confirmar reserves |

@@ -1,0 +1,45 @@
+---
+title: Platos y nutricion
+sidebar_position: 2
+---
+# Gerichte und Ernährung
+
+## PlatesScreen
+
+Der Nährwertkatalog zeigt zugelassene Gerichte in einem einzigen Kartenformat mit sequenzieller Navigation an, ähnlich einem linearen Karussell. Der Benutzer sieht jeweils ein Gericht und kann zwischen diesen hin und her wechseln.
+
+### Daten-Upload
+
+Bei der Initialisierung des Bildschirms werden parallel zwei Abfragen an Supabase gestellt:
+
+**Akzeptierte Gerichte:** `from("platos").select { filter { eq("visibilidad", true); eq("aceptado", true) } }`. Im Karussell werden nur Gerichte angezeigt, die von einem Administrator genehmigt wurden und deren Sichtbarkeit aktiviert ist.
+
+**Ausstehende Vorschläge (nur Administratoren):** `from("platos").select { filter { eq("aceptado", false) } }`. Gerichte, deren Moderation noch aussteht, sind nur für Administratoren sichtbar.
+
+### Plattenanzeige
+
+Jede Karte zeigt:
+- Dish-Image (wenn `imagen_url` eine Base64-Zeichenfolge enthält, wird sie mit `ImageUtils.decodeBase64ToBitmap` in `Bitmap` dekodiert). 
+- Name des Gerichts. 
+- Kalorien. 
+- Vorbereitungszeit. 
+- Beschreibung oder Rezept.
+
+### Gerichtvorschlag vom Benutzer
+
+Jeder Benutzer kann über die Vorschlagsschaltfläche ein neues Gericht vorschlagen. Dadurch wird ein modaler Dialog mit den folgenden Feldern geöffnet:
+- Titel (Name des Gerichts)
+- Rezept oder Beschreibung
+- Vorbereitungszeit
+- Kalorien
+- Foto (aus der Galerie mit `ActivityResultContracts.GetContent()` ausgewählt, in Base64 konvertiert)
+
+Die Schale wird mit `aceptado = false` und `visibilidad = true` in Supabase eingefügt. Die Überprüfung durch einen Administrator steht noch aus.
+
+### Moderation durch Administrator
+
+Der Administrator sieht in einem separaten Abschnitt die Liste der Gerichte, deren Genehmigung noch aussteht (`aceptado = false`). Für jedes Gericht können Sie:
+- **OK:** Führen Sie `update { set("aceptado", true) }` in Supabase aus. Das Gericht wird im Karussell sichtbar. 
+- **Ablehnen:** Führen Sie `delete` in Supabase aus. Die Platte wird dauerhaft entfernt.
+
+Aus dem Karussell der akzeptierten Gerichte kann der Administrator auch bereits veröffentlichte Gerichte löschen.

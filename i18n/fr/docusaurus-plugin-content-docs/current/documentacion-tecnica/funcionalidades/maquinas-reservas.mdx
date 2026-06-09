@@ -1,0 +1,111 @@
+---
+title: Máquinas y reservas
+sidebar_position: 1
+---
+# Machines et réserves
+
+## MachinesScreen
+
+`MaquinasScreen` délègue à `MaquinasViewModel`, qui gère l'état de la liste des machines, les dialogues d'action et les opérations CRUD via `MaquinaRepository` et `ReservaRepository` via `ServiceLocator`.
+
+### État du modèle de vue
+
+```kotlin
+class MaquinasViewModel : ViewModel() {
+    var listaMaquinas by mutableStateOf<List<Maquina>>(emptyList())
+    var isLoading by mutableStateOf(false)
+    var showingDialogAdd by mutableStateOf(false)
+    var maquinaParaMantenimiento by mutableStateOf<Int?>(null)
+    var maquinaParaReservar by mutableStateOf<Int?>(null)
+    var fechaSeleccionada by mutableStateOf("")
+    var horaSeleccionada by mutableStateOf("")
+    var reservasDeLaMaquina by mutableStateOf<List<Reserva>>(emptyList())
+    var reservasDelUsuario by mutableStateOf<List<Reserva>>(emptyList())
+    var reservaExitosa by mutableStateOf<Reserva?>(null)
+    var errorMessage by mutableStateOf<String?>(null)
+    var nuevaFoto by mutableStateOf<String?>(null)
+    // ...
+}
+```
+
+Alors que `isLoading` est `true`, l'écran affiche un `SkeletonList` au lieu du contenu réel.
+
+### Mode utilisateur standard
+
+L'utilisateur voit la liste complète des machines disponibles. En cliquant sur une machine opérationnelle, vous pouvez démarrer le processus de réservation.
+
+**Processus de réservation :**
+
+1. Un `DatePickerDialog` (Android View) s'affiche pour sélectionner la date. 
+2. `AppTimePickerDialog` (Compose Material 3) s'affiche pour sélectionner l'heure de début. L'application calcule automatiquement l'heure de fin en ajoutant 30 minutes. 
+3. **Validation de la durée maximale :** Le paramètre `onValidate` du `AppTimePickerDialog` vérifie que la plage horaire n'excède pas 60 minutes. En cas de dépassement, un message d'erreur s'affiche et la réservation n'est pas confirmée. 
+4. Le ViewModel charge `reservasDeLaMaquina` et `reservasDelUsuario` en parallèle à partir des référentiels. 
+5. Deux conditions sont vérifiées avant de confirmer :
+- Que la machine n'est pas déjà réservée sur cette plage horaire. 
+- Que l'utilisateur n'a pas déjà une autre réservation dans ce même créneau. 
+6. S'il n'y a pas de conflit, `ReservaRepository.insert(...)` est appelé avec `estado = true`. 
+7. Une fois l'insertion réussie, un rappel est automatiquement programmé à l'aide de `NotificationHelper.rescheduleNextReservationNotification(context, userId)`. 
+8. Un `Snackbar` s'affiche avec la possibilité d'**annuler la réservation nouvellement créée** pendant quelques secondes. Si l'utilisateur appuie sur "Annuler", la réservation est supprimée et la notification programmée est annulée.
+
+**Restriction due à l'état de maintenance :**
+
+Si une machine dispose de `operativa = false`, un badge "Maintenance" s'affiche et le bouton de réservation est désactivé. La carte indique les dates de début et de fin de la période de maintenance lorsqu'elles sont disponibles.
+
+### Images de machines
+
+Les cartes montrent la photo de la machine si le champ `foto` (Base64) est disponible. S'il n'y a pas d'image, un espace réservé s'affiche. Les administrateurs peuvent joindre une image lors de la création d'une nouvelle machine ou lors de sa modification en la sélectionnant dans la galerie des appareils à l'aide de `ActivityResultContracts.GetContent()`.
+
+### Mode administrateur
+
+L'administrateur dispose de fonctionnalités supplémentaires accessibles depuis chaque carte machine :
+
+**Enregistrement de la machine :** Un FAB (`FloatingActionButton`) ouvre une boîte de dialogue pour saisir le nom, le type, la description et l'image d'une nouvelle machine. Délégués à `MaquinasViewModel.addMachine(...)` → `MaquinaRepository.insert(...)`.
+
+**Suppression de la machine :** Le bouton de suppression de chaque carte appelle `MaquinasViewModel.deleteMachine(id)` → `MaquinaRepository.delete(id)`.
+
+**Activation de la maintenance :** Le bouton clé ouvre un formulaire avec quatre champs (date de début, heure de début, date de fin et heure de fin). Après confirmation, le ViewModel exécute la séquence suivante :
+
+1. `MaquinaRepository.activateMaintenance(id, desde, hasta)` : Composez `operativa = false` et enregistrez la plage. 
+2. Vérifiez toutes les réservations actives pour cette machine. 
+3. Pour chaque réservation, vérifiez si la durée `[fecha + hora_inicio, fecha + hora_fin]` chevauche la plage de maintenance. 
+4. Les réservations qui se chevauchent sont automatiquement annulées à l'aide de `ReservaRepository.delete(reserva.id)`.
+
+La détection de chevauchement utilise la condition standard : `resInicio < calHasta && resFin > calDesde`.
+
+**Réactivation de la machine :** Appelez `MaquinasViewModel.deactivateMaintenance(id)` → `MaquinaRepository.deactivateMaintenance(id)`, qui saisit `operativa = true` et efface les champs de maintenance.
+
+---
+
+## RéservationsScreen
+
+Lister toutes les réservations avec un système de filtrage par critères :
+
+| Filtrer | Comportement | 
+|---|---| 
+| À venir | Affiche les réservations dont l'heure de fin n'est pas encore arrivée | 
+| Aujourd'hui | Affiche les réservations avec une date égale à la date actuelle | 
+| Passé | Affiche les réservations dont l'heure de fin est déjà dépassée | 
+| Tout | Afficher toutes les réservations sans filtre de date | 
+| Dates | Ouvrez un `DatePickerDialog` pour filtrer par date spécifique |
+
+La logique de tri entre « suivant » et « passé » est basée sur l'heure de fin complète (`fecha + hora_fin`), et pas seulement sur la date. Cela permet à une réservation passée aujourd'hui d'apparaître correctement dans le filtre « Passé ».
+
+Les réservations sont chargées à partir de `ReservaRepository` avec la syntaxe de relations intégrées : `*, usuarios(*), maquinas(*)`. Cela permet d'afficher directement le nom de l'utilisateur et de la machine sans requêtes supplémentaires.
+
+**Vue Administrateur :** L'administrateur voit les réservations de tous les utilisateurs. Chaque ligne affiche le nom d'utilisateur en plus du nom de la machine. Vous pouvez également annuler toute réservation active.
+
+**Vue utilisateur :** L'utilisateur ne voit que ses propres réservations et peut annuler une réservation active.
+
+Les réservations sont triées par date croissante puis par heure de début, les plus proches apparaissent donc en premier. Pendant le chargement des données, un `SkeletonList` s'affiche.
+
+### Exporter vers le calendrier de l'appareil
+
+Chaque carte de réservation comprend un bouton de calendrier (`Icons.Default.CalendarMonth`). En appuyant dessus, une boîte de dialogue de confirmation apparaît et, après acceptation, un `Intent` avec l'action `Intent.ACTION_INSERT` est lancé vers `CalendarContract.Events.CONTENT_URI`. L'intention comprend le titre de la machine, la description avec l'heure et les heures de début et de fin en millisecondes. L'appareil ouvre l'application de calendrier de l'utilisateur pour terminer l'insertion de l'événement.
+
+### Annulation et notifications
+
+Lors de l'annulation d'une réservation depuis l'écran :
+
+1. La réservation Supabase avec `ReservaRepository.delete(id)` est supprimée. 
+2. Le rappel programmé avec `NotificationHelper.cancelScheduledNotification(context, reservaId)` est annulé. 
+3. Le rappel pour la prochaine réservation future est reprogrammé avec `NotificationHelper.rescheduleNextReservationNotification(context, userId)`.

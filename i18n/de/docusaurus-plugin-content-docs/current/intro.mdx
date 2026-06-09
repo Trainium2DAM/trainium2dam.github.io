@@ -1,0 +1,63 @@
+---
+title: Trainium
+sidebar_position: 1
+---
+# Trainium
+
+Trainium ist eine native Android-Anwendung, die auf die umfassende Verwaltung eines Fitnessstudios abzielt. Es ermöglicht Benutzern, sich zu registrieren, Maschinen zu reservieren, ihren körperlichen Fortschritt durch Gewichtsaufzeichnung zu überwachen und Ernährungspläne zu befolgen. Es verfügt über ein Premium-Abonnementsystem, das die verfügbaren Funktionalitäten erweitert, sowie über eine Administratorrolle mit Zugriff auf die Verwaltung des Maschinenkatalogs, aktive Reservierungen und die Moderation von Ernährungsgerichten.
+
+## Hauptfunktionen
+
+Die Anwendung implementiert in ihrer endgültigen Version die folgenden Funktionalitäten:
+
+- Benutzerauthentifizierung mit ID und Passwort, mit Wiederherstellung der Anmeldeinformationen per E-Mail
+- Registrierung neuer Benutzer mit Validierung der Felder (Name, ID, E-Mail, Telefon)
+– Permanente Sitzung zwischen Startvorgängen mit `SharedPreferences` mit konfigurierbarer Dauer von 7 Tagen
+- Reservierung von Maschinen mit Auswahl von Datum und Zeitfenster, mit Erkennung von Überschneidungen und einer Begrenzung auf 1 Stunde pro Reservierung
+- Maschinenwartungssystem mit automatischer Stornierung betroffener Reservierungen
+- Konfigurierbare Push-Benachrichtigungen zur Vorausbuchungserinnerung (10, 15, 30, 60 oder 120 Minuten)
+- Reservierungen in den Gerätekalender exportieren
+- Gewichtsverfolgung mit Zeitverlaufsdiagramm
+- Katalog ernährungsphysiologischer Gerichte mit Vorschlagssystem durch den Benutzer und Moderation durch den Administrator
+- Premium-Abonnement mit drei Preisarten (monatlich, halbjährlich und jährlich) und Zahlungsregistrierung, mit Anzeige der verbleibenden Tage
+- Profilbearbeitung mit in Base64 gespeichertem Benutzerfoto
+- Unterstützung heller und dunkler Themes mit Präferenzpersistenz über DataStore
+- **Unterstützung mehrerer Sprachen** mit automatischer Systemsprachenerkennung und manueller Auswahl (12 Sprachen verfügbar)
+- Animierter Begrüßungsbildschirm mit einführender Videowiedergabe
+- Laden mit Skelettbildschirmen während API-Abfragen
+
+## Technologie-Stack
+
+| Schicht | Technologie | 
+|---|---| 
+| Sprache | Kotlin | 
+| Benutzeroberfläche | Jetpack Compose + Material 3 | 
+| Navigation | Navigation Compose 2.7.7 | 
+| Haupt-Backend | Supabase (PostgreSQL) über offizielles SDK | 
+| Alternatives Backend | Firebase Data Connect (GraphQL) | 
+| Authentifizierung | Firebase Auth (deklariert) | 
+| Lokale Persistenz | Jetpack DataStore-Einstellungen + SharedPreferences | 
+| Internationalisierung | Eigenes Stringsystem in Compose (i18n) | 
+| Benachrichtigungen | AlarmManager + NotificationCompat | 
+| Buildsystem | Gradle (Kotlin DSL) | 
+| IDE | AndroidStudio |
+
+## Dokumentationsstruktur
+
+**Installation und Einrichtung** umfasst die Anforderungen der Entwicklungsumgebung, das Klonen des Repositorys und das Einrichten der Supabase- und Firebase-Anmeldeinformationen, die zum Erstellen des Projekts erforderlich sind.
+
+**Architektur** beschreibt die Modulstruktur, den Navigationsgraphen, die Repository-Ebene und die getroffenen Designentscheidungen.
+
+**Datenbank** dokumentiert das Supabase-Tabellenschema, die Entitätsbeziehungen und das Firebase Data Connect GraphQL-Schema.
+
+**Bildschirme** beschreibt jeden Bildschirm der Anwendung, seine Verantwortlichkeiten und Navigationsabläufe.
+
+**Funktionalitäten** beschreibt die Implementierung jedes Hauptfunktionsblocks.
+
+**API und Dienste** erläutert die Integration mit Supabase, Firebase Auth und Firebase Data Connect.
+
+**Design** dokumentiert das Designsystem, die Farbpalette, die Typografie und wiederverwendbare UI-Komponenten.
+
+**Bereitstellung** gibt die Schritte zum Generieren eines Debug- oder Release-APK an.
+
+**Referenz** sammelt den Bestand an Datenmodellen, Konstanten und Dienstprogrammklassen.

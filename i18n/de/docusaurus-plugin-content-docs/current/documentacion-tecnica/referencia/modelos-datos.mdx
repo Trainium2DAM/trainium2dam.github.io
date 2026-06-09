@@ -1,0 +1,239 @@
+---
+title: Modelos de datos
+sidebar_position: 1
+---
+# Datenmodelle
+
+Alle Datenklassen im Paket `models` sind mit `@Serializable` von `kotlinx.serialization` annotiert. Sie sind standardmäßig unveränderlich und werden sowohl zum Deserialisieren von Supabase-Antworten als auch zum Serialisieren der Hauptteile von Einfüge- und Aktualisierungsanforderungen verwendet.
+
+---
+
+## Benutzer
+
+**Datensatz:** `models/Usuario.kt` 
+**Tabla Supabase:** `usuarios`
+
+```kotlin
+@Serializable
+data class Usuario(
+    @SerialName("id")
+    val id: Int = 0,
+    val nombre: String,
+    val dni: String,
+    val contraseniaHash: String,
+    val admin: Int,
+    val premium: Boolean,
+    val email: String? = null,
+    val telefono: String? = null,
+    val foto: String? = null,
+    @SerialName("fecha_ini_prem")
+    val fechaInicio: String? = null,
+    @SerialName("fecha_fin_prem")
+    val fechaFin: String? = null
+)
+```
+
+| Feld | Geben Sie | ein Nullable | Beschreibung | 
+|---|---|---|---| 
+| `id` | `Int` | Nein | Autoinkrementelle PK (Standard 0 beim Einfügen) | 
+| `nombre` | `String` | Nein | Vollständiger Name | 
+| `dni` | `String` | Nein | DNI wird als Anmeldeinformation verwendet | 
+| `contraseniaHash` | `String` | Nein | Passwort (in dieser Version Klartext) | 
+| `admin` | `Int` | Nein | 0 = Benutzer, 1 = Administrator | 
+| `premium` | `Boolean` | Nein | Abonnementstatus | 
+| `email` | `String?` | Ja | E-Mail | 
+| `telefono` | `String?` | Ja | Kontakttelefonnummer | 
+| `foto` | `String?` | Ja | Profilbild in Base64 | 
+| `fechaInicio` | `String?` | Ja | Startdatum des Premium-Abonnements (`yyyy-MM-dd`) | 
+| `fechaFin` | `String?` | Ja | Enddatum des Premium-Abonnements (`yyyy-MM-dd`) |
+
+Die Felder `fechaInicio` und `fechaFin` werden in `ProfileViewModel` gelesen, um die verbleibenden Tage des Premium-Abonnements zu berechnen und sie in `ProfileScreen` anzuzeigen.
+
+---
+
+##Sitzungsdaten
+
+**Datenblatt:** `models/SesionData.kt`
+
+```kotlin
+data class SesionData(
+    val userId: Int,
+    val userName: String,
+    val isAdmin: Boolean,
+    val isPremium: Boolean,
+    val token: String = ""
+)
+```
+
+Von `SecureSessionManager` verwendetes Modell zur Darstellung der dauerhaften Sitzung des Benutzers. Es ist nicht mit `@Serializable` annotiert, da es nicht in JSON serialisiert ist. es wird Feld für Feld in `SharedPreferences` gespeichert.
+
+---
+
+## Maschine
+
+**Datenblatt:** `models/Maquina.kt` 
+**Tabla Supabase:** `maquinas`
+
+```kotlin
+@Serializable
+data class Maquina(
+    val id: Int,
+    val nombre: String,
+    val tipo: String? = null,
+    val estado: Int = 0,
+    val descripcion: String? = null,
+    val operativa: Boolean = true,
+    val foto: String? = null,
+    val mantenimiento_desde: String? = null,
+    val mantenimiento_hasta: String? = null
+)
+```
+
+| Feld | Geben Sie | ein Nullable | Beschreibung | 
+|---|---|---|---| 
+| `id` | `Int` | Nein | Autoinkrementelle PK | 
+| `nombre` | `String` | Nein | Maschinenname | 
+| `tipo` | `String?` | Ja | Übungskategorie | 
+| `estado` | `Int` | Nein | Generisches Statusfeld (Standardwert 0) | 
+| `descripcion` | `String?` | Ja | Detaillierte Beschreibung | 
+| `operativa` | `Boolean` | Nein | `true` = für Reservierungen verfügbar | 
+| `foto` | `String?` | Ja | Bild der Maschine in Base64 | 
+| `mantenimiento_desde` | `String?` | Ja | Beginn des Wartungszeitraums (`yyyy-MM-dd HH:mm`) | 
+| `mantenimiento_hasta` | `String?` | Ja | Ende des Wartungszeitraums (`yyyy-MM-dd HH:mm`) |
+
+---
+
+## Reserva
+
+**Datensatz:** `models/Reserva.kt` 
+**Tabla Supabase:** `reservas`
+
+```kotlin
+@Serializable
+data class Reserva(
+    val id: Int? = null,
+    @SerialName("id_usuario") val idUsuario: Int,
+    @SerialName("id_maquina") val idMaquina: Int,
+    val fecha: String,
+    @SerialName("hora_inicio") val horaInicio: String,
+    @SerialName("hora_fin") val horaFin: String,
+    val estado: Boolean = true
+)
+```
+
+| Feld | Geben Sie | ein Nullable | Beschreibung | 
+|---|---|---|---| 
+| `id` | `Int?` | Ja | PK (null beim Einfügen, zugewiesen von Supabase) | 
+| `idUsuario` | `Int` | Nein | FK → user.id | 
+| `idMaquina` | `Int` | Nein | FK →machines.id | 
+| `fecha` | `String` | Nein | Reservierungsdatum (`yyyy-MM-dd`) | 
+| `horaInicio` | `String` | Nein | Startzeit (`HH:mm`) | 
+| `horaFin` | `String` | Nein | Endzeit (`HH:mm`). Maximal 60 Minuten nach `horaInicio` | 
+| `estado` | `Boolean` | Nein | `true` = aktiv, `false` = abgebrochen |
+
+## ReservaConDetalles
+
+Erweiterte Datenklasse für Abfragen mit eingebetteten Beziehungen (PostgREST implicit JOIN).
+
+```kotlin
+@Serializable
+data class ReservaConDetalles(
+    val id: Int,
+    val fecha: String,
+    @SerialName("hora_inicio") val horaInicio: String,
+    @SerialName("hora_fin") val horaFin: String,
+    val estado: Boolean,
+    @SerialName("usuarios") val usuario: Usuario? = null,
+    @SerialName("maquinas") val maquina: Maquina? = null
+)
+```
+
+Es wird mit der Spalte `"*, usuarios(*), maquinas(*)"` ermittelt.
+
+---
+
+## Platon
+
+**Datenblatt:** `models/Plato.kt` 
+**Tabla Supabase:** `platos`
+
+```kotlin
+@Serializable
+data class Plato(
+    val id: Int? = null,
+    @SerialName("id_usuario") val idUsuario: Int? = null,
+    val nombre: String,
+    val descripcion: String? = null,
+    val calorias: Double? = null,
+    @SerialName("imagen_url") val imagenUrl: String? = null,
+    @SerialName("fecha_subida") val fechaSubida: String? = null,
+    val visibilidad: Boolean = true,
+    val tiempo: String? = null,
+    val aceptado: Boolean = false
+)
+```
+
+| Feld | Geben Sie | ein Nullable | Beschreibung | 
+|---|---|---|---| 
+| `id` | `Int?` | Ja | PK (null beim Einfügen) | 
+| `idUsuario` | `Int?` | Ja | FK → user.id (null für Systemgerichte) | 
+| `nombre` | `String` | Nein | Name des Gerichts | 
+| `descripcion` | `String?` | Ja | Rezept oder Beschreibung | 
+| `calorias` | `Double?` | Ja | Kalorien pro Portion | 
+| `imagenUrl` | `String?` | Ja | Bild Base64-String | 
+| `fechaSubida` | `String?` | Ja | Erstellungszeitstempel | 
+| `visibilidad` | `Boolean` | Nein | `true` = im Katalog sichtbar | 
+| `tiempo` | `String?` | Ja | Vorbereitungszeit im Freitext (z. B. `"30 minutos"`) | 
+| `aceptado` | `Boolean` | Nein | `false` = Moderation durch Administrator ausstehend |
+
+---
+
+## PesoUsuario
+
+**Datensatz:** `models/PesoUsuario.kt` 
+**Tabla Supabase:** `peso_usuario`
+
+```kotlin
+@Serializable
+data class PesoUsuario(
+    val id: Int? = null,
+    @SerialName("id_usuario") val idUsuario: Int,
+    val peso: Double,
+    val fecha: String
+)
+```
+
+| Feld | Geben Sie | ein Nullable | Beschreibung | 
+|---|---|---|---| 
+| `id` | `Int?` | Ja | PK (null beim Einfügen) | 
+| `idUsuario` | `Int` | Nein | FK → user.id | 
+| `peso` | `Double` | Nein | Gewicht in Kilogramm | 
+| `fecha` | `String` | Nein | Registrierungsdatum (`yyyy-MM-dd`) |
+
+---
+
+## Zahlen
+
+**Datensatz:** `models/Pago.kt` 
+**Tabla Supabase:** `pagos`
+
+```kotlin
+@Serializable
+data class Pago(
+    val id: Int? = null,
+    @SerialName("id_usuario") val idUsuario: Int,
+    val monto: Double,
+    @SerialName("fecha_pago") val fechaPago: String,
+    val tipo: String,
+    @SerialName("metodo_pago") val metodoPago: String
+)
+```
+
+| Feld | Geben Sie | ein Nullable | Beschreibung | 
+|---|---|---|---| 
+| `id` | `Int?` | Ja | PK (null beim Einfügen) | 
+| `idUsuario` | `Int` | Nein | FK → user.id | 
+| `monto` | `Double` | Nein | Betrag in Euro | 
+| `fechaPago` | `String` | Nein | Zahlungsdatum (`yyyy-MM-dd`) | 
+| `tipo` | `String` | Nein | Modalität: Monatlich, halbjährlich, jährlich | 
+| `metodoPago` | `String` | Nein | Methode: Karte, Bizum |

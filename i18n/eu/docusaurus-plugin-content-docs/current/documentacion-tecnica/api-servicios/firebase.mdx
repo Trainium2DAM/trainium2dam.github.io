@@ -1,0 +1,73 @@
+---
+title: Firebase Auth y Data Connect
+sidebar_position: 2
+---
+# Firebase Auth y Data Connect
+
+## Firebase autentifikazioa
+
+Firebase Auth SDK menpekotasun gisa deklaratu da (`libs.firebase.auth`) eta Firebase BOM-en sartzen da. Hala ere, aplikazioaren egungo bertsioan, autentifikazio-fluxu nagusiak ez du Firebase Auth-en eskuordetzen: saio-hasiera zuzeneko kontsulta baten bidez inplementatzen da Supabase taulan `usuarios` IDa eta pasahitza alderatuz.
+
+Firebase Auth eskuragarri dago autentifikazio-sistema JWT-n oinarritutako fluxu estandarrera (posta elektronikoa/pasahitza, OAuth, etab.) migratzeko, menpekotasun gehigarririk gehitu beharrik gabe.
+
+## DataConnectClient
+
+`DataConnectClient.kt`-k eskuzko HTTP bezero bat inplementatzen du Firebase Data Connect amaierako puntua deitzeko. Supabase SDK ez bezala, ez dago Kotlin SDK Data Connect for testuinguru honetan eskuragarri, beraz, `HttpURLConnection` zuzenean erabiltzen da.
+
+### Amaiera-puntuaren konfigurazioa
+
+```kotlin
+object DataConnectClient {
+    private const val API_KEY = "<api-key-de-ejemplo>..."
+    private const val APP_ID = "<app-id-de-ejemplo>..."
+    private const val ENDPOINT = 
+        "https://europe-southwest1-dataconnect.googleapis.com/v1beta/projects/tu-proyecto.../connectors/default:executeGraphql" +
+        "/locations/europe-southwest1/services/tu-proyecto.../connectors/default:executeGraphql"
+}
+```
+
+Eskualdeko azpidomeinua `europe-southwest1-dataconnect.googleapis.com` behar da. `dataconnect.googleapis.com` domeinu generikoa erabiltzeak HTTP 404 itzultzen du zerbitzua `us-central1` ez den beste eskualde batean zabaltzen denean.
+
+### Firma del metodo execute
+
+```kotlin
+suspend fun execute(
+    query: String,
+    variables: Map<String, Any?> = emptyMap(),
+    operationName: String? = null
+): JSONObject?
+```
+
+| Parametroa | Mota | Deskribapena | 
+|---|---|---| 
+| `query` | `String` | GraphQL kontsulta edo mutazioa kate formatuan | 
+| `variables` | `Map<String, Any?>` | GraphQL eragiketa-aldagaiak (aukerakoa) | 
+| `operationName` | `String?` | Eragiketaren izena dokumentuak anitz dituenean (aukerakoa) |
+
+**Itzuli balioa:** `JSONObject` API erantzun osoarekin (`data` objektua barne) edo `null` sareko errore bat gertatu bada edo HTTP erantzuna arrakastatsua izan ez bada (200-299 bitarteko kodea).
+
+### HTTP goiburuak bidali dira
+
+| Goiburua | Balioa | 
+|---|---| 
+| `Content-Type` | `application/json` | 
+| `x-goog-api-key` | Firebase proiektuko API gakoa | 
+| `x-firebase-gmpid` | Aplikazioa Firebase proiektuaren IDa |
+
+### Eskatu gorputzaren egitura
+
+```json
+{
+  "query": "query GetUsuarios { usuarios { id nombre } }",
+  "variables": {
+    "id": 42
+  },
+  "operationName": "GetUsuarios"
+}
+```
+
+`variables` eta `operationName` eremuak gorputzetik kanpo uzten dira, ez badira ematen.
+
+### Erroreen kudeaketa
+
+Sareko erroreak (`IOException`, `SocketTimeoutException`, etab.) `catch(Exception)` bloke batekin atzematen dira eta `Log.e("DataConnect", ...)`rekin erregistratzen dira. Kasu horretan metodoak `null` itzultzen du. HTTP erroreak (200-299 tartetik kanpoko kodea duen erantzuna) konexioaren `errorStream`-tik irakurtzen dira eta `null` itzuli aurretik ere erregistratzen dira.

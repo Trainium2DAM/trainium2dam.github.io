@@ -1,0 +1,111 @@
+---
+title: Máquinas y reservas
+sidebar_position: 1
+---
+# Màquines i reserves
+
+## Pantalla de Maquinas
+
+`MaquinasScreen` delega a `MaquinasViewModel`, que gestiona l'estat de la llista de màquines, els diàlegs d'acció i les operacions CRUD a través de `MaquinaRepository` i `ReservaRepository` via `ServiceLocator`.
+
+### Estat del ViewModel
+
+```kotlin
+class MaquinasViewModel : ViewModel() {
+    var listaMaquinas by mutableStateOf<List<Maquina>>(emptyList())
+    var isLoading by mutableStateOf(false)
+    var showingDialogAdd by mutableStateOf(false)
+    var maquinaParaMantenimiento by mutableStateOf<Int?>(null)
+    var maquinaParaReservar by mutableStateOf<Int?>(null)
+    var fechaSeleccionada by mutableStateOf("")
+    var horaSeleccionada by mutableStateOf("")
+    var reservasDeLaMaquina by mutableStateOf<List<Reserva>>(emptyList())
+    var reservasDelUsuario by mutableStateOf<List<Reserva>>(emptyList())
+    var reservaExitosa by mutableStateOf<Reserva?>(null)
+    var errorMessage by mutableStateOf<String?>(null)
+    var nuevaFoto by mutableStateOf<String?>(null)
+    // ...
+}
+```
+
+Mentre `isLoading` és `true`, la pantalla mostra un `SkeletonList` en lloc del contingut real.
+
+### Mode usuari estàndard
+
+Lusuari veu la llista completa de màquines disponibles. En prémer sobre una màquina operativa, podeu iniciar el procés de reserva.
+
+**Procés de reserva:**
+
+1. Es mostra un `DatePickerDialog` (Android View) per seleccionar la data. 
+2. Es mostra `AppTimePickerDialog` (Composeu Material 3) per seleccionar l'hora d'inici. L'aplicació calcula automàticament l'hora de fi afegint-hi 30 minuts. 
+3. **Validació de durada màxima:** El paràmetre `onValidate` del `AppTimePickerDialog` comprova que la franja horària no superi 60 minuts. Si s'excedeix, es mostrarà un missatge d'error i no es confirmarà la reserva. 
+4. El ViewModel carrega en paral·lel `reservasDeLaMaquina` i `reservasDelUsuario` des dels repositoris. 
+5. Es comproven dues condicions abans de confirmar: 
+- Que la màquina no estigui ja reservada en aquest tram horari. 
+- Que l'usuari ja no tingui una altra reserva en aquesta mateixa franja. 
+6. Si no hi ha conflicte, es truca a `ReservaRepository.insert(...)` amb `estado = true`. 
+7. Després d'inserir correctament, es programa automàticament un recordatori mitjançant `NotificationHelper.rescheduleNextReservationNotification(context, userId)`. 
+8. Es mostra un `Snackbar` amb l'opció de **cancel·lar la reserva acabada de crear** durant uns segons. Si l'usuari prem Cancel·la, s'elimina la reserva i es cancel·la la notificació programada.
+
+**Restricció per estat de manteniment:**
+
+Si una màquina té `operativa = false`, es mostra un badge de "Manteniment" i el botó de reserva queda deshabilitat. La targeta mostra les dates d'inici i de finalització del període de manteniment quan estan disponibles.
+
+### Imatges de màquines
+
+Les targetes mostren la fotografia de la màquina si el camp `foto` (Base64) està disponible. Si no hi ha imatge, es mostrarà un placeholder. Els administradors poden adjuntar una imatge en crear una nova màquina o en editar-la, seleccionant-la de la galeria del dispositiu mitjançant `ActivityResultContracts.GetContent()`.
+
+### Mode d'administrador
+
+L'administrador disposa de funcionalitats addicionals accessibles des de cada targeta de màquina:
+
+**Alta de màquina:** Un FAB (`FloatingActionButton`) obre un diàleg per introduir el nom, el tipus, la descripció i la imatge d'una nova màquina. Delega a `MaquinasViewModel.addMachine(...)` → `MaquinaRepository.insert(...)`.
+
+**Eliminació de màquina:** El botó d'esborrament de cada targeta truca a `MaquinasViewModel.deleteMachine(id)` → `MaquinaRepository.delete(id)`.
+
+**Activació de manteniment:** El botó de clau anglesa obre un formulari amb quatre camps (data d'inici, hora d'inici, data de fi i hora de fi). En confirmar, el ViewModel executa la següent seqüència:
+
+1. `MaquinaRepository.activateMaintenance(id, desde, hasta)`: marca `operativa = false` i desa el rang. 
+2. Consulta totes les reserves actives de la màquina. 
+3. Per a cada reserva, comprova si el tram `[fecha + hora_inicio, fecha + hora_fin]` se solapa amb el rang de manteniment. 
+4. Les reserves solapades es cancel·len automàticament mitjançant `ReservaRepository.delete(reserva.id)`.
+
+La detecció de solapament utilitza la condició estàndard: `resInicio < calHasta && resFin > calDesde`.
+
+**Reactivació de màquina:** Truca a `MaquinasViewModel.deactivateMaintenance(id)` → `MaquinaRepository.deactivateMaintenance(id)`, que posa `operativa = true` i neteja els camps de manteniment.
+
+---
+
+## Pantalla de reserves
+
+Llista totes les reserves amb un sistema de filtratge per criteris:
+
+| Filtre | Comportament | 
+|---|---| 
+| Properes | Mostra reserves l'hora de fi de les quals encara no ha arribat | 
+| Avui | Mostra reserves amb data igual a la data actual | 
+| Passades | Mostra reserves l'hora de fi de les quals ja ha passat | 
+| Totes | Mostra totes les reserves sense filtre de data | 
+| Data | Obre un `DatePickerDialog` per filtrar per una data concreta |
+
+La lògica de classificació entre "pròxima" i "passada" es basa en l'hora de finalització completa (`fecha + hora_fin`), no només en la data. Això permet que una reserva d'avui ja transcorreguda aparegui al filtre "Passades" correctament.
+
+Les reserves es carreguen des de `ReservaRepository` amb la sintaxi de relacions embegudes: `*, usuarios(*), maquinas(*)`. Això permet mostrar el nom de lusuari i de la màquina directament sense consultes addicionals.
+
+**Vista de l'administrador:** L'administrador veu les reserves de tots els usuaris. Cada fila mostra el nom de lusuari a més del nom de la màquina. També podeu cancel·lar qualsevol reserva activa.
+
+**Vista de l'usuari:** L'usuari només veu les seves pròpies reserves i pot cancel·lar una reserva activa.
+
+Les reserves s'ordenen per data ascendent i després per hora d'inici, de manera que les més properes apareixen primer. Mentre es carreguen les dades es mostra un `SkeletonList`.
+
+### Exportar al calendari del dispositiu
+
+Cada targeta de reserva inclou un botó de calendari (`Icons.Default.CalendarMonth`). En prémer-ho es mostra un diàleg de confirmació i, en acceptar, es llança un `Intent` amb acció `Intent.ACTION_INSERT` cap a `CalendarContract.Events.CONTENT_URI`. L'Intent inclou el títol de la màquina, la descripció amb l'horari i els instants d'inici i fi en mil·lisegons. El dispositiu obre l'aplicació de calendari de l'usuari per completar la inserció de l'esdeveniment.
+
+### Cancel·lació i notificacions
+
+En cancel·lar una reserva des de la pantalla:
+
+1. S'elimina la reserva de Supabase amb `ReservaRepository.delete(id)`. 
+2. Es cancel·la el recordatori programat amb `NotificationHelper.cancelScheduledNotification(context, reservaId)`. 
+3. Es reprograma el recordatori de la següent reserva futura amb `NotificationHelper.rescheduleNextReservationNotification(context, userId)`.

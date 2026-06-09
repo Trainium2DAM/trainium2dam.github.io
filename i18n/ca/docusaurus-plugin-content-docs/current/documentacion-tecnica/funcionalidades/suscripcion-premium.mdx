@@ -1,0 +1,90 @@
+---
+title: Suscripcion Premium
+sidebar_position: 4
+---
+# Subscripció Premium
+
+## Pantalla de selecció premium
+
+Gestiona el flux de contractació i renovació de subscripció Premium. El procés es completa en una única pantalla amb selecció de pla i selecció de mètode de pagament.
+
+### Plans disponibles
+
+| Pla | Preu | Durada | 
+|---|---|---| 
+| Mensual | 9,99 € | 1 mes | 
+| Semestral | 49,99 € | 6 mesos | 
+| Anual | 89,99 € | 12 mesos |
+
+Els plans es defineixen com una llista d'objectes `PlanInfo` a `PremiumSelectionViewModel`:
+
+```kotlin
+data class PlanInfo(val nombre: String, val precio: Double, val meses: Int)
+
+val planes = listOf(
+    PlanInfo("Mensual", 9.99, 1),
+    PlanInfo("Semestral", 49.99, 6),
+    PlanInfo("Anual", 89.99, 12)
+)
+```
+
+### Metodes de pagament
+
+- **Targeta de crèdit/dèbit:** Mostra un formulari amb els camps número de targeta (entre 13 i 16 dígits, teclat numèric), data de venciment i CVV (3 dígits). El ViewModel valida el format dels tres camps abans de processar el pagament. 
+- **Bizum:** No requereix camps addicionals, només confirmar la selecció.
+
+### Validació de targeta
+
+Abans de processar el pagament amb targeta el ViewModel executa `validateCard()`, que comprova:
+
+1. Número de targeta amb entre 13 i 16 dígits. 
+2. CVV de exactament 3 dígits. 
+3. Data de venciment en format vàlid i no expirada.
+
+Si alguna validació falla, s'emet un codi d'error (`invalid_card_number`, `invalid_cvv`, `invalid_expiry_date`, `card_expired`) que la pantalla tradueix a un missatge localitzat mitjançant `Toast`.
+
+### Renovació de subscripció
+
+Si l'usuari ja té el Premium actiu, `PremiumSelectionViewModel.loadUser(id)` detecta la renovació (`esRenovacion = true`) i recupera `fechaFinActual`. En calcular les dates del nou període, la data d'inici de la renovació s'estableix l'endemà de `fechaFinActual`, de manera que no hi hagi solapaments ni dies perduts:
+
+```kotlin
+fun calculateDates() {
+    val plan = planes.getOrNull(planSeleccionado) ?: return
+    val cal = Calendar.getInstance()
+    if (esRenovacion && !fechaFinActual.isNullOrBlank()) {
+        val fechaActual = AppConfig.FORMAT_ISO_DATE.parse(fechaFinActual) ?: Date()
+        cal.time = fechaActual
+        fechaInicioCalculada = fechaFinActual
+    } else {
+        cal.time = Date()
+        fechaInicioCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+    }
+    cal.add(Calendar.MONTH, plan.meses)
+    fechaFinCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+}
+```
+
+### Processament del pagament
+
+En prémer el botó de confirmar, l'aplicació executa la seqüència següent:
+
+1. **Registrar el pagament:** Insereix un nou registre a la taula `pagos` amb `id_usuario`, l'import del pla seleccionat, la data actual, el tipus de pla i el mètode de pagament.
+
+2. **Activar la subscripció:** Actualitza el registre de l'usuari a la taula `usuarios`: 
+- `premium = true` 
+- `fecha_ini_prem` = data d'inici calculada (`yyyy-MM-dd`) 
+- `fecha_fin_prem` = data d'inici calculada + nombre de mesos del pla
+
+Després del processament correcte, es mostra un diàleg de confirmació i s'invoca `onSuccess` per tancar la pantalla.
+
+### Historial de pagaments
+
+Els pagaments registrats a la taula `pagos` són consultats per `HistorialScreen`, que els llista ordenats per `fecha_pago` de forma descendent. Cada entrada mostra el tipus de pla, el mètode de pagament, l'import, la data i la data estimada de finalització de la subscripció (calculada localment a partir del tipus de pla).
+
+## Indicador de dies restants a ProfileScreen
+
+`ProfileViewModel` calcula els dies restants de subscripció Premium a partir del camp `fechaFin` de l'usuari. El resultat s'exposa com a `diasRestantes: Int` i es mostra a `ProfileScreen`:
+
+- Si `diasRestantes > 7`: es mostra en daurat, sense urgència. 
+- Si `diasRestantes` està entre 0 i 7: es mostra en vermell com a avís de caducitat propera. 
+- Si `diasRestantes == 0`: es mostra el literal "Vence avui" en lloc del número.

@@ -1,0 +1,151 @@
+---
+title: Esquema de Supabase
+sidebar_position: 1
+---
+# Schéma Supabase
+
+Supabase agit comme le backend principal de l'application. La base de données sous-jacente est PostgreSQL. Chaque tableau, ses colonnes et les relations entre elles sont décrites ci-dessous.
+
+## Tableau : utilisateurs
+
+Stocke les données des utilisateurs enregistrés dans l'application.
+
+| Colonne | Tapez | Restrictions | Descriptif | 
+|---|---|---|---| 
+| `id` | `integer` | PK, incrémentation automatique | Identifiant unique de l'utilisateur | 
+| `nombre` | `varchar(100)` | PAS NULL | Nom complet de l'utilisateur | 
+| `dni` | `varchar(20)` | UNIQUE | Document d'identité nationale. Il est utilisé comme identifiant de connexion | 
+| `contraseniaHash` | `varchar(255)` | | Mot de passe stocké (texte brut dans la version actuelle) | 
+| `email` | `varchar(100)` | UNIQUE | E-mail. Utilisé pour la récupération de mot de passe | 
+| `telefono` | `varchar(20)` | | Numéro de téléphone du contact | 
+| `admin` | `integer` | PAR DÉFAUT 0 | Indique si l'utilisateur a un rôle d'administrateur (0 = utilisateur, 1 = admin) | 
+| `premium` | `boolean` | PAR DÉFAUT faux | Indique si l'utilisateur dispose d'un abonnement Premium actif | 
+| `fecha_ini_prem` | `date` | | Date de début de l'abonnement Premium | 
+| `fecha_fin_prem` | `date` | | Date de fin de l'abonnement Premium | 
+| `foto` | `text` | | Image de profil encodée en Base64 |
+
+La classe de données correspondante est `models/Usuario.kt`.
+
+## Tableau : machines
+
+Stocke le catalogue des machines de gym.
+
+| Colonne | Tapez | Restrictions | Descriptif | 
+|---|---|---|---| 
+| `id` | `integer` | PK, incrémentation automatique | Identifiant unique de la machine | 
+| `nombre` | `varchar(100)` | PAS NULL | Nom convivial de la machine | 
+| `tipo` | `varchar(50)` | | Catégorie d'exercice (Cardio, Dos, Jambe, Poitrine, etc.) | 
+| `estado` | `integer` | PAR DÉFAUT 0 | Champ de statut générique | 
+| `descripcion` | `text` | | Description détaillée de la machine | 
+| `operativa` | `boolean` | PAR DÉFAUT vrai | Indique si la machine est disponible pour les réservations | 
+| `mantenimiento_desde` | `varchar` | | Date et heure de début de la période de maintenance (`yyyy-MM-dd HH:mm`) | 
+| `mantenimiento_hasta` | `varchar` | | Date et heure de fin de la période de maintenance (`yyyy-MM-dd HH:mm`) |
+
+La classe de données correspondante est `models/Maquina.kt`.
+
+## Tableau : réserves
+
+Stocke les réservations de machines effectuées par les utilisateurs.
+
+| Colonne | Tapez | Restrictions | Descriptif | 
+|---|---|---|---| 
+| `id` | `integer` | PK, incrémentation automatique | Identifiant unique de réservation | 
+| `id_usuario` | `integer` | FK → utilisateurs.id | Utilisateur ayant effectué la réservation | 
+| `id_maquina` | `integer` | FK → machines.id | Machine réservée | 
+| `fecha` | `date` | | Date de réservation (`yyyy-MM-dd`) | 
+| `hora_inicio` | `time` | | Heure de début du créneau réservé | 
+| `hora_fin` | `time` | | Heure de fin du créneau réservé | 
+| `estado` | `boolean` | PAR DÉFAUT vrai | `true` = actif, `false` = annulé |
+
+Les classes de données correspondantes sont `models/Reserva.kt` et `models/ReservaConDetalles.kt`. Le second comprend les objets `Usuario` et `Maquina` intégrés, obtenus via la syntaxe de relation PostgREST (`*, usuarios(*), maquinas(*)`).
+
+## Tableau : plats
+
+Conservez les plats nutritionnels du catalogue.
+
+| Colonne | Tapez | Restrictions | Descriptif | 
+|---|---|---|---| 
+| `id` | `integer` | PK, incrémentation automatique | Identifiant unique du plat | 
+| `id_usuario` | `integer` | FK → utilisateurs.id | Utilisateur qui a suggéré le plat (nullable pour les plats système) | 
+| `nombre` | `varchar(100)` | PAS NULL | Nom du plat | 
+| `descripcion` | `text` | | Description ou recette du plat | 
+| `calorias` | `double precision` | | Teneur en calories par portion | 
+| `imagen_url` | `varchar(255)` | | URL de l'image ou chaîne Base64 de l'image de la plaque | 
+| `fecha_subida` | `timestamp` | | Date et heure de création de l'enregistrement | 
+| `visibilidad` | `boolean` | PAR DÉFAUT vrai | Indique si le plat est visible dans le catalogue | 
+| `tiempo` | `varchar` | | Temps de préparation estimé (par exemple, "30 minutes") | 
+| `aceptado` | `boolean` | PAR DÉFAUT faux | Indique si le plat a été approuvé par un administrateur |
+
+La classe de données correspondante est `models/Plato.kt`.
+
+## Tableau : poids_utilisateur
+
+Stocke l’historique des enregistrements de poids pour chaque utilisateur.
+
+| Colonne | Tapez | Restrictions | Descriptif | 
+|---|---|---|---| 
+| `id` | `integer` | PK, incrémentation automatique | Identifiant unique de l'enregistrement | 
+| `id_usuario` | `integer` | FK → utilisateurs.id | Utilisateur auquel appartient l'enregistrement | 
+| `peso` | `double precision` | PAS NULL | Poids en kilogrammes | 
+| `fecha` | `date` | | Date d'inscription (`yyyy-MM-dd`) |
+
+L'application impose la restriction d'une seule inscription par jour au niveau de l'UI. L'écran vérifie si un enregistrement existe déjà pour la date actuelle avant de permettre l'ajout d'un nouveau.
+
+La classe de données correspondante est `models/PesoUsuario.kt`.
+
+## Tableau : paiements
+
+Stocke l’historique des transactions de l’abonnement Premium.
+
+| Colonne | Tapez | Restrictions | Descriptif | 
+|---|---|---|---| 
+| `id` | `integer` | PK, incrémentation automatique | Identifiant unique de paiement | 
+| `id_usuario` | `integer` | FK → utilisateurs.id | Utilisateur ayant effectué le paiement | 
+| `monto` | `double precision` | PAS NULL | Montant de la transaction en euros | 
+| `fecha_pago` | `date` | | Date de paiement | 
+| `tipo` | `varchar(50)` | | Mode d'abonnement (Mensuel, Semestriel, Annuel) | 
+| `metodo_pago` | `varchar(25)` | | Mode de paiement utilisé (Carte, Bizum) |
+
+La classe de données correspondante est `models/Pago.kt`.
+
+## Diagramme de relation
+
+```
+usuarios (id)
+    |
+    |--< reservas (id_usuario) >-- maquinas (id)
+    |
+    |--< peso_usuario (id_usuario)
+    |
+    |--< platos (id_usuario)
+    |
+    |--< pagos (id_usuario)
+```
+
+Les relations sont toutes de un à plusieurs. Aucune clé étrangère explicite n'est définie au niveau du tableau de bord Supabase ; L'intégrité référentielle est gérée au niveau de l'application.
+
+## Sécurité au niveau des lignes
+
+Les politiques Supabase Row Level Security (RLS) ne sont pas configurées dans cette version. L'accès aux données se fait avec le `anon key`, de sorte que tout client disposant de la clé peut lire et écrire sur toutes les tables. Dans un environnement de production, il serait essentiel de définir des politiques RLS appropriées ou d'utiliser `service_role key` exclusivement à partir d'un backend fiable.
+
+## Constantes de base de données
+
+Les noms des tables et des colonnes sont centralisés dans `DbConstants.kt` à travers les objets `DbTables` et `DbColumns`, évitant ainsi l'utilisation de chaînes littérales disséminées dans le code :
+
+```kotlin
+object DbTables {
+    const val USUARIOS = "usuarios"
+    const val MAQUINAS = "maquinas"
+    const val PLATOS = "platos"
+    const val PAGOS = "pagos"
+    const val RESERVAS = "reservas"
+    const val PESO_USUARIO = "peso_usuario"
+}
+
+object DbColumns {
+    const val ID = "id"
+    const val DNI = "dni"
+    const val NOMBRE = "nombre"
+    // ...
+}
+```

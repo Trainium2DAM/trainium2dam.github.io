@@ -1,0 +1,207 @@
+---
+title: Clases de utilidad y constantes
+sidebar_position: 2
+---
+# فئات المنفعة والثوابت
+
+## تكوين التطبيق
+
+**فيشيرو:** `AppConfig.kt`
+
+كائن Singleton الذي يقوم بمركزية كافة ثوابت تكوين التطبيق. تجنب استخدام سلسلة حرفية متناثرة في جميع أنحاء التعليمات البرمجية.
+
+```kotlin
+object AppConfig {
+    // Supabase
+    const val SUPABASE_URL = "https://mi-proyecto.supabase.co"
+    const val SUPABASE_KEY = "eyJhbGci..."
+
+    // Firebase / DataConnect
+    const val FIREBASE_API_KEY = "AIzaSy..."
+    const val FIREBASE_APP_ID = "1:123456789:android:abc"
+    const val DATACONNECT_URL = "https://europe-southwest1-dataconnect.googleapis.com/..."
+
+    // Sesión persistente
+    const val SESSION_PREFS_NAME = "trainium_session"
+    const val SESSION_DURATION_MS = 7L * 24L * 60L * 60L * 1000L  // 7 días
+
+    // Imágenes
+    const val IMAGE_QUALITY = 70
+
+    // Formatos de fecha
+    val FORMAT_ISO_DATE = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    const val FORMAT_DATE_TIME = "yyyy-MM-dd HH:mm"
+    const val FORMAT_HOUR_MINUTE = "HH:mm"
+}
+```
+
+## ثوابت دي بي
+
+**فيشيرو:** `DbConstants.kt`
+
+يحدد أسماء الجداول والأعمدة Supabase كثوابت، وتجنب الأخطاء المطبعية وتسهيل إعادة البناء.
+
+### جداول البيانات
+
+```kotlin
+object DbTables {
+    const val USUARIOS = "usuarios"
+    const val MAQUINAS = "maquinas"
+    const val PLATOS = "platos"
+    const val PAGOS = "pagos"
+    const val RESERVAS = "reservas"
+    const val PESO_USUARIO = "peso_usuario"
+    const val FOTO = "foto"
+}
+```
+
+### أعمدة ديسيبل
+
+```kotlin
+object DbColumns {
+    const val ID = "id"
+    const val ID_USUARIO = "id_usuario"
+    const val ID_MAQUINA = "id_maquina"
+    const val NOMBRE = "nombre"
+    const val EMAIL = "email"
+    const val DNI = "dni"
+    const val TELEFONO = "telefono"
+    const val CONTRASENIA_HASH = "contraseniaHash"
+    const val ADMIN = "admin"
+    const val PREMIUM = "premium"
+    const val FECHA_INI_PREM = "fecha_ini_prem"
+    const val FECHA_FIN_PREM = "fecha_fin_prem"
+    const val FOTO = "foto"
+    const val TIPO = "tipo"
+    const val ESTADO = "estado"
+    const val DESCRIPCION = "descripcion"
+    const val OPERATIVA = "operativa"
+    const val MANTENIMIENTO_DESDE = "mantenimiento_desde"
+    const val MANTENIMIENTO_HASTA = "mantenimiento_hasta"
+    const val IMAGEN_URL = "imagen_url"
+    const val VISIBILIDAD = "visibilidad"
+    const val ACEPTADO = "aceptado"
+    const val FECHA_SUBIDA = "fecha_subida"
+    const val HORA_INICIO = "hora_inicio"
+    const val HORA_FIN = "hora_fin"
+    const val FECHA = "fecha"
+    const val MONTO = "monto"
+    const val FECHA_PAGO = "fecha_pago"
+    const val METODO_PAGO = "metodo_pago"
+    const val PESO = "peso"
+    const val TIEMPO = "tiempo"
+}
+```
+
+---
+
+## إيماج يوتيلز
+
+**فيشيرو:** `ImageUtils.kt`
+
+يحتوي على وظيفتين للتحويل بين صيغ الصور. يتم استخدامه لتخزين صور الملفات الشخصية وصور الآلة وصور الأطباق في Supabase.
+
+### uriToBase64
+
+يحول URI للصورة المحددة من معرض الجهاز إلى سلسلة Base64 مضغوطة بتنسيق JPEG.
+
+```kotlin
+fun uriToBase64(uri: Uri, contentResolver: ContentResolver): String?
+```
+
+| المعلمة | اكتب | الوصف | 
+|---|---|---| 
+| `uri` | `Uri` | URI للصورة التي حددها المستخدم | 
+| `contentResolver` | `ContentResolver` | حل من السياق لفتح دفق الصور |
+
+**قيمة الإرجاع:** سلسلة Base64 للصورة المضغوطة، أو `null` في حالة حدوث أي استثناء.
+
+**العملية الداخلية:**
+1. افتح `InputStream` لمعرف URI باستخدام `contentResolver.openInputStream(uri)`. 
+2. قم بفك تشفير الدفق إلى `Bitmap` باستخدام `BitmapFactory.decodeStream`. 
+3. قم بضغط الصورة النقطية إلى JPEG بجودة `AppConfig.IMAGE_QUALITY` (70) في `ByteArrayOutputStream`. 
+4. قم بتشفير مصفوفة البايت الناتجة إلى Base64 باستخدام `Base64.encodeToString(byteArray, Base64.DEFAULT)`.
+
+### decodeBase64ToBitmap
+
+تحويل سلسلة Base64 مرة أخرى إلى كائن `Bitmap`.
+
+```kotlin
+fun decodeBase64ToBitmap(base64Str: String): Bitmap?
+```
+
+| المعلمة | اكتب | الوصف | 
+|---|---|---| 
+| `base64Str` | `String` | سلسلة Base64 تمثل الصورة |
+
+**قيمة الإرجاع:** `Bitmap` تم فك تشفيرها، أو `null` إذا كانت السلسلة غير صالحة Base64 أو حدث أي استثناء.
+
+---
+
+## مدير الموضوع
+
+**فيشيرو:** `ThemeManager.kt`
+
+يدير استمرارية تفضيلات السمة (فاتحة/غامقة) باستخدام تفضيلات Jetpack DataStore.
+
+```kotlin
+class ThemeManager(private val context: Context) {
+    val isDarkMode: Flow<Boolean?>
+    suspend fun setDarkMode(isDark: Boolean)
+}
+```
+
+`isDarkMode` يخرج `null` عند التشغيل الأول. المُجمع في `MainActivity.kt` يعامل `null` على أنه "يستخدم سمة النظام".
+
+---
+
+## مدير إعدادات الإشعارات
+
+**فيشيرو:** `NotificationSettingsManager.kt`
+
+يستمر كل من إشعار الحجز المسبق الذي اختاره المستخدم وحالة التنشيط العامة للإشعارات في DataStore.
+
+```kotlin
+class NotificationSettingsManager(private val context: Context) {
+    val minutesBefore: Flow<Int>
+    val notificationsEnabled: Flow<Boolean>
+
+    suspend fun setMinutesBefore(minutes: Int)
+    suspend fun setNotificationsEnabled(enabled: Boolean)
+
+    companion object {
+        const val DEFAULT_MINUTES = 30
+        val OPTIONS = listOf(10, 15, 30, 60, 120)
+    }
+}
+```
+
+`minutesBefore` يقوم بإخراج القيمة الحالية (الافتراضي: 30 دقيقة). `notificationsEnabled` يخرج `true` بشكل افتراضي. توجد واجهة مستخدم الإعداد في `EditProfileScreen`. راجع [Notificaciones de reservas](/docs/funcionalidades/notificaciones) للاستخدام الكامل.
+
+---
+
+## مدير اللغة
+
+**فيشيرو:** `data/i18n/LanguageManager.kt`
+
+يستمر في اللغة التي حددها المستخدم من خلال DataStore.
+
+```kotlin
+class LanguageManager(private val context: Context) {
+    val currentLanguage: Flow<AppLanguage?>
+    suspend fun setLanguage(language: AppLanguage)
+    fun detectSystemLanguage(): AppLanguage
+}
+```
+
+`currentLanguage` يخرج `null` حتى يقوم المستخدم بتحديد اللغة. يقوم `detectSystemLanguage()` بتعيين `Locale.getDefault()` إلى أقرب `AppLanguage`، مع `SPANISH` كبديل. راجع [Internacionalización](/docs/arquitectura/i18n) للتعرف على النظام الكامل.
+
+---
+
+## مدير قاعدة البيانات
+
+**فيشيرو:** `DatabaseAdmin.kt`
+
+Singleton الذي يحدد اتصال JDBC المباشر بقاعدة بيانات MySQL/MariaDB المحلية. تتوافق هذه الفئة مع الاختصار الذي تم استخدامه أثناء المراحل الأولى من التطوير.
+
+**هذه الفئة غير نشطة في إصدار الإنتاج**; يتم تنفيذ جميع عمليات البيانات من خلال `SupabaseClient`. وهي محفوظة في المستودع كمرجع تاريخي.

@@ -1,0 +1,123 @@
+---
+title: Generacion del APK
+sidebar_position: 1
+---
+# поколение APK
+
+## APK отладка
+
+Отладочный APK создается автоматически при запуске приложения из Android Studio или через оболочку Gradle:
+
+```bash
+./gradlew assembleDebug
+```
+
+Артефакт создается в:
+```
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+APK-файл отладки содержит подпись отладки Android Studio и не может распространяться в Google Play. Он подходит для внутреннего тестирования и непосредственной установки на устройства, использующие `adb`.
+
+## Выпустить APK
+
+Чтобы создать подписанный APK, подходящий для распространения:
+
+### 1. Создайте хранилище ключей
+
+Если у вас нет хранилища ключей подписи:
+
+```bash
+keytool -genkey -v \
+  -keystore trainium-release-key.jks \
+  -alias trainium \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 10000
+```
+
+### 2. Настройте вход в build.gradle.kts
+
+Добавьте конфигурацию `signingConfigs` в `app/build.gradle.kts`:
+
+```kotlin
+android {
+    signingConfigs {
+        create("release") {
+            storeFile = file("../trainium-release-key.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = "trainium"
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+}
+```
+
+Рекомендуется считывать пароли из переменных среды (`System.getenv`), а не включать их в виде обычного текста в файл сборки.
+
+### 3. Создайте подписанный APK
+
+```bash
+./gradlew assembleRelease
+```
+
+Артефакт создается в:
+```
+app/build/outputs/apk/release/app-release.apk
+```
+
+## Минификация и обфускация
+
+В текущей конфигурации `isMinifyEnabled = false` в блоке `release`. Это означает, что код не минимизируется и не запутывается R8/ProGuard. Для производственного дистрибутива рекомендуется включить минификацию:
+
+```kotlin
+release {
+    isMinifyEnabled = true
+    proguardFiles(
+        getDefaultProguardFile("proguard-android-optimize.txt"),
+        "proguard-rules.pro"
+    )
+}
+```
+
+При включении минификации с помощью Supabase и `kotlinx.serialization` необходимо добавить соответствующие правила ProGuard для сохранения сериализуемых классов. Файл `proguard-rules.pro`, включенный в проект, в этой версии пуст.
+
+## Установка через adb
+
+Чтобы установить APK непосредственно на подключенное устройство:
+
+```bash
+adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
+Если подключено несколько устройств, укажите пункт назначения:
+
+```bash
+adb -s <device-serial> install app-debug.apk
+```
+
+Чтобы получить список подключенных устройств:
+
+```bash
+adb devices
+```
+
+## Требования к целевому устройству
+
+| Требование | Значение | 
+|---|---| 
+| Минимальный API | 24 (Android 7.0 Нуга) | 
+| Целевой API | 36 | 
+| Архитектура | Arm64-v8a, Armeabi-v7a, x86_64 (в зависимости от устройства) | 
+| Разрешения на установку | ИНТЕРНЕТ, ACCESS_NETWORK_STATE | 
+| Подключение к Интернету | Обязательно для работы приложения |

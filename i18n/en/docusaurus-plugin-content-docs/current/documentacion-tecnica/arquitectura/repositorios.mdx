@@ -1,0 +1,106 @@
+---
+title: Capa de repositorios
+sidebar_position: 3
+---
+
+# Capa de repositorios
+
+La capa de repositorios abstrae el acceso a Supabase del resto de la aplicación. Cada repositorio encapsula las operaciones CRUD de una entidad concreta. Todos los métodos son funciones `suspend` que se ejecutan en `Dispatchers.IO`.
+
+## ServiceLocator
+
+`di/ServiceLocator.kt` actúa como punto de acceso a los repositorios. Cada repositorio se instancia de forma `lazy` (una única instancia, creada en el primer acceso):
+
+```kotlin
+object ServiceLocator {
+    val authRepository by lazy { AuthRepository() }
+    val usuarioRepository by lazy { UsuarioRepository() }
+    val maquinaRepository by lazy { MaquinaRepository() }
+    val reservaRepository by lazy { ReservaRepository() }
+    val platoRepository by lazy { PlatoRepository() }
+    val pesoRepository by lazy { PesoRepository() }
+    val pagoRepository by lazy { PagoRepository() }
+}
+```
+
+Los ViewModels acceden a los repositorios a través de `ServiceLocator.xRepository`.
+
+## AuthRepository
+
+Gestiona las operaciones de autenticación y registro.
+
+| Método | Descripción |
+|---|---|
+| `getUserByDni(dni)` | Busca un usuario por DNI. Devuelve `Usuario?` |
+| `userExistsByDni(dni)` | Verifica si un DNI ya está registrado. Devuelve `Boolean` |
+| `verifyCredentials(dni, email)` | Verifica el par DNI + email para la recuperación de contraseña |
+| `updatePassword(userId, newPass)` | Actualiza el campo `contraseniaHash` del usuario |
+| `insertUser(nombre, dni, email, pass, telefono)` | Registra un nuevo usuario con `admin=0` y `premium=false` |
+
+## UsuarioRepository
+
+Gestiona la lectura y actualización del perfil de usuario.
+
+| Método | Descripción |
+|---|---|
+| `getById(id)` | Obtiene un usuario por su ID. Devuelve `Usuario?` |
+| `update(id, nombre, email, telefono, pass, foto)` | Actualiza los campos editables del perfil |
+| `updatePremium(id, isPremium, fechaIni, fechaFin)` | Activa o desactiva la suscripción Premium |
+
+## MaquinaRepository
+
+Gestiona el catálogo de maquinaria.
+
+| Método | Descripción |
+|---|---|
+| `getAll()` | Obtiene la lista completa de máquinas. Devuelve `List<Maquina>` |
+| `insert(maquina)` | Inserta una nueva máquina |
+| `delete(id)` | Elimina una máquina por ID |
+| `activateMaintenance(id, desde, hasta)` | Marca la máquina como no operativa con el rango de mantenimiento |
+| `deactivateMaintenance(id)` | Reactiva la máquina y limpia los campos de mantenimiento |
+
+## ReservaRepository
+
+Gestiona las reservas de maquinaria.
+
+| Método | Descripción |
+|---|---|
+| `getAll()` | Obtiene todas las reservas con datos de usuario y máquina embebidos |
+| `getByUser(userId)` | Obtiene las reservas de un usuario concreto |
+| `getByMachine(machineId)` | Obtiene las reservas activas de una máquina |
+| `insert(reserva)` | Crea una nueva reserva |
+| `delete(id)` | Cancela/elimina una reserva por ID |
+
+Las consultas de reservas usan la sintaxis de relaciones embebidas de PostgREST (`*, usuarios(*), maquinas(*)`) para recuperar los datos de usuario y máquina en una única petición.
+
+## PlatoRepository
+
+Gestiona el catálogo de platos nutricionales.
+
+| Método | Descripción |
+|---|---|
+| `getAccepted()` | Obtiene los platos con `aceptado=true` y `visibilidad=true` |
+| `getPending()` | Obtiene los platos con `aceptado=false` (solo para administradores) |
+| `insert(plato)` | Inserta un plato nuevo con `aceptado=false` |
+| `accept(id)` | Aprueba un plato: `aceptado=true` |
+| `delete(id)` | Elimina un plato permanentemente |
+
+## PesoRepository
+
+Gestiona los registros de peso corporal.
+
+| Método | Descripción |
+|---|---|
+| `getByUser(userId)` | Obtiene el historial de peso de un usuario, ordenado por fecha ascendente |
+| `insert(pesoUsuario)` | Inserta un nuevo registro de peso |
+| `update(id, peso)` | Actualiza el valor de un registro existente |
+| `delete(id)` | Elimina un registro de peso |
+
+## PagoRepository
+
+Gestiona el historial de pagos de suscripción.
+
+| Método | Descripción |
+|---|---|
+| `getByUser(userId)` | Obtiene los pagos de un usuario, ordenados por fecha descendente |
+| `insert(pago)` | Registra un nuevo pago de suscripción |

@@ -1,0 +1,130 @@
+---
+title: Sistema diseño
+sidebar_position: 1
+---
+#نظام التصميم
+
+## لوحة الألوان
+
+تم ضبط لوحة Trainium على `ui/theme/Color.kt`. إنه يتبع جمالية داكنة أحادية اللون مع اللون الأزرق الكهربائي كلون مميز.
+
+### النغمات الأساسية (موضوع مستقل)
+
+| الرمز المميز | قيمة HEX | الاستخدام الرئيسي | 
+|---|---|---| 
+| `BlueDark` | `#0B1426` | خلفية موضوع داكن | 
+| `BlueMid` | `#121F3D` | سطح المظهر الداكن | 
+| `BlueDeep` | `#162347` | سطح متغير للموضوع الداكن | 
+| `BlueAccent` | `#2196F3` | اللون الأساسي للإجراءات (الأزرار، الحدود النشطة) | 
+| `BlueElectric` | `#448AFF` | أزرار CTA متدرجة | 
+| `BlueSoft` | `#64B5F6` | النصوص الثانوية والعناوين الفرعية في موضوع مظلم | 
+| `BlueGlow` | `#332196F3` | تأثيرات التوهج والظل مع الشفافية | 
+| `BlueLight` | `#BBDEFB` | خلفيات ناعمة بموضوع فاتح | 
+| `WhiteSoft` | `#F0F4FF` | خلفية موضوع فاتح |
+
+### نظام الألوان للموضوع الداكن
+
+| مادة الدور 3 | الرمز المميز | فالور هيكس | 
+|---|---|---| 
+| `primary` | `DarkPrimary` | `#448AFF` | 
+| `onPrimary` | `DarkOnPrimary` | `#001E5F` | 
+| `primaryContainer` | `DarkPrimaryContainer` | `#1A3A6E` | 
+| `background` | `DarkBackground` | `#0B1426` | 
+| `surface` | `DarkSurface` | `#121F3D` | 
+| `surfaceVariant` | `DarkSurfaceVariant` | `#1A2D54` | 
+| `error` | `DarkError` | `#FF6B6B` |
+
+### نظام الألوان موضوع الضوء
+
+| مادة الدور 3 | الرمز المميز | فالور هيكس | 
+|---|---|---| 
+| `primary` | `LightPrimary` | `#1565C0` | 
+| `onPrimary` | `LightOnPrimary` | `#FFFFFF` | 
+| `primaryContainer` | `LightPrimaryContainer` | `#D0E4FF` | 
+| `background` | `LightBackground` | `#F0F4FF` | 
+| `surface` | `LightSurface` | `#FFFFFF` | 
+| `surfaceVariant` | `LightSurfaceVariant` | `#E3ECFA` | 
+| `error` | `LightError` | `#D32F2F` |
+
+## الطباعة
+
+تم ضبط مقياس الخط على `ui/theme/Type.kt` ويستخدم `FontFamily.SansSerif` (الخط sans-serif الافتراضي لنظام Android، عادةً Roboto) لجميع المستويات.
+
+| نيفيل | الوزن | تامانيو | انترليتراجي | 
+|---|---|---|---| 
+| `displayLarge` | أسود (900) | 34 س | -0.25 ليرة سورية | 
+| `headlineLarge` | جريئة (700) | 28 س | 0 س | 
+| `headlineMedium` | جريئة (700) | 24 س | 0 س | 
+| `titleLarge` | نصف غامق (600) | 20 س | 0.15 ل.س | 
+| `titleMedium` | نصف غامق (600) | 16 س | 0.15 ل.س | 
+| `bodyLarge` | عادي (400) | 16 س | 0.5 س | 
+| `bodyMedium` | عادي (400) | 14 س | 0.25 ل.س | 
+| `labelLarge` | جريئة (700) | 14 س | 1.2 س | 
+| `labelMedium` | متوسطة (500) | 12 س | 0.5 س | 
+| `labelSmall` | متوسطة (500) | 11 س | 0.5 س |
+
+يتم استخدام `labelLarge` مع `letterSpacing = 1.2 sp` على أزرار CTA (مثل "ابدأ الآن"، "متابعة") لإعطاء تأثير النص الموسع المميز للواجهة.
+
+## الأشكال
+
+يحل نظام الشكل المخصص `PremiumShapes` محل نظام ركن المادة 3 الافتراضي:
+
+| نيفيل | راديو الإسكينا | 
+|---|---| 
+| `small` | 10 موانئ دبي | 
+| `medium` | 16 موانئ دبي | 
+| `large` | 22 موانئ دبي | 
+| `extraLarge` | 28 موانئ دبي |
+
+تساهم هذه الأقطار الأكثر سخاءً من القيم الافتراضية للمادة 3 في المظهر المتميز المستدير للبطاقات والأزرار.
+
+## إدارة الموضوع
+
+تتم إدارة الموضوع في طبقتين:
+
+**MaterialTheme (`ui/theme/Theme.kt`):** يحدد `Trainium2Theme` القابل للتركيب الذي يطبق `ColorScheme`، و`Typography`، و`Shapes` وفقًا للمعلمة `darkTheme`.
+
+**ThemeManager (`ThemeManager.kt`):** يحافظ على تفضيلات المستخدم في DataStore. تتم قراءة التفضيل كـ `Flow<Boolean?>` ويتم تجميعه في `MainActivity.kt` مع `collectAsState(initial = null)`. القيمة الأولية `null` تعني أن التفضيلات لم تتم قراءتها من القرص بعد؛ في هذه الحالة، يتم استخدام سمة النظام (`isSystemInDarkTheme()`).
+
+```kotlin
+val savedDarkMode by themeManager.isDarkMode.collectAsState(initial = null)
+val systemTheme = isSystemInDarkTheme()
+var isDarkTheme by remember(savedDarkMode) {
+    mutableStateOf(savedDarkMode ?: systemTheme)
+}
+```
+
+## تدرجات الخلفية
+
+تستخدم كافة الشاشات التدرجات الرأسية بدلاً من الخلفيات المسطحة. يختلف التدرج اعتمادًا على الموضوع النشط:
+
+**موضوع مظلم:**
+```kotlin
+Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
+// #0B1426 → #121F3D → #162347
+```
+
+**موضوع واضح:**
+```kotlin
+Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
+```
+
+## دخول الرسوم المتحركة
+
+تنفذ جميع الشاشات رسومًا متحركة مدخلة متداخلة باستخدام `LaunchedEffect(Unit)` + `animateFloatAsState`. النمط القياسي هو:
+
+```kotlin
+var elementoVisible by remember { mutableStateOf(false) }
+val alpha by animateFloatAsState(
+    targetValue = if (elementoVisible) 1f else 0f,
+    animationSpec = tween(durationMillis = 500),
+    label = "elemento_alpha"
+)
+
+LaunchedEffect(Unit) {
+    delay(100)
+    elementoVisible = true
+}
+```
+
+يتم الكشف عن العناصر بشكل تسلسلي مع تأخيرات تتراوح من 100 إلى 300 مللي ثانية بين كل عنصر، مما يؤدي إلى إنشاء تأثير مظهر متتالي.

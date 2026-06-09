@@ -1,0 +1,123 @@
+---
+title: Generacion del APK
+sidebar_position: 1
+---
+# APK belaunaldia
+
+## APK arazketa
+
+Arazketa APK automatikoki sortzen da aplikazioa Android Studiotik edo Gradle wrapper-etik exekutatzen duzunean:
+
+```bash
+./gradlew assembleDebug
+```
+
+Artefaktua honako hauetan sortzen da:
+```
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+Arazketa APK-k Android Studio arazketa sinadura du eta ezin da Google Play-n banatu. `adb` erabiltzen duten gailuetan barne probak egiteko eta zuzeneko instalazioa egiteko egokia da.
+
+## Askatu APK
+
+Banatzeko egokia den APK sinatutako bat sortzeko:
+
+### 1. Sortu gako-biltegia
+
+Ez baduzu sinatzeko gako-biltegirik:
+
+```bash
+keytool -genkey -v \
+  -keystore trainium-release-key.jks \
+  -alias trainium \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 10000
+```
+
+### 2. Konfiguratu saioa build.gradle.kts-en
+
+Gehitu `signingConfigs` konfigurazioa `app/build.gradle.kts`-ri:
+
+```kotlin
+android {
+    signingConfigs {
+        create("release") {
+            storeFile = file("../trainium-release-key.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = "trainium"
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+}
+```
+
+Gomendagarria da pasahitzak ingurune-aldagaietatik irakurtzea (`System.getenv`) eraikitze fitxategian testu arruntean sartu beharrean.
+
+### 3. Sortu sinatutako APK-a
+
+```bash
+./gradlew assembleRelease
+```
+
+Artefaktua honako hauetan sortzen da:
+```
+app/build/outputs/apk/release/app-release.apk
+```
+
+## Minifikazioa eta lausotzea
+
+Uneko konfigurazioan, `isMinifyEnabled = false` blokean `release`. Horrek esan nahi du kodea ez duela txikitu edo lausotu R8/ProGuard-ek. Produkzioaren banaketarako minifikazioa gaitzea gomendatzen da:
+
+```kotlin
+release {
+    isMinifyEnabled = true
+    proguardFiles(
+        getDefaultProguardFile("proguard-android-optimize.txt"),
+        "proguard-rules.pro"
+    )
+}
+```
+
+Supabase eta `kotlinx.serialization`-rekin minifikazioa gaitzean, dagozkion ProGuard arauak gehitzea beharrezkoa da serializa daitezkeen klaseak gordetzeko. Proiektuan sartutako `proguard-rules.pro` fitxategia hutsik dago bertsio honetan.
+
+## Instalazioa adb bidez
+
+APK zuzenean konektatutako gailu batean instalatzeko:
+
+```bash
+adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
+Hainbat gailu konektatuta badaude, zehaztu helmuga:
+
+```bash
+adb -s <device-serial> install app-debug.apk
+```
+
+Konektatutako gailuen zerrenda lortzeko:
+
+```bash
+adb devices
+```
+
+## Helburu gailuaren eskakizunak
+
+| Baldintza | Balioa | 
+|---|---| 
+| Gutxieneko API | 24 (Android 7.0 Turroia) | 
+| Helburuko APIa | 36 | 
+| Arkitektura | arm64-v8a, armeabi-v7a, x86_64 (gailuaren arabera) | 
+| Instalazio-baimenak | INTERNET, SARBIDEA_SARE_ESTATUA | 
+| Interneteko konexioa | Aplikazioaren funtzionamendurako derrigorrezkoa |

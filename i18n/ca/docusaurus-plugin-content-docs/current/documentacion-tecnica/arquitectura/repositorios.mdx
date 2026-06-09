@@ -1,0 +1,105 @@
+---
+title: Capa de repositorios
+sidebar_position: 3
+---
+# Capa de repositoris
+
+La capa de repositoris abstrau l'accés a Supabase de la resta de l'aplicació. Cada repositori encapsula les operacions CRUD duna entitat concreta. Tots els mètodes són funcions `suspend` que s'executen a `Dispatchers.IO`.
+
+## Localitzador de serveis
+
+`di/ServiceLocator.kt` actua com a punt d'accés als repositoris. Cada repositori s'instància de forma `lazy` (una única instància, creada al primer accés):
+
+```kotlin
+object ServiceLocator {
+    val authRepository by lazy { AuthRepository() }
+    val usuarioRepository by lazy { UsuarioRepository() }
+    val maquinaRepository by lazy { MaquinaRepository() }
+    val reservaRepository by lazy { ReservaRepository() }
+    val platoRepository by lazy { PlatoRepository() }
+    val pesoRepository by lazy { PesoRepository() }
+    val pagoRepository by lazy { PagoRepository() }
+}
+```
+
+Els ViewModels accedeixen als repositoris a través de `ServiceLocator.xRepository`.
+
+## AuthRepository
+
+Gestiona les operacions d'autenticació i de registre.
+
+| Mètode | Descripció | 
+|---|---| 
+| `getUserByDni(dni)` | Cerca un usuari per DNI. Retorna `Usuario?` | 
+| `userExistsByDni(dni)` | Verifica si un DNI ja està enregistrat. Retorna `Boolean` | 
+| `verifyCredentials(dni, email)` | Verifica el parell DNI + correu electrònic per a la recuperació de contrasenya | 
+| `updatePassword(userId, newPass)` | Actualitza el camp `contraseniaHash` de l'usuari | 
+| `insertUser(nombre, dni, email, pass, telefono)` | Registra un nou usuari amb `admin=0` i `premium=false` |
+
+## UsuariRepository
+
+Gestiona la lectura i l'actualització del perfil d'usuari.
+
+| Mètode | Descripció | 
+|---|---| 
+| `getById(id)` | Obté un usuari pel vostre ID. Retorna `Usuario?` | 
+| `update(id, nombre, email, telefono, pass, foto)` | Actualitza els camps editables del perfil | 
+| `updatePremium(id, isPremium, fechaIni, fechaFin)` | Activa o desactiva la subscripció Premium |
+
+## MaquinaRepository
+
+Gestiona el catàleg de maquinària.
+
+| Mètode | Descripció | 
+|---|---| 
+| `getAll()` | Obté la llista completa de màquines. Retorna `List<Maquina>` | 
+| `insert(maquina)` | Insereix una màquina nova | 
+| `delete(id)` | Elimina una màquina per ID | 
+| `activateMaintenance(id, desde, hasta)` | Marca la màquina com a no operativa amb el rang de manteniment | 
+| `deactivateMaintenance(id)` | Reactiva la màquina i neteja els camps de manteniment |
+
+## Repositori de reserves
+
+Gestiona les reserves de maquinària.
+
+| Mètode | Descripció | 
+|---|---| 
+| `getAll()` | Obté totes les reserves amb dades d'usuari i màquina encastats | 
+| `getByUser(userId)` | Obté reserves d'un usuari concret | 
+| `getByMachine(machineId)` | Obté reserves actives d'una màquina | 
+| `insert(reserva)` | Creeu una nova reserva | 
+| `delete(id)` | Cancel·la/elimina una reserva per ID |
+
+Les consultes de reserves usen la sintaxi de relacions embegudes de PostgREST (`*, usuarios(*), maquinas(*)`) per recuperar les dades d'usuari i màquina en una sola petició.
+
+## PlatoRepository
+
+Gestiona el catàleg de plats nutricionals.
+
+| Mètode | Descripció | 
+|---|---| 
+| `getAccepted()` | Obté els plats amb `aceptado=true` i `visibilidad=true` | 
+| `getPending()` | Obté els plats amb `aceptado=false` (només per a administradors) | 
+| `insert(plato)` | Insereix un plat nou amb `aceptado=false` | 
+| `accept(id)` | Aprova un plat: `aceptado=true` | 
+| `delete(id)` | Elimina un plat permanentment |
+
+## Repositori de pesos
+
+Gestiona els registres de pes corporal.
+
+| Mètode | Descripció | 
+|---|---| 
+| `getByUser(userId)` | Obté l'historial de pes d'un usuari ordenat per data ascendent | 
+| `insert(pesoUsuario)` | Insereix un registre de pes nou | 
+| `update(id, peso)` | Actualitzeu el valor d'un registre existent | 
+| `delete(id)` | Elimina un registre de pes
+
+## PagoRepository
+
+Gestiona l'historial de pagaments de subscripció.
+
+| Mètode | Descripció | 
+|---|---| 
+| `getByUser(userId)` | Obté els pagaments d'un usuari ordenats per data descendent | 
+| `insert(pago)` | Registra un nou pagament de subscripció |

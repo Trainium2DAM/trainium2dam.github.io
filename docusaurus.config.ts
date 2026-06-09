@@ -11,10 +11,29 @@ const config: Config = {
   organizationName: "trainium2dam",
   projectName: "trainium2dam.github.io",
   deploymentBranch: "gh-pages",
-  onBrokenLinks: "throw",
+  trailingSlash: true,
+  onBrokenLinks: "warn",
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: "warn",
+    },
+  },
   i18n: {
     defaultLocale: "es",
-    locales: ["es"],
+    locales: ["es", "en", "ca", "va", "fr", "ary", "eu", "gl", "de", "pt", "ru"],
+    localeConfigs: {
+      es: { label: "Español" },
+      en: { label: "English" },
+      ca: { label: "Català" },
+      va: { label: "Valencià" },
+      fr: { label: "Français" },
+      ary: { label: "الدارجة" },
+      eu: { label: "Euskara" },
+      gl: { label: "Galego" },
+      de: { label: "Deutsch" },
+      pt: { label: "Português" },
+      ru: { label: "Русский" },
+    },
   },
   plugins: ["docusaurus-plugin-image-zoom"],
   presets: [
@@ -35,15 +54,15 @@ const config: Config = {
   ],
   themeConfig: {
     colorMode: {
-      defaultMode: "dark",
-      respectPrefersColorScheme: true,
+      defaultMode: "light",
+      respectPrefersColorScheme: false,
     },
     navbar: {
       title: "Trainium",
       logo: {
         alt: "Trainium",
-        src: "img/logo_default.png",
-        srcDark: "img/logo_darkmode.png",
+        src: "img/logo_darkmode.png",
+        srcDark: "img/logo_default.png",
       },
       items: [
         {
@@ -55,6 +74,10 @@ const config: Config = {
         {
           href: 'https://github.com/trainium2dam',
           label: 'GitHub',
+          position: 'right',
+        },
+        {
+          type: 'localeDropdown',
           position: 'right',
         },
       ],
@@ -82,11 +105,11 @@ const config: Config = {
           items: [
             {
               label: "Introduction",
-              to: "/docs/",
+              to: "/docs/intro",
             },
             {
               label: "API Reference",
-              to: "/docs/",
+              to: "/docs/api-servicios/firebase",
             },
           ],
         },
@@ -100,12 +123,12 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `© ${new Date().getFullYear()} Trainium`,
+      copyright: `Trainium — Documentación técnica`,
     },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['typescript', 'javascript', 'bash', 'json', 'css', 'jsx'],
+      additionalLanguages: ['typescript', 'javascript', 'bash', 'json', 'css', 'jsx', 'tsx'],
       magicComments: [
         {
           className: 'theme-code-block-highlighted-line',

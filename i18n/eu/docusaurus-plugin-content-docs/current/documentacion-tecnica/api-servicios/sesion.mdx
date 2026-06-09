@@ -1,0 +1,70 @@
+---
+title: Gestión de sesión
+sidebar_position: 3
+---
+# Saioen kudeaketa
+
+## SecureSession Manager
+
+`SecureSessionManager.kt` aplikazioak abiarazteko erabiltzailearen saioaren iraupena kudeatzen du `SharedPreferences` erabiliz.
+
+```kotlin
+object SecureSessionManager {
+    fun setContext(context: Context)
+    fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+    fun obtenerSesion(): SesionData?
+    fun cerrarSesion()
+}
+```
+
+### Hasieratzea
+
+`setContext(context)` deitu behar da beste edozein eragiketa baino lehen. `MainActivity.onCreate()`-n deitutako jardueraren testuinguruarekin. Barruan `SharedPreferences` bat sortzen du `AppConfig.SESSION_PREFS_NAME` (`"trainium_session"`) eta `MODE_PRIVATE` moduarekin.
+
+### hasi saioa
+
+Gorde saioaren datuak `SharedPreferences`-n:
+
+```kotlin
+fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+```
+
+`userId`, `userName`, `isAdmin` eta `isPremium` jarraitzen dute. `true` itzultzen du gordetzea ondo burutu bada (egiaztatu `userId` berrirakurtuz).
+
+`LoginScreen`-tik deitua autentifikazio arrakastatsuaren ondoren.
+
+### getSession
+
+Berreskuratu gordetako saioaren datuak:
+
+```kotlin
+fun obtenerSesion(): SesionData?
+```
+
+`SesionData` objektu bat itzultzen du erabiltzailearen datuekin, edo `null` gordetako saiorik ez badago (lehen abioa edo saioa amaitu ondoren). Aplikazioa abiarazten denean `loading` pantailatik deitzen da.
+
+### itxi saioa
+
+Garbitu `SharedPreferences`-ko datu guztiak:
+
+```kotlin
+fun cerrarSesion()
+```
+
+`ProfileScreen`-tik deitzen da erabiltzaileak "Salitu saioa" sakatzen duenean, `main`-ra `popUpTo(0)`-rekin nabigatu baino lehen.
+
+## SessionData Model
+
+```kotlin
+data class SesionData(
+    val userId: Int,
+    val userName: String,
+    val isAdmin: Boolean,
+    val isPremium: Boolean,
+    val token: String = ""
+)
+```
+
+## Saioaren iraupena
+
+`AppConfig.SESSION_DURATION_MS` saioaren iraupen teorikoa definitzen du (7 egun milisegundotan). Hala ere, oraingo ezarpenean saioa ez da automatikoki iraungitzen; Irauten da erabiltzailea esplizituki saioa amaitzen den arte edo aplikazioaren datuak garbitu arte.

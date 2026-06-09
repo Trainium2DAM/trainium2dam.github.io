@@ -1,0 +1,56 @@
+---
+title: Requisitos previos
+sidebar_position: 1
+---
+# Предварительные условия
+
+Перед клонированием репозитория и компиляцией проекта необходимо установить и настроить на машине разработки следующее программное обеспечение.
+
+## Среда разработки
+
+| Инструмент | Минимальная версия | Заметки | 
+|---|---|---| 
+| AndroidСтудия | Ежик (2023.1.1) или выше | Рекомендуется последняя стабильная версия | 
+| ЯДК | 11 | Настроен как `sourceCompatibility` и `targetCompatibility` в модуле `:app` | 
+| Градл | 8.13 | Управляется оболочкой, включенной в репозиторий (`gradlew`) | 
+| Android SDK (compileSdk) | 36 | Установить из Android Studio SDK Manager | 
+| Android SDK (minSdk) | 24 (Android 7.0 Нуга) | Приложение не устанавливается на предыдущие версии | 
+| Котлин | 2.0+ | Управляется плагином `kotlin.android`, объявленным в `build.gradle.kts` |
+
+## Требуются сервисные учетные записи
+
+Проект зависит от двух внешних серверов, для которых требуются активные учетные записи:
+
+**Супабаза**
+
+Вам нужен проект Supabase с таблицами схемы, описанными в [Base de datos](/docs/base-de-datos/esquema-supabase). Учетные данные (`SUPABASE_URL` и `SUPABASE_KEY`) объявлены как константы в `AppConfig.kt`. Для производственных сред рекомендуется переместить их в файл `local.properties` или в переменные среды и не включать реальные значения в репозиторий.
+
+**Огневая база**
+
+Требуется проект Firebase с включенной службой Data Connect. Файл `google-services.json` необходимо скопировать в `app/google-services.json`. Этот файл не следует загружать в репозиторий, если проект является публичным.
+
+## Разрешения, необходимые приложению
+
+`AndroidManifest.xml` декларирует следующие разрешения:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+```
+
+| Разрешение | Тип | Цель | 
+|---|---|---| 
+| `INTERNET` | Нормальный | Доступ к Supabase и Firebase | 
+| `ACCESS_NETWORK_STATE` | Нормальный | Проверка подключения | 
+| `POST_NOTIFICATIONS` | Время выполнения (Android 13+) | Показывать уведомления о напоминаниях о резервировании | 
+| `SCHEDULE_EXACT_ALARM` | Нормальный | Установите точные сигналы для напоминаний | 
+| `USE_EXACT_ALARM` | Нормальный | Дополнительная гарантия точности сигналов тревоги в API 33+ | 
+| `RECEIVE_BOOT_COMPLETED` | Нормальный | Заявлено для будущего перепрограммирования сигнализации после сброса |
+
+Разрешение `POST_NOTIFICATIONS` запрашивается во время выполнения от `MainActivity.onCreate()` на устройствах под управлением Android 13 (API 33) или более поздней версии. В предыдущих версиях разрешение предоставлялось автоматически. Приложение по-прежнему работает без этого разрешения, но не будет отправлять напоминания.
+
+Сетевое подключение необходимо для работы приложения, поскольку все операции с данными выполняются удаленно.

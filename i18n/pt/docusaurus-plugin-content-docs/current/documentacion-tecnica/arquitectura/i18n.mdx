@@ -1,0 +1,103 @@
+---
+title: Internacionalización (i18n)
+sidebar_position: 4
+---
+# Internacionalização (i18n)
+
+Trainium implementa seu próprio sistema de internacionalização no Compose que permite alterar o idioma da interface em tempo de execução sem reiniciar a aplicação, baseado em um `CompositionLocal`.
+
+## Arquitetura do sistema
+
+O sistema é composto por cinco arquivos no pacote `data/i18n/`:
+
+| Arquivo | Responsabilidade | 
+|---|---| 
+| `AppLanguage.kt` | Enum com os 12 idiomas suportados e sua resolução a partir de `Locale` | 
+| `AppStrings.kt` | Classe de dados com todos os literais da UI como propriedades `String` | 
+| `LocalStrings.kt` | `CompositionLocal` + função `stringsForLanguage()` | 
+| `LanguageManager.kt` | Persistência de linguagem no DataStore | 
+| `LanguagePickerDialog.kt` | Diálogo de seleção de idioma (componente visual) |
+
+Os arquivos de string (`StringsEs.kt`, `StringsEn.kt`, etc.) contêm as instâncias específicas de `AppStrings` para cada idioma.
+
+## Idiomas suportados
+
+| Enum | Código | Nome nativo | 
+|---|---|---| 
+| `SPANISH` | `es` | Espanhol | 
+| `ENGLISH` | `en` | Inglês | 
+| `VALENCIAN` | `ca-VALENCIA` | Valência | 
+| `CATALAN` | `ca` | Catalã | 
+| `FRENCH` | `fr` | Français | 
+| `MOROCCAN_ARABIC` | `ar-MA` | الدارجة | 
+| `BASQUE` | `eu` | Euskara | 
+| `GALICIAN` | `gl` | Galego | 
+| `GERMAN` | `de` | Alemão | 
+| `PORTUGUESE` | `pt` | Português | 
+| `RUSSIAN` | `ru` | Russo | 
+| `CHINESE` | `zh` | 中文 |
+
+## Detecção e resolução de idioma
+
+Ao iniciar o aplicativo, `MainActivity` observe o `Flow<AppLanguage?>` de `LanguageManager`:
+
+- Se o usuário já tiver selecionado um idioma manualmente (valor não nulo), ele será usado. 
+- Se o valor for `null` (primeira execução ou preferência limpa), `detectSystemLanguage()` é chamado, que mapeia o `Locale` do sistema para o `AppLanguage` mais próximo. Se o sistema usar um idioma não suportado, o substituto será `SPANISH`.
+
+```kotlin
+val resolvedLanguage by remember(savedLanguage) {
+    derivedStateOf {
+        savedLanguage ?: languageManager.detectSystemLanguage()
+    }
+}
+
+val currentStrings = remember(resolvedLanguage) {
+    stringsForLanguage(resolvedLanguage)
+}
+
+CompositionLocalProvider(LocalStrings provides currentStrings) {
+    // toda la jerarquía de composables
+}
+```
+
+## Acesso a strings em elementos que podem ser compostos
+
+Qualquer elemento que pode ser composto em `CompositionLocalProvider` acessa as strings de idioma ativas com:
+
+```kotlin
+val strings = LocalStrings.current
+Text(strings.login)
+```
+
+Não é necessário passar strings como parâmetros: `CompositionLocal` as propaga automaticamente para toda a hierarquia.
+
+## Mudança de idioma em tempo de execução
+
+O usuário abre o seletor pressionando o ícone do globo (`Icons.Default.Language`) disponível nas telas principais. `LanguagePickerDialog` mostra a lista de idiomas com seus nomes nativos. Após a confirmação:
+
+```kotlin
+scope.launch { languageManager.setLanguage(selectedLanguage) }
+```
+
+`LanguageManager.setLanguage` grava o código do idioma no DataStore. O `Flow` observando `MainActivity` gera o novo valor, `resolvedLanguage` muda, `currentStrings` é recalculado e `CompositionLocalProvider` é recomposto. A mudança é imediata e visível em toda a interface sem a necessidade de reiniciar o app.
+
+## Gerenciador de idiomas
+
+```kotlin
+class LanguageManager(private val context: Context) {
+    val currentLanguage: Flow<AppLanguage?>
+    suspend fun setLanguage(language: AppLanguage)
+    fun detectSystemLanguage(): AppLanguage
+}
+```
+
+`currentLanguage` gera `null` até que o usuário selecione um idioma pela primeira vez. `detectSystemLanguage()` é uma função síncrona que mapeia `Locale.getDefault()` para o `AppLanguage` correspondente.
+
+## Adicione um novo idioma
+
+Para adicionar suporte para um idioma adicional:
+
+1. Adicione uma nova entrada no enum `AppLanguage` com seus `code`, `displayName` e `nativeName`. 
+2. Adicione a detecção desse código no bloco `when` de `AppLanguage.fromLocale()`. 
+3. Crie um novo objeto `StringsXx` que instancie `AppStrings` com todas as traduções. 
+4. Adicione o caso na função `stringsForLanguage()` de `LocalStrings.kt`.

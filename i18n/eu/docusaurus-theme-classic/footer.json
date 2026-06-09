@@ -1,0 +1,26 @@
+{
+  "link.title.Documentation": {
+    "message": "Dokumentazioa",
+    "description": "The title of the footer links column with title=Documentation in the footer"
+  },
+  "link.title.Resources": {
+    "message": "Baliabideak",
+    "description": "The title of the footer links column with title=Resources in the footer"
+  },
+  "link.item.label.Introduction": {
+    "message": "Sarrera",
+    "description": "The label of footer link with label=Introduction linking to /docs/intro"
+  },
+  "link.item.label.API Reference": {
+    "message": "API Erreferentzia",
+    "description": "The label of footer link with label=API Reference linking to /docs/api-servicios/firebase"
+  },
+  "link.item.label.GitHub": {
+    "message": "GitHub",
+    "description": "The label of footer link with label=GitHub linking to https://github.com/trainium2dam"
+  },
+  "copyright": {
+    "message": "Trainium — Dokumentazio Teknikoa",
+    "description": "The footer copyright"
+  }
+}

@@ -1,0 +1,44 @@
+---
+title: Registro de peso
+sidebar_position: 3
+---
+# Registro de peso
+
+## Tela de Registro
+
+Ele permite ao usuário registrar seu peso corporal diário e visualizar a evolução ao longo do tempo usando um gráfico de linhas desenhado com a API `Canvas` do Compose.
+
+### Carregamento de dados
+
+Ao inicializar a tela é consultada a tabela Supabase `peso_usuario`, filtrando por `id_usuario` e ordenando os resultados em ordem crescente por data. Os registros são armazenados no estado `registros: List<PesoUsuario>`.
+
+### Restrição de uma inscrição por dia
+
+A tela verifica se já existe um registro para a data atual (`fechaHoy`) antes de exibir o campo de entrada. A variável `yaExisteHoy` é calculada comparando a data de cada registro com a data do sistema:
+
+```kotlin
+val fechaHoy = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+val yaExisteHoy = registros.any { it.fecha == fechaHoy }
+```
+
+Se já existir um registro para hoje, o campo de entrada será ocultado e uma mensagem informativa será exibida. Esta restrição é exclusivamente no nível da UI, não há restrição `UNIQUE` no banco de dados para esta combinação de colunas.
+
+### Inserção de um novo registro
+
+O usuário insere o peso no campo de texto (aceita valores decimais) e pressiona o botão confirmar. Um `insert` é executado no Supabase com o `id_usuario`, o valor do peso e a data atual.
+
+### Editando um registro existente
+
+Cada linha da listagem inclui um botão de edição que ativa o modo de edição online (`editandoId`). Após o commit, um `update` é executado no Supabase no registro identificado por seu `id`.
+
+### Excluindo um registro
+
+O botão delete para cada linha executa um `delete` no Supabase filtrando por `id` do registro.
+
+### Gráfico de evolução
+
+O gráfico é desenhado com `Canvas` do Jetpack Compose. A implementação normaliza os valores de peso para o intervalo `[0, 1]` em relação ao mínimo e máximo do histórico, mapeia-os para coordenadas de pixel na tela e os une com linhas usando `drawPath`. Cada ponto é representado por um círculo preenchido.
+
+O eixo horizontal representa o tempo (as entradas são organizadas cronologicamente) e o eixo vertical representa o peso em quilogramas. Os valores mínimo e máximo são exibidos como rótulos de texto nas extremidades do eixo.
+
+Se o histórico contiver menos de dois pontos, o gráfico não será renderizado (são necessários pelo menos dois pontos para desenhar uma linha).

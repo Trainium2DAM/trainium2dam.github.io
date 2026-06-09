@@ -1,0 +1,225 @@
+---
+title: Componentes y patrones de UI
+sidebar_position: 2
+---
+# UI osagaiak eta ereduak
+
+Atal honek erabiltzailearen interfazean errepikatzen diren osagai berrerabilgarriak eta UI ereduak dokumentatzen ditu.
+
+## Pantaila-goiburua
+
+**Fichero:** `ui/theme/ScreenHeader.kt`
+
+Haurraren pantaila guztietan erabiltzen den goiburuko osagai berrerabilgarria. Izenburua, azpititulua, aukerako atzera botoia, eskuineko eduki gehigarria eta gaiaren txandakatzea barne hartzen ditu.
+
+```kotlin
+@Composable
+fun ScreenHeader(
+    title: String,
+    subtitle: String,
+    visible: Boolean = true,
+    onBack: (() -> Unit)? = null,
+    trailing: @Composable (() -> Unit)? = null,
+    textColor: Color,
+    subtitleColor: Color,
+    onToggleTheme: (() -> Unit)? = null,
+    darkTheme: Boolean? = null
+)
+```
+
+Osagaiak `statusBarsPadding()` aplikatzen du eta bere sarrera alfa animatzen du `animateFloatAsState`-rekin `visible` `false`-tik `true`ra doanean.
+
+## Hezurdura kargatzen
+
+**Fichero:** `ui/theme/SkeletonLoading.kt`
+
+APIaren datuen zain dauden bitartean bistaratzen diren osagaiak kargatzea, erabiltzailearen esperientzia hobetuz pantaila hutsak saihestuz.
+
+### SkeletonCard
+
+Zerrenda-txarteletarako leku-marko angeluzuzen animatua:
+
+```kotlin
+@Composable
+fun SkeletonCard(
+    modifier: Modifier = Modifier,
+    height: Int? = null,
+    width: Int? = null
+)
+```
+
+Erabili `rememberInfiniteTransition` begizta batean animatutako gradiente lineal bat distira efektua simulatzeko.
+
+### SkeletonCircle
+
+Avatar eta ikonoentzako leku-marka zirkularra:
+
+```kotlin
+@Composable
+fun SkeletonCircle(
+    modifier: Modifier = Modifier,
+    size: Int = 100
+)
+```
+
+### SkeletonText
+
+Testuetarako leku-marko biribildu angeluzuzena:
+
+```kotlin
+@Composable
+fun SkeletonText(
+    modifier: Modifier = Modifier,
+    width: Int = 200,
+    height: Int = 20
+)
+```
+
+### SkeletonList
+
+Bertikalki pilatutako `SkeletonCard` anitzen konposizioa:
+
+```kotlin
+@Composable
+fun SkeletonList(
+    itemCount: Int = 5,
+    modifier: Modifier = Modifier,
+    itemHeight: Int = 80
+)
+```
+
+**Erabilera arrunta:**
+
+```kotlin
+if (isLoading) {
+    SkeletonList(itemCount = 5, modifier = Modifier.fillMaxWidth())
+} else {
+    LazyColumn { /* items reales */ }
+}
+```
+
+## AppTimePickerDialog
+
+**Fichero:** `ui/theme/AppTimePickerDialog.kt`
+
+Denbora aukeratzeko elkarrizketa-koadroa 3. materialaren `TimePicker`-n oinarrituta. Aurreko bertsioetan erabilitako Android View-ren `TimePickerDialog` ordezkatzen du.
+
+```kotlin
+@Composable
+fun AppTimePickerDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (hour: Int, minute: Int) -> Unit,
+    initialHour: Int = LocalTime.now().hour,
+    initialMinute: Int = LocalTime.now().minute,
+    title: String = "Seleccionar hora",
+    is24Hour: Boolean = true,
+    onValidate: ((hour: Int, minute: Int) -> String?)? = null
+)
+```
+
+`onValidate` parametroak baliozkotze gehigarriak aplika daitezke konpromisoa hartu aurretik. Funtzioak `String` (errore mezua) itzultzen badu, `Toast` gisa bistaratzen du eta ez du elkarrizketa-koadroa ixten. `null` itzultzen badu, aukeraketa baliozkotzat joko da eta `onConfirm` deitzen da.
+
+## Zerrendako elementuen txartelaren eredua
+
+Makina, erreserba eta plater zerrendek txartel eredu bera jarraitzen dute:
+
+```
+Card (RoundedCornerShape 16 dp, elevation, cardBg)
+  └── Row (padding 16 dp, verticalAlignment Center)
+        ├── Image/Icon (60-80 dp)
+        ├── Column (weight 1f)
+        │     ├── Text nombre (titleMedium, fontWeight Bold)
+        │     └── Text subtítulo (bodyMedium, alpha 0.5)
+        └── Botones de acción (IconButton)
+```
+
+Atzeko planoko kolorea `cardBg` gai aktibora egokitzen da: `Color(0xFF162347).copy(0.9f)` ilunetan eta `Color.White` argitan.
+
+## Testu eremuaren eredua (OutlinedTextField)
+
+Inprimaki guztiek `OutlinedTextField` erabiltzen dute kolore eskema pertsonalizatuarekin:
+
+```kotlin
+val inputColors = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = BlueAccent,
+    unfocusedBorderColor = if (isDarkTheme) Color.White.copy(0.15f) else BlueDark.copy(0.15f),
+    focusedLabelColor = BlueAccent,
+    unfocusedLabelColor = if (isDarkTheme) Color.White.copy(0.4f) else BlueDark.copy(0.4f),
+    cursorColor = BlueAccent,
+    focusedTextColor = textColor,
+    unfocusedTextColor = textColor.copy(0.9f)
+)
+```
+
+Ertz aktiboa beti da `BlueAccent` (#2196F3) gaia edozein dela ere.
+
+## Lehen ekintza-botoia (CTA)
+
+Ekintza-botoi nagusiek gradiente horizontala erabiltzen dute Material 3-ren kolore lauaren ordez:
+
+```kotlin
+Button(
+    onClick = accion,
+    modifier = Modifier.fillMaxWidth().height(56.dp),
+    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+    contentPadding = PaddingValues()
+) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(
+                Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)),
+                RoundedCornerShape(16.dp)
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            "CONFIRMAR",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 2.sp,
+            color = Color.White
+        )
+    }
+}
+```
+
+## Atzera botoia
+
+Atzera egitea `TextButton`-rekin ezartzen da `IconButton` gezi baten ordez, ukipen-eremu gehiago lortzeko. `ScreenHeader` portaera hau estandarizatu egiten du `Icons.AutoMirrored.Filled.ArrowBack` erabiliz.
+
+## Gai-hautatzailea (aktibatu)
+
+Gaiaren txandakatzea `MainScreen` eta `ProfileScreen` `IconButton` gisa agertzen da goiko eskuineko izkinan lerrokatuta, `statusBarsPadding()` sistemaren egoera-barra errespetatzeko:
+
+```kotlin
+IconButton(
+    onClick = onToggleTheme,
+    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).statusBarsPadding()
+) {
+    Icon(
+        if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+        contentDescription = "Cambiar tema",
+        tint = if (isDarkTheme) BlueSoft else BlueAccent
+    )
+}
+```
+
+Gainerako pantailetan, toggle-a `ScreenHeader`-n integratzen da `darkTheme` eta `onToggleTheme` parametroen bidez.
+
+## Erabiltzailearen avatarra
+
+Profilaren avatarra `ProfileScreen` eta `EditProfileScreen` `Box` zirkular gisa bistaratzen da `clip(CircleShape)`-rekin. Erabiltzaileak Base64-n argazki bat badu, `ImageUtils.decodeBase64ToBitmap`-rekin deskodetzen da. Argazkirik ez baduzu, pertsonaren ikono generiko bat bistaratuko da.
+
+## Makinaren egoeraren adierazlea
+
+`MaquinasScreen`-ko makina-txartelek koloretako egoera bereizgarria erakusten dute:
+
+| Egoera | Kolorea | Testua | 
+|---|---|---| 
+| Operatiboa | Berdea (`Color(0xFF4CAF50)`) | Eskuragarri | 
+| Mantentze-lanean | Laranja (`Color(0xFFFF9800)`) | Mantentzea |
+
+## Iragazki-txipa (erreserba-pantaila)
+
+Erreserba pantailako iragazkiak 3. materialaren `FilterChip` gisa inplementatzen dira horizontalki korritu daitekeen `LazyRow` batean.

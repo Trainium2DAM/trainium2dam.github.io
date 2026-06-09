@@ -1,0 +1,105 @@
+---
+title: Capa de repositorios
+sidebar_position: 3
+---
+# Couche de référentiel
+
+La couche référentiel soustrait l'accès à Supabase au reste de l'application. Chaque référentiel encapsule les opérations CRUD pour une entité spécifique. Toutes les méthodes sont des fonctions `suspend` qui s'exécutent sur `Dispatchers.IO`.
+
+## Localisateur de services
+
+`di/ServiceLocator.kt` agit comme un point d'accès aux référentiels. Chaque référentiel est instancié de manière `lazy` (une seule instance, créée au premier accès) :
+
+```kotlin
+object ServiceLocator {
+    val authRepository by lazy { AuthRepository() }
+    val usuarioRepository by lazy { UsuarioRepository() }
+    val maquinaRepository by lazy { MaquinaRepository() }
+    val reservaRepository by lazy { ReservaRepository() }
+    val platoRepository by lazy { PlatoRepository() }
+    val pesoRepository by lazy { PesoRepository() }
+    val pagoRepository by lazy { PagoRepository() }
+}
+```
+
+Les ViewModels accèdent aux référentiels via `ServiceLocator.xRepository`.
+
+## AuthRepository
+
+Gère les opérations d’authentification et d’enregistrement.
+
+| Méthode | Descriptif | 
+|---|---| 
+| `getUserByDni(dni)` | Recherchez un utilisateur par ID. Renvoie `Usuario?` | 
+| `userExistsByDni(dni)` | Vérifiez si un DNI est déjà enregistré. Renvoie `Boolean` | 
+| `verifyCredentials(dni, email)` | Vérifiez la paire DNI + email pour la récupération du mot de passe | 
+| `updatePassword(userId, newPass)` | Met à jour le champ `contraseniaHash` de l'utilisateur | 
+| `insertUser(nombre, dni, email, pass, telefono)` | Enregistrez un nouvel utilisateur avec `admin=0` et `premium=false` |
+
+##Référentiel d'utilisateurs
+
+Gère la lecture et la mise à jour du profil utilisateur.
+
+| Méthode | Descriptif | 
+|---|---| 
+| `getById(id)` | Obtient un utilisateur par son identifiant. Renvoie `Usuario?` | 
+| `update(id, nombre, email, telefono, pass, foto)` | Mettre à jour les champs de profil modifiables | 
+| `updatePremium(id, isPremium, fechaIni, fechaFin)` | Activer ou désactiver l'abonnement Premium |
+
+## MaquinaRepository
+
+Gérer le catalogue de machines.
+
+| Méthode | Descriptif | 
+|---|---| 
+| `getAll()` | Obtient la liste complète des machines. Renvoie `List<Maquina>` | 
+| `insert(maquina)` | Insérer une nouvelle machine | 
+| `delete(id)` | Supprimer une machine par ID | 
+| `activateMaintenance(id, desde, hasta)` | Marquer la machine comme non opérationnelle avec la gamme maintenance | 
+| `deactivateMaintenance(id)` | Réactiver la machine et nettoyer les champs de maintenance |
+
+## ReservaRepository
+
+Gérer les réserves de machines.
+
+| Méthode | Descriptif | 
+|---|---| 
+| `getAll()` | Obtenez toutes les réservations avec les données utilisateur et machine intégrées | 
+| `getByUser(userId)` | Obtenir les réservations d'un utilisateur spécifique | 
+| `getByMachine(machineId)` | Obtenir les réservations actives d'une machine | 
+| `insert(reserva)` | Créer une nouvelle réservation | 
+| `delete(id)` | Annuler/supprimer une réservation par ID |
+
+Les requêtes de réservation utilisent la syntaxe de relation intégrée PostgREST (`*, usuarios(*), maquinas(*)`) pour récupérer les données utilisateur et machine en une seule requête.
+
+## PlatonRéférentiel
+
+Gérer le catalogue de plats nutritionnels.
+
+| Méthode | Descriptif | 
+|---|---| 
+| `getAccepted()` | Obtient les plats avec `aceptado=true` et `visibilidad=true` | 
+| `getPending()` | Récupère la vaisselle avec `aceptado=false` (uniquement pour les administrateurs) | 
+| `insert(plato)` | Insérez une nouvelle plaque avec `aceptado=false` | 
+| `accept(id)` | Approuver un plat : `aceptado=true` | 
+| `delete(id)` | Supprimer une plaque définitivement |
+
+## Référentiel Peso
+
+Gérer les enregistrements de poids corporel.
+
+| Méthode | Descriptif | 
+|---|---| 
+| `getByUser(userId)` | Obtient l'historique de poids d'un utilisateur, trié par date croissante | 
+| `insert(pesoUsuario)` | Insérer un nouvel enregistrement de poids | 
+| `update(id, peso)` | Met à jour la valeur d'un enregistrement existant | 
+| `delete(id)` | Supprimer un enregistrement de poids |
+
+## PagoRepository
+
+Gérer l'historique des paiements d'abonnement.
+
+| Méthode | Descriptif | 
+|---|---| 
+| `getByUser(userId)` | Obtient les paiements d'un utilisateur, triés par date décroissante | 
+| `insert(pago)` | Enregistrer un nouveau paiement d'abonnement |

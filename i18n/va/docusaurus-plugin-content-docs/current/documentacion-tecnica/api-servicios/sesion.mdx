@@ -1,0 +1,70 @@
+---
+title: Gestión de sesión
+sidebar_position: 3
+---
+# Gestió de sessió
+
+## SecureSessionManager
+
+`SecureSessionManager.kt` gestiona la persistència de la sessió de l'usuari entre arrencades de l'aplicació mitjançant `SharedPreferences`.
+
+```kotlin
+object SecureSessionManager {
+    fun setContext(context: Context)
+    fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+    fun obtenerSesion(): SesionData?
+    fun cerrarSesion()
+}
+```
+
+### Inicialització
+
+`setContext(context)` ha de trucar abans de qualsevol altra operació. S'invoca a `MainActivity.onCreate()` amb el context de l'activitat. Internament crea un `SharedPreferences` amb el nom `AppConfig.SESSION_PREFS_NAME` (`"trainium_session"`) i mode `MODE_PRIVATE`.
+
+### iniciarSesion
+
+Desa les dades de la sessió a `SharedPreferences`:
+
+```kotlin
+fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+```
+
+Persisteix `userId`, `userName`, `isAdmin` i `isPremium`. Retorna `true` si el desat es va completar correctament (verifica rellegint el `userId`).
+
+S'anomena des de `LoginScreen` immediatament després d'una autenticació amb èxit.
+
+### obtenirSesion
+
+Recupera les dades de la sessió desada:
+
+```kotlin
+fun obtenerSesion(): SesionData?
+```
+
+Torna un objecte `SesionData` amb les dades de l'usuari, o `null` si no hi ha sessió desada (primera arrencada o després d'un logout). S'anomena des de la pantalla `loading` en arrencar l'app.
+
+### cerrarSesion
+
+Neteja totes les dades de `SharedPreferences`:
+
+```kotlin
+fun cerrarSesion()
+```
+
+S'anomena des de `ProfileScreen` quan l'usuari prem "Tancar sessió", just abans de navegar a `main` amb `popUpTo(0)`.
+
+## Model SesionData
+
+```kotlin
+data class SesionData(
+    val userId: Int,
+    val userName: String,
+    val isAdmin: Boolean,
+    val isPremium: Boolean,
+    val token: String = ""
+)
+```
+
+## Durada de la sessió
+
+`AppConfig.SESSION_DURATION_MS` defineix la durada teòrica de la sessió (7 dies en mil·lisegons). Tot i això, en la implementació actual la sessió no expira automàticament; persisteix fins que l'usuari tanca sessió explícitament o es netegen les dades de l'app.

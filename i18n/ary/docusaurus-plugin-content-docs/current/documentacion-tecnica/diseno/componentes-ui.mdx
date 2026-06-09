@@ -1,0 +1,225 @@
+---
+title: Componentes y patrones de UI
+sidebar_position: 2
+---
+# مكونات وأنماط واجهة المستخدم
+
+يوثق هذا القسم المكونات القابلة لإعادة الاستخدام وأنماط واجهة المستخدم التي تتكرر عبر واجهة المستخدم.
+
+## رأس الشاشة
+
+**فيشيرو:** `ui/theme/ScreenHeader.kt`
+
+مكون رأس قابل لإعادة الاستخدام يستخدم على جميع الشاشات الفرعية. يتضمن العنوان والعنوان الفرعي وزر الرجوع الاختياري ومحتوى إضافي على اليمين وتبديل الموضوع.
+
+```kotlin
+@Composable
+fun ScreenHeader(
+    title: String,
+    subtitle: String,
+    visible: Boolean = true,
+    onBack: (() -> Unit)? = null,
+    trailing: @Composable (() -> Unit)? = null,
+    textColor: Color,
+    subtitleColor: Color,
+    onToggleTheme: (() -> Unit)? = null,
+    darkTheme: Boolean? = null
+)
+```
+
+يطبق المكون `statusBarsPadding()` ويحرك ألفا المدخلات الخاصة به باستخدام `animateFloatAsState` عندما ينتقل `visible` من `false` إلى `true`.
+
+## تحميل الهيكل العظمي
+
+**فيشيرو:** `ui/theme/SkeletonLoading.kt`
+
+تحميل المكونات التي يتم عرضها أثناء انتظار بيانات API، مما يؤدي إلى تحسين تجربة المستخدم عن طريق تجنب الشاشات الفارغة.
+
+### بطاقة الهيكل العظمي
+
+عنصر نائب مستطيل متحرك لبطاقات القائمة:
+
+```kotlin
+@Composable
+fun SkeletonCard(
+    modifier: Modifier = Modifier,
+    height: Int? = null,
+    width: Int? = null
+)
+```
+
+استخدم تدرجًا خطيًا متحركًا في حلقة باستخدام `rememberInfiniteTransition` لمحاكاة تأثير الوميض.
+
+### دائرة الهيكل العظمي
+
+عنصر نائب دائري للصور الرمزية والأيقونات:
+
+```kotlin
+@Composable
+fun SkeletonCircle(
+    modifier: Modifier = Modifier,
+    size: Int = 100
+)
+```
+
+### نص هيكل عظمي
+
+عنصر نائب مستطيل مستدير للنصوص:
+
+```kotlin
+@Composable
+fun SkeletonText(
+    modifier: Modifier = Modifier,
+    width: Int = 200,
+    height: Int = 20
+)
+```
+
+### قائمة الهيكل العظمي
+
+تكوين `SkeletonCard` المتعددة مكدسة عموديًا:
+
+```kotlin
+@Composable
+fun SkeletonList(
+    itemCount: Int = 5,
+    modifier: Modifier = Modifier,
+    itemHeight: Int = 80
+)
+```
+
+** الاستخدام النموذجي: **
+
+```kotlin
+if (isLoading) {
+    SkeletonList(itemCount = 5, modifier = Modifier.fillMaxWidth())
+} else {
+    LazyColumn { /* items reales */ }
+}
+```
+
+## AppTimePickerDialog
+
+**فيشيرو:** `ui/theme/AppTimePickerDialog.kt`
+
+مربع حوار اختيار الوقت بناءً على المادة 3 `TimePicker`. يستبدل `TimePickerDialog` الخاص بـ Android View المستخدم في الإصدارات السابقة.
+
+```kotlin
+@Composable
+fun AppTimePickerDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (hour: Int, minute: Int) -> Unit,
+    initialHour: Int = LocalTime.now().hour,
+    initialMinute: Int = LocalTime.now().minute,
+    title: String = "Seleccionar hora",
+    is24Hour: Boolean = true,
+    onValidate: ((hour: Int, minute: Int) -> String?)? = null
+)
+```
+
+تسمح المعلمة `onValidate` بتطبيق عمليات تحقق إضافية قبل الالتزام. إذا قامت الدالة بإرجاع `String` (رسالة خطأ)، فإنها تعرضها كـ `Toast` ولا تغلق مربع الحوار. إذا أعاد `null`، يعتبر التحديد صالحًا ويتم استدعاء `onConfirm`.
+
+## نمط بطاقة عنصر القائمة
+
+تتبع قوائم الماكينة والحجز والأطباق نفس نمط البطاقة:
+
+```
+Card (RoundedCornerShape 16 dp, elevation, cardBg)
+  └── Row (padding 16 dp, verticalAlignment Center)
+        ├── Image/Icon (60-80 dp)
+        ├── Column (weight 1f)
+        │     ├── Text nombre (titleMedium, fontWeight Bold)
+        │     └── Text subtítulo (bodyMedium, alpha 0.5)
+        └── Botones de acción (IconButton)
+```
+
+يتكيف لون الخلفية `cardBg` مع السمة النشطة: `Color(0xFF162347).copy(0.9f)` في الظلام و `Color.White` في الضوء.
+
+## نمط حقل النص (OutlinedTextField)
+
+تستخدم جميع النماذج `OutlinedTextField` مع نظام الألوان المخصص:
+
+```kotlin
+val inputColors = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = BlueAccent,
+    unfocusedBorderColor = if (isDarkTheme) Color.White.copy(0.15f) else BlueDark.copy(0.15f),
+    focusedLabelColor = BlueAccent,
+    unfocusedLabelColor = if (isDarkTheme) Color.White.copy(0.4f) else BlueDark.copy(0.4f),
+    cursorColor = BlueAccent,
+    focusedTextColor = textColor,
+    unfocusedTextColor = textColor.copy(0.9f)
+)
+```
+
+الحد النشط دائمًا هو `BlueAccent` (#2196F3) بغض النظر عن الموضوع.
+
+## زر الإجراء الأساسي (CTA)
+
+تستخدم أزرار الإجراء الرئيسية تدرجًا أفقيًا بدلاً من اللون المسطح للمادة 3:
+
+```kotlin
+Button(
+    onClick = accion,
+    modifier = Modifier.fillMaxWidth().height(56.dp),
+    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+    contentPadding = PaddingValues()
+) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(
+                Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)),
+                RoundedCornerShape(16.dp)
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            "CONFIRMAR",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 2.sp,
+            color = Color.White
+        )
+    }
+}
+```
+
+## زر العودة
+
+يتم تنفيذ التراجع باستخدام `TextButton` بدلاً من السهم `IconButton`، لمزيد من مساحة اللمس. `ScreenHeader` يوحد هذا السلوك باستخدام `Icons.AutoMirrored.Filled.ArrowBack`.
+
+## محدد الموضوع (تبديل)
+
+يظهر تبديل السمة في `MainScreen` و`ProfileScreen` كـ `IconButton` محاذاة إلى الزاوية اليمنى العليا، مع `statusBarsPadding()` لاحترام شريط حالة النظام:
+
+```kotlin
+IconButton(
+    onClick = onToggleTheme,
+    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).statusBarsPadding()
+) {
+    Icon(
+        if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+        contentDescription = "Cambiar tema",
+        tint = if (isDarkTheme) BlueSoft else BlueAccent
+    )
+}
+```
+
+في بقية الشاشات، تم دمج التبديل في `ScreenHeader` من خلال المعلمات `darkTheme` و `onToggleTheme`.
+
+## الصورة الرمزية للمستخدم
+
+يتم عرض الصورة الرمزية للملف الشخصي في `ProfileScreen` و `EditProfileScreen` كشكل دائري `Box` مع `clip(CircleShape)`. إذا كان لدى المستخدم صورة في Base64، فسيتم فك تشفيرها باستخدام `ImageUtils.decodeBase64ToBitmap`. إذا لم يكن لديك صورة، فسيتم عرض رمز شخص عام.
+
+## مؤشر حالة الجهاز
+
+تعرض بطاقات الآلة في `MaquinasScreen` شارة حالة ملونة:
+
+| الحالة | اللون | نص | 
+|---|---|---| 
+| التشغيلية | أخضر (`Color(0xFF4CAF50)`) | متاح | 
+| تحت الصيانة | برتقالي (`Color(0xFFFF9800)`) | صيانة |
+
+## شريحة التصفية (شاشة الحجز)
+
+يتم تطبيق مرشحات شاشة الحجز على أنها المادة 3 `FilterChip` على `LazyRow` القابل للتمرير أفقيًا.

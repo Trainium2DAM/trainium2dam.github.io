@@ -1,0 +1,76 @@
+---
+title: Gestión de reservas
+sidebar_position: 5
+---
+# Gerenciamento de reservas
+
+A seção **"Minhas Reservas"** permite consultar todas as suas reservas, filtrá-las por data ou status, cancelar aquelas que não são mais necessárias e exportá-las para a agenda do seu telefone.
+
+---
+
+## Veja suas reservas
+
+Pressione **"Minhas Reservas"** na tela principal. Todas as suas reservas serão carregadas ordenadas por data (a mais próxima primeiro). Enquanto a lista está sendo carregada, você verá o efeito do carregamento do esqueleto.
+
+Cada cartão de reserva mostra:
+
+- Nome da **máquina** reservada. 
+- **Data** da reserva. 
+- **Horário de início e término**. 
+- Status (ativo ou passado).
+
+---
+
+## Filtrar reservas
+
+No topo da tela você encontrará os filtros disponíveis. Você pode deslizá-los horizontalmente se nem todos couberem na tela:
+
+| Filtro | O que mostra | 
+|---|---| 
+| **Próximos** | Reservas cujo horário de término ainda não chegou. Visualização padrão na entrada | 
+| **Hoje** | Somente reservas agendadas para o dia atual | 
+| **Passados** | Reservas cujo horário de término já passou | 
+| **Todos** | Todas as suas reservas sem nenhum filtro | 
+| **Por data** | Abra um calendário para escolher um dia específico |
+
+:::dica
+O filtro **"Passado"** leva em consideração o horário exato de término, não apenas o dia. Uma reserva de hoje que já terminou aparecerá corretamente em "Passados" mesmo que ainda seja no mesmo dia. 
+:::
+
+---
+
+## Cancelar uma reserva
+
+Para cancelar uma reserva ativa, pressione o botão de cancelamento que aparece no seu cartão. Quando você faz isso, o seguinte acontece automaticamente:
+
+1. A reserva é excluída do sistema. 
+2. O lembrete de notificação programado para essa reserva é cancelado. 
+3. Se você tiver mais reservas futuras, o lembrete será reprogramado para apontar para a próxima.
+
+Você não precisa fazer nada manualmente para gerenciar as notificações: o aplicativo cuida de tudo quando você cancela.
+
+:::cuidado
+O cancelamento é permanente. Uma vez cancelado, você terá que fazer uma nova reserva se quiser usar aquela máquina novamente naquele momento, desde que ela ainda esteja disponível. 
+:::
+
+---
+
+## Exporte uma reserva para o calendário do telefone
+
+Cada cartão de reserva inclui um ícone de calendário no canto superior direito. Quando pressionado:
+
+1. Aparece uma caixa de diálogo de confirmação com os dados da reserva (máquina, data e hora). 
+2. Caso você confirme, o app abre o aplicativo de calendário do seu celular com todos os dados já preenchidos: título com nome da máquina, data, horário de início e horário de término. 
+3. Confirme em seu aplicativo de calendário para salvar o evento.
+
+Este recurso é útil tanto para reservas futuras (lembrando você visualmente no calendário) quanto para reservas anteriores (mantendo um registro histórico de sua atividade).
+
+:::informações
+A exportação abre o aplicativo de calendário padrão do seu telefone. Se você tiver vários aplicativos de calendário instalados, o sistema perguntará qual você deseja usar. 
+:::
+
+---
+
+## Visualização do administrador
+
+Se sua conta tiver permissões de administrador, na tela de reservas você também verá as reservas de **o resto dos usuários**, não apenas as suas. Cada cartão também inclui o nome do usuário que fez a reserva. O administrador pode cancelar qualquer reserva ativa, não apenas a sua.

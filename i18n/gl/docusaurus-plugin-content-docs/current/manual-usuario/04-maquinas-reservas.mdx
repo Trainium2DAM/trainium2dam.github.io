@@ -1,0 +1,87 @@
+---
+title: Máquinas y reservas
+sidebar_position: 4
+---
+# Máquinas e reservas
+
+A sección de máquinas permite consultar o equipamento dispoñible no ximnasio e reservar a máquina que quere utilizar nunha franxa horaria concreta.
+
+---
+
+## Consulta o catálogo de máquinas
+
+Preme **"Máquinas"** na pantalla principal para ver a lista completa de equipos. Mentres se cargan os datos, verás tarxetas grises animadas (carga de esqueleto) que son substituídas polas tarxetas reais en canto chegue a información.
+
+Cada tarxeta de máquina mostra:
+
+- **Nome** da máquina. 
+- **Categoría** de exercicio (Cardio, Lombo, Perna, Peito, etc.). 
+- **Descrición** do equipamento. 
+- **Estado actual**, indicado por un distintivo de cores:
+
+| Insignia | Cor | Significado | 
+|---|---|---| 
+| **Dispoñible** | Verde | A máquina está operativa e podes reservala | 
+| **Mantemento** | Laranxa | Temporalmente fóra de servizo, non é posible reservar |
+
+Cando unha máquina está en mantemento, a tarxeta tamén mostra as **datas de inicio e finalización** do período, para que saibas cando estará dispoñible de novo.
+
+---
+
+## Fai unha reserva
+
+Para reservar unha máquina debe estar no estado **Dispoñible**. Fai clic na túa tarxeta para iniciar o proceso:
+
+### 1. Seleccione a data
+
+Abrirase un calendario onde podes escoller o día no que queres utilizar a máquina.
+
+### 2. Seleccione a hora de inicio
+
+Despois de escoller a data, aparecerá un selector de hora. Escolle a hora que queres comezar.
+
+### 3. Establece a hora de finalización (opcional)
+
+A aplicación calcula automaticamente a hora de finalización engadindo **30 minutos** á hora de inicio. Se o precisas podes axustar este tempo, pero ten en conta que **o máximo permitido por reserva é de 1 hora**. Se tentas reservar máis tempo, a aplicación notificarache cunha mensaxe de erro.
+
+### 4. Confirmación automática da dispoñibilidade
+
+Antes de gardar a reserva, a aplicación verifica dúas condicións:
+
+- Que a máquina non estea xa reservada por outro usuario nesa franxa horaria. 
+- Que non tes outra reserva nesa mesma franxa.
+
+Se hai un conflito verás unha mensaxe explicando o motivo e poderás escoller outra data ou hora.
+
+### 5. Reserva confirmada
+
+Se non hai conflitos, gárdase a reserva e **prográmase automaticamente un recordatorio** para avisarte antes da hora de inicio. O aviso previo do recordatorio é o que configuraches en O meu perfil (por defecto, 30 minutos).
+
+Na parte inferior da pantalla aparecerá un aviso coa opción **"Cancelar"**. Se cometeches un erro, podes premer ese botón durante uns segundos para desfacer a reserva inmediatamente, sen ter que ir a "As miñas reservas".
+
+:::información
+Non é posible ter dúas reservas na mesma franxa horaria aínda que estean en máquinas diferentes. Planifica ben as túas sesións para evitar conflitos. 
+:::
+
+---
+
+## Máquinas en mantemento
+
+Cando o administrador pon unha máquina en mantemento durante un período determinado, ocorre o seguinte:
+
+- A máquina aparece co distintivo laranxa **"Mantemento"** e o botón de reserva está desactivado. 
+- Se tivese unha reserva nese período, **cancélase automaticamente**. 
+- Cando abras a aplicación verás un aviso que indica as máquinas e as reservas afectadas.
+
+Unha vez finalizado o período de mantemento, a máquina volve aparecer como **Dispoñible** e poderás reservala de novo.
+
+---
+
+## Restricións de reserva
+
+| Restricción | Detalle | 
+|---|---| 
+| Duración máxima | 1 hora por reserva | 
+| Horarios superpostos | Non podes ter dúas reservas ao mesmo tempo | 
+| Máquinas en mantemento | Non se poden reservar durante o período de mantemento | 
+| Conexión a Internet | Necesario para comprobar a dispoñibilidade e confirmar reservas |

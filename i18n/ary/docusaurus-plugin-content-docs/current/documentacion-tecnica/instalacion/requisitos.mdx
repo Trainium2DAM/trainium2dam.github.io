@@ -1,0 +1,56 @@
+---
+title: Requisitos previos
+sidebar_position: 1
+---
+#المتطلبات الأساسية
+
+قبل استنساخ المستودع وتجميع المشروع، من الضروري تثبيت البرنامج التالي وتكوينه على جهاز التطوير.
+
+## بيئة التطوير
+
+| أداة | النسخة الدنيا | ملاحظات | 
+|---|---|---| 
+| أندرويد ستوديو | القنفذ (2023.1.1) أو أعلى | يوصى باستخدام أحدث إصدار ثابت | 
+| جدك | 11 | تم تكوينه كـ `sourceCompatibility` و `targetCompatibility` في الوحدة النمطية `:app` | 
+| جرادل | 8.13 | تتم إدارته بواسطة المجمع المضمن في المستودع (`gradlew`) | 
+| أندرويد SDK (compilSdk) | 36 | التثبيت من Android Studio SDK Manager | 
+| أندرويد SDK (minSdk) | 24 (أندرويد 7.0 نوجا) | لا يتم تثبيت التطبيق على الإصدارات السابقة | 
+| كوتلين | 2.0+ | تتم إدارته بواسطة البرنامج المساعد `kotlin.android` المعلن عنه في `build.gradle.kts` |
+
+## حسابات الخدمة المطلوبة
+
+يعتمد المشروع على واجهتين خلفيتين خارجيتين تتطلبان حسابات نشطة:
+
+**سوبابيس**
+
+أنت بحاجة إلى مشروع Supabase يحتوي على جداول المخطط الموضحة في [Base de datos](/docs/base-de-datos/esquema-supabase). تم الإعلان عن بيانات الاعتماد (`SUPABASE_URL` و`SUPABASE_KEY`) كثوابت في `AppConfig.kt`. بالنسبة لبيئات الإنتاج يوصى بنقلها إلى ملف `local.properties` أو إلى متغيرات البيئة وعدم تضمين القيم الحقيقية في المستودع.
+
+**فايرباسي**
+
+مطلوب مشروع Firebase مع تمكين خدمة Data Connect. يجب نسخ الملف `google-services.json` إلى `app/google-services.json`. لا ينبغي تحميل هذا الملف إلى المستودع إذا كان المشروع عامًا.
+
+## الأذونات المطلوبة من قبل التطبيق
+
+يعلن `AndroidManifest.xml` عن الأذونات التالية:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+```
+
+| إذن | اكتب | الغرض | 
+|---|---|---| 
+| `INTERNET` | عادي | الوصول إلى Supabase وFirebase | 
+| `ACCESS_NETWORK_STATE` | عادي | فحص الاتصال | 
+| `POST_NOTIFICATIONS` | وقت التشغيل (أندرويد 13+) | عرض إشعارات تذكير الحجز | 
+| `SCHEDULE_EXACT_ALARM` | عادي | ضبط المنبهات الدقيقة للتذكيرات | 
+| `USE_EXACT_ALARM` | عادي | ضمان إضافي لدقة الإنذار في API 33+ | 
+| `RECEIVE_BOOT_COMPLETED` | عادي | تم الإعلان عن إعادة برمجة التنبيه في المستقبل بعد إعادة الضبط |
+
+يتم طلب الإذن `POST_NOTIFICATIONS` في وقت التشغيل من `MainActivity.onCreate()` على الأجهزة التي تعمل بنظام Android 13 (API 33) أو أعلى. في الإصدارات السابقة يتم منح الإذن تلقائيًا. لا يزال التطبيق يعمل بدون هذا الإذن، لكنه لن يرسل إشعارات تذكير.
+
+يعد الاتصال بالشبكة ضروريًا لتشغيل التطبيق نظرًا لأن جميع عمليات البيانات تتم عن بُعد.

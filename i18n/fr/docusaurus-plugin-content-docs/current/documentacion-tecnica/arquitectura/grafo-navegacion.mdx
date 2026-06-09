@@ -1,0 +1,91 @@
+---
+title: Grafo de navegación
+sidebar_position: 2
+---
+# Graphique de navigation
+
+Le graphe de navigation est déclaré de manière centralisée dans `MainActivity.kt` à l'aide d'un `NavHost`. La destination de départ est toujours `splash`.
+
+## Itinéraires définis
+
+| Itinéraire | Composable | Arguments | Accessible depuis | 
+|---|---|---|---| 
+| `splash` | `SplashVideoScreen` | ninguno | Début de l'application | 
+| `loading` | Pantalon de chargement intermédiaire | ninguno | `splash` (pour compléter la vidéo) | 
+| `main` | `MainScreen` | ninguno | `loading` | 
+| `login` | `LoginScreen` | ninguno | `main` | 
+| `register` | `RegisterScreen` | ninguno | `login` | 
+| `forgot` | `ForgotPasswordScreen` | ninguno | `login` | 
+| `profile/{idUsuario}` | `ProfileScreen` | `Int` | `login` / `loading` (session gardée) | 
+| `edit_profile/{idUsuario}` | `EditProfileScreen` | `Int` | `profile` | 
+| `historial/{idUsuario}` | `HistorialScreen` | `Int` | `edit_profile` | 
+| `premium_selection/{idUsuario}` | `PremiumSelectionScreen` | `Int` | `profile` / `edit_profile` | 
+| `maquinas/{isAdmin}/{idUsuario}` | `MaquinasScreen` | `Int`, `Int` | `profile` | 
+| `reservas/{isAdmin}/{idUsuario}` | `ReservasScreen` | `Int`, `Int` | `profile` | 
+| `platos/{isAdmin}/{idUsuario}` | `PlatosScreen` | `Int`, `Int` | `profile` | 
+| `registro/{idUsuario}` | `RegistroScreen` | `Int` | `profile` |
+
+## Flux de navigation principal
+
+```
+[splash]
+    |
+    v (onVideoFinished → popUpTo splash inclusive)
+[loading]  ─── sesión válida guardada ──────────────────────────> [profile/{idUsuario}]
+    |
+    v (sin sesión)
+[main]
+    |
+    v (onNavigateToLogin)
+[login]
+    |---> [register] (onNavigateToRegister)
+    |---> [forgot]   (onNavigateToForgot)
+    |
+    v (onLoginSuccess: idUsuario)
+[profile/{idUsuario}]
+    |---> [maquinas/{isAdmin}/{idUsuario}]     (onNavigateToMaquinas)
+    |---> [platos/{isAdmin}/{idUsuario}]       (onNavigateToPlatos)
+    |---> [registro/{idUsuario}]               (onNavigateToRegistroPeso)
+    |---> [reservas/{isAdmin}/{idUsuario}]     (onNavigateToReservas)
+    |---> [edit_profile/{idUsuario}]           (onNavigateToEditProfile)
+    |---> [premium_selection/{idUsuario}]      (onNavigateToPremium)
+    |---> [main] popUpTo(0)                    (onLogout)
+         |
+         v (edit_profile)
+    [edit_profile/{idUsuario}]
+         |---> [historial/{idUsuario}]           (onNavigateToHistorial)
+         |---> [premium_selection/{idUsuario}]   (onNavigateToPremium)
+```
+
+## Écran de chargement
+
+La route `loading` sert d'intermédiaire entre le splash et le reste de l'application. Lors de la saisie de `loading`, une vérification est effectuée pour voir si une session enregistrée valide existe sur `SecureSessionManager`. Si tel est le cas, accédez directement à `profile/{idUsuario}` pour récupérer l’ID utilisateur de session. Si aucune session n’existe, accédez à `main`.
+
+Ce comportement permet aux utilisateurs authentifiés de ne pas avoir à se reconnecter à chaque démarrage de l'application.
+
+## Gestion de la pile arrière
+
+La destination `splash` est supprimée de la pile arrière lors de la navigation vers `loading` à l'aide de `popUpTo("splash") { inclusive = true }`, empêchant l'utilisateur de pouvoir revenir à l'écran vidéo avec le bouton Précédent.
+
+Lors de la déconnexion de `ProfileScreen`, `popUpTo(0)` est exécuté pour effacer complètement la pile arrière avant de naviguer vers `main`, empêchant l'accès aux écrans protégés via le bouton Retour du système. De plus, `SecureSessionManager.cerrarSesion()` efface les données de session persistantes.
+
+## Passer des booléens sous forme d'entiers
+
+Navigation Compose ne prend pas en charge `Boolean` comme type d'argument de navigation. Par conséquent, le champ `isAdmin` est transporté sous la forme `Int` (0 ou 1) et est converti par comparaison lorsqu'il est extrait de `Bundle` :
+
+```kotlin
+val isAdmin = backStackEntry.arguments?.getInt("isAdmin") == 1
+```
+
+Lors de la navigation, la conversion inverse se fait avec l'opérateur ternaire :
+
+```kotlin
+navController.navigate("maquinas/${if (isAdmin) 1 else 0}/$idUsuario")
+```
+
+## Gestion de la barre système
+
+`MainActivity.kt` réagit aux changements d'itinéraire en utilisant `SideEffect` pour adapter la couleur et le style des barres d'état et de navigation du système :
+
+- Sur l'itinéraire `splash` : fond blanc, icônes sombres, barre de navigation visible. 
+- Dans le reste des parcours : fond adapté au thème (foncé `#0B1426` / clair `#F0F4FF`), icônes selon le thème, barre de navigation cachée (affichée par glissement).

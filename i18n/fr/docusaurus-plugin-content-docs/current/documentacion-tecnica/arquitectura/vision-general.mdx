@@ -1,0 +1,213 @@
+---
+title: Visión general de la arquitectura
+sidebar_position: 1
+---
+# Aperçu de l'architecture
+
+## Modèle architectural
+
+Trainium suit une architecture en couches qui combine la couche de présentation (composables + ViewModels), une couche de référentiel pour l'accès aux données et un localisateur de services comme point d'injection. La majeure partie de la logique métier réside dans les ViewModels et les référentiels ; la couche de présentation leur délègue via des appels et observe leur état réactif.
+
+```
+Capa de presentación  →  ViewModels  →  Repositorios  →  SupabaseClient / DataConnectClient
+```
+
+Certains écrans secondaires (historique, premium) lancent encore des coroutines directement dans `rememberCoroutineScope()`, mais le flux principal (machines, réservations, authentification, profil) fonctionne déjà via le pattern ViewModel + Repository.
+
+## Structure du code source
+
+```
+com.example.trainium2/
+├── MainActivity.kt               # Punto de entrada, NavHost, gestión del tema e idioma
+├── AppConfig.kt                  # Constantes globales (URLs, credenciales, formatos)
+├── DbConstants.kt                # Nombres de tablas (DbTables) y columnas (DbColumns)
+├── SecureSessionManager.kt       # Gestión de sesión persistente con SharedPreferences
+├── SupabaseClient.kt             # Singleton del cliente Supabase
+├── DataConnectClient.kt          # Cliente HTTP para Firebase Data Connect
+├── ThemeManager.kt               # Gestión de tema con DataStore
+├── NotificationHelper.kt         # Programación y cancelación de notificaciones de reserva
+├── NotificationReceiver.kt       # BroadcastReceiver que muestra la notificación
+├── NotificationSettingsManager.kt # Persistencia de la antelación de notificación (DataStore)
+├── DatabaseAdmin.kt              # Referencia legacy a JDBC (no activo en producción)
+├── ImageUtils.kt                 # Utilidades de conversión Bitmap ↔ Base64
+│
+├── SplashVideoScreen.kt          # Pantalla de splash con vídeo
+├── MainScreen.kt                 # Landing sin autenticar
+├── LoginScreen.kt                # Autenticación
+├── RegisterScreen.kt             # Alta de usuario
+├── ForgotPasswordScreen.kt       # Recuperación de contraseña
+├── ProfileScreen.kt              # Hub principal autenticado
+├── EditProfileScreen.kt          # Edición de datos de perfil y configuración de notificaciones
+├── MaquinasScreen.kt             # Catálogo y reserva de maquinaria
+├── ReservasScreen.kt             # Listado y gestión de reservas (con integración de calendario)
+├── PlatosScreen.kt               # Catálogo nutricional
+├── RegistroScreen.kt             # Registro de peso corporal
+├── HistorialScreen.kt            # Historial de pagos
+├── PremiumSelectionScreen.kt     # Selección de plan Premium
+│
+├── data/
+│   ├── repository/               # Capa de acceso a datos
+│   │   ├── AuthRepository.kt
+│   │   ├── UsuarioRepository.kt
+│   │   ├── MaquinaRepository.kt
+│   │   ├── ReservaRepository.kt
+│   │   ├── PlatoRepository.kt
+│   │   ├── PesoRepository.kt
+│   │   └── PagoRepository.kt
+│   └── i18n/                     # Sistema de internacionalización
+│       ├── AppLanguage.kt        # Enum de idiomas soportados
+│       ├── AppStrings.kt         # Data class con todas las cadenas de texto
+│       ├── LocalStrings.kt       # CompositionLocal + función de resolución
+│       ├── LanguageManager.kt    # Persistencia del idioma seleccionado (DataStore)
+│       ├── LanguagePickerDialog.kt # Diálogo de selección de idioma
+│       ├── StringsEs.kt          # Strings en español
+│       ├── StringsEn.kt          # Strings en inglés
+│       ├── StringsVal.kt         # Strings en valenciano
+│       ├── StringsCat.kt         # Strings en catalán
+│       ├── StringsFr.kt          # Strings en francés
+│       ├── StringsAr.kt          # Strings en árabe marroquí
+│       ├── StringsEu.kt          # Strings en euskera
+│       ├── StringsGl.kt          # Strings en gallego
+│       └── StringsDeAndOthers.kt # Strings en alemán, portugués, ruso y chino
+│
+├── di/
+│   └── ServiceLocator.kt         # Localizador de servicios (instancias lazy de repos)
+│
+├── models/                       # Data classes serializables
+│   ├── Maquina.kt
+│   ├── Reserva.kt
+│   ├── Usuario.kt                # Incluye fechaInicio y fechaFin de suscripción Premium
+│   ├── Pago.kt
+│   ├── Plato.kt
+│   ├── PesoUsuario.kt
+│   └── SesionData.kt
+│
+└── ui/
+    ├── theme/
+    │   ├── Color.kt              # Paleta completa de colores
+    │   ├── Theme.kt              # MaterialTheme con esquemas claro/oscuro
+    │   ├── Type.kt               # Escala tipográfica
+    │   ├── ScreenHeader.kt       # Componente de cabecera reutilizable
+    │   ├── SkeletonLoading.kt    # Componentes de carga skeleton
+    │   ├── AppTimePickerDialog.kt # Diálogo de selección de hora personalizado
+    │   └── StatusBarPadding.kt   # Utilidad de padding para barra de estado
+    └── viewmodel/                # ViewModels por pantalla
+        ├── LoginViewModel.kt
+        ├── RegisterViewModel.kt
+        ├── ForgotPasswordViewModel.kt
+        ├── EditProfileViewModel.kt
+        ├── MaquinasViewModel.kt
+        ├── ReservasViewModel.kt
+        ├── PlatosViewModel.kt
+        ├── RegistroViewModel.kt
+        ├── HistorialViewModel.kt
+        ├── PremiumSelectionViewModel.kt
+        └── ProfileViewModel.kt
+```
+
+## Backends externes
+
+L'application interagit avec deux backends externes :
+
+**Supabase** fait office de backend principal. Gère toutes les tables de données à l'aide du protocole PostgREST. Le SDK Supabase Kotlin mappe automatiquement les réponses JSON aux classes de données à l'aide de `kotlinx.serialization`. L'authentification se fait directement sur la table `usuarios` en vérifiant l'ID et le mot de passe, et non via le flux Supabase Auth (dont le module est inclus mais n'est pas activement utilisé).
+
+**Firebase Data Connect** est utilisé comme backend complémentaire via un client HTTP manuel (`DataConnectClient.kt`) qui appelle le point de terminaison GraphQL. Le SDK Firebase Auth est déclaré comme dépendance et est disponible pour une éventuelle migration du système d'authentification.
+
+## Gestion de l'état
+
+L'état de l'UI est géré de deux manières selon l'écran :
+
+**ViewModels (modèle principal) :** Les écrans les plus complexes (machines, réservations, plats, connexion, inscription, profil) exposent leur état via les variables `mutableStateOf` déclarées dans le ViewModel et observées depuis le composable. Le ViewModel survit aux rotations d’écran et aux changements de configuration.
+
+**État local (écrans secondaires) :** Certains écrans simples (historique, premium) utilisent `remember` + `mutableStateOf` à l'intérieur du composable. Dans ces cas, l’état ne survit pas aux rotations de l’écran, ce qui est acceptable puisque l’application force l’orientation portrait par conception.
+
+La préférence de thème est conservée sur le disque par `ThemeManager` (DataStore) et lue dans `MainActivity.kt` en tant que `Flow<Boolean?>` collecté avec `collectAsState`.
+
+La préférence de langue est conservée par `LanguageManager` (DataStore) et résolue en tant que `Flow<AppLanguage?>` à `MainActivity.kt`. Si l'utilisateur n'a pas sélectionné de langue, la langue du système est détectée avec `languageManager.detectSystemLanguage()`.
+
+## Internationalisation (i18n)
+
+Le système d'internationalisation utilise un `CompositionLocal` (`LocalStrings`) pour fournir à tous les composables un accès aux chaînes de texte de la langue active, sans avoir besoin de passer des chaînes en tant que paramètres.
+
+### Langues prises en charge
+
+| Codes | Langue | 
+|---|---| 
+| `es` | Espagnol | 
+| `en` | Anglais | 
+| `ca-VALENCIA` | valencien | 
+| `ca` | catalan | 
+| `fr` | français | 
+| `ar-MA` | Arabe marocain | 
+| `eu` | Basque | 
+| `gl` | Galicien | 
+| `de` | Allemand | 
+| `pt` | Portugais | 
+| `ru` | Russe | 
+| `zh` | Chinois |
+
+### Flux de résolution linguistique
+
+```
+LanguageManager.currentLanguage (Flow<AppLanguage?>)
+    ├── null → languageManager.detectSystemLanguage() (Locale del sistema)
+    └── AppLanguage → stringsForLanguage(language) → AppStrings
+                                    ↓
+                    CompositionLocalProvider(LocalStrings provides currentStrings)
+                                    ↓
+                        val strings = LocalStrings.current  // en cualquier composable
+```
+
+Le sélecteur de langue s'ouvre à partir de l'icône de globe disponible sur `ProfileScreen`, `EditProfileScreen`, `MaquinasScreen` et d'autres écrans principaux. La sélection d'une langue dans `LanguagePickerDialog` conserve le code avec `LanguageManager.setLanguage(language)` et le composable `MainActivity` recharge automatiquement les chaînes.
+
+## Système de notifications
+
+L'application planifie des rappels de réservation locaux en utilisant `AlarmManager`. Le système se compose de trois éléments :
+
+- **`NotificationHelper` :** Crée le canal de notification, planifie les alarmes exactes (`setExactAndAllowWhileIdle`) et les annule. Il contient également `rescheduleNextReservationNotification`, qui interroge les futures réservations de l'utilisateur et reprogramme l'alarme pour la suivante. 
+- **`NotificationReceiver` :** `BroadcastReceiver` qui reçoit l'alarme et publie la notification avec `NotificationCompat`. 
+- **`NotificationSettingsManager` :** Le préavis choisi par l'utilisateur (options : 10, 15, 30, 60 ou 120 minutes ; valeur par défaut : 30 minutes) et l'état d'activation global des notifications (activé par défaut) persistent dans DataStore.
+
+L'autorisation `POST_NOTIFICATIONS` est demandée lors de l'exécution sur Android 13+ depuis `MainActivity.onCreate()`. Les autorisations `SCHEDULE_EXACT_ALARM` et `USE_EXACT_ALARM` sont déclarées dans le manifeste pour garantir l'exactitude des alarmes.
+
+## Injection de dépendances
+
+Le localisateur de service `ServiceLocator` (dans `di/ServiceLocator.kt`) instancie les référentiels sous la forme `lazy` (une seule instance par référentiel, créée au premier accès) :
+
+```kotlin
+object ServiceLocator {
+    val authRepository by lazy { AuthRepository() }
+    val usuarioRepository by lazy { UsuarioRepository() }
+    val maquinaRepository by lazy { MaquinaRepository() }
+    val reservaRepository by lazy { ReservaRepository() }
+    val platoRepository by lazy { PlatoRepository() }
+    val pesoRepository by lazy { PesoRepository() }
+    val pagoRepository by lazy { PagoRepository() }
+}
+```
+
+Les ViewModels accèdent aux référentiels via `ServiceLocator`, en maintenant un couplage lâche entre les couches.
+
+## Configuration centralisée
+
+`AppConfig.kt` centralise toutes les constantes de configuration de l'application :
+
+```kotlin
+object AppConfig {
+    const val SUPABASE_URL = "https://<tu-proyecto>.supabase.co"
+    const val SUPABASE_KEY = "<tu-anon-key>"
+    const val FIREBASE_API_KEY = "<tu-api-key>"
+    const val FIREBASE_APP_ID = "<tu-app-id>"
+    const val DATACONNECT_URL = "https://europe-southwest1-dataconnect.googleapis.com/..."
+    const val SESSION_PREFS_NAME = "trainium_session"
+    const val SESSION_DURATION_MS = 7L * 24L * 60L * 60L * 1000L  // 7 días
+    const val IMAGE_QUALITY = 70
+    // Formatos de fecha...
+}
+```
+
+De manière analogue, `DbConstants.kt` définit les objets `DbTables` et `DbColumns` avec les noms de tables et de colonnes comme constantes, en évitant les chaînes littérales dispersées dans le code.
+
+## Navigation
+
+La navigation est gérée avec Navigation Compose. Le `NavHost` est déclaré dans `MainActivity.kt` et définit toutes les routes. Le schéma détaillé se trouve dans [Grafo de navegación](/docs/arquitectura/grafo-navegacion).

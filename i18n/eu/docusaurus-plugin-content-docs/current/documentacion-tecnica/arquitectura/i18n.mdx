@@ -1,0 +1,103 @@
+---
+title: Internacionalización (i18n)
+sidebar_position: 4
+---
+# Nazioartekotzea (i18n)
+
+Trainium-ek bere nazioartekotze-sistema inplementatzen du Compose-n, exekuzioan interfazearen hizkuntza aldatzea ahalbidetzen duena aplikazioa berrabiarazi gabe, `CompositionLocal` batean oinarrituta.
+
+## Sistemaren arkitektura
+
+Sistema `data/i18n/` paketeko bost fitxategiz osatuta dago:
+
+| Fitxategia | Erantzukizuna | 
+|---|---| 
+| `AppLanguage.kt` | Enum `Locale`-tik onartzen diren 12 hizkuntzekin eta haien bereizmenarekin
+| `AppStrings.kt` | Datu-klasea UI literal guztiak propietate gisa `String` | 
+| `LocalStrings.kt` | `CompositionLocal` + funtzioa `stringsForLanguage()` | 
+| `LanguageManager.kt` | Hizkuntza iraunkortasuna DataStore | 
+| `LanguagePickerDialog.kt` | Hizkuntza hautatzeko elkarrizketa-koadroa (ikusmenaren osagaia) |
+
+Kate-fitxategiek (`StringsEs.kt`, `StringsEn.kt`, etab.) hizkuntza bakoitzerako `AppStrings`-ren instantzia zehatzak dituzte.
+
+## Onartutako hizkuntzak
+
+| Enum | kodea | Nombre nativo | 
+|---|---|---| 
+| `SPANISH` | `es` | Español | 
+| `ENGLISH` | `en` | ingelesa | 
+| `VALENCIAN` | `ca-VALENCIA` | Valencià | 
+| `CATALAN` | `ca` | Català | 
+| `FRENCH` | `fr` | Français | 
+| `MOROCCAN_ARABIC` | `ar-MA` | الدارجة | 
+| `BASQUE` | `eu` | Euskara | 
+| `GALICIAN` | `gl` | Galego | 
+| `GERMAN` | `de` | Deutsch | 
+| `PORTUGUESE` | `pt` | portugesa | 
+| `RUSSIAN` | `ru` | Русский | 
+| `CHINESE` | `zh` | 中文 |
+
+## Hizkuntzaren detekzioa eta ebazpena
+
+Aplikazioa antolatu, `MainActivity` behatu `Flow<AppLanguage?>` de `LanguageManager`:
+
+- Erabiltzaileak hizkuntza bat eskuz hautatu badu jada (balio nulua), hori erabiltzen da. 
+- Balioa `null` bada (lehen exekuzioa edo garbitutako hobespena), `detectSystemLanguage()` deitzen da, sistemaren `Locale` hurbilen dagoen `AppLanguage`rekin mapatzen duena. Sistemak onartzen ez den hizkuntza bat erabiltzen badu, ordezkoa `SPANISH` da.
+
+```kotlin
+val resolvedLanguage by remember(savedLanguage) {
+    derivedStateOf {
+        savedLanguage ?: languageManager.detectSystemLanguage()
+    }
+}
+
+val currentStrings = remember(resolvedLanguage) {
+    stringsForLanguage(resolvedLanguage)
+}
+
+CompositionLocalProvider(LocalStrings provides currentStrings) {
+    // toda la jerarquía de composables
+}
+```
+
+## Konposagarrietan kateetarako sarbidea
+
+`CompositionLocalProvider` barruan dagoen edozein konposagarri hizkuntza aktiboko kateetara sartzen da:
+
+```kotlin
+val strings = LocalStrings.current
+Text(strings.login)
+```
+
+Ez da beharrezkoa kateak parametro gisa pasatzea: `CompositionLocal` automatikoki hedatzen ditu hierarkia osora.
+
+## Hizkuntza aldaketa exekuzioan
+
+Erabiltzaileak hautatzailea irekitzen du pantaila nagusietan eskuragarri dagoen globo ikonoa (`Icons.Default.Language`) sakatuz. `LanguagePickerDialog` hizkuntzen zerrenda erakusten du bere jatorrizko izenekin. Berrespenean:
+
+```kotlin
+scope.launch { languageManager.setLanguage(selectedLanguage) }
+```
+
+`LanguageManager.setLanguage` hizkuntza-kodea idazten du DataStore-n. `Flow` behatuz `MainActivity` balio berria ateratzen du, `resolvedLanguage` aldatzen da, `currentStrings` berriro kalkulatzen da eta `CompositionLocalProvider` birkonposatzen da. Aldaketa berehalakoa da eta interfaze osoan ikusgai dago aplikazioa berrabiarazi beharrik gabe.
+
+## Hizkuntza-kudeatzailea
+
+```kotlin
+class LanguageManager(private val context: Context) {
+    val currentLanguage: Flow<AppLanguage?>
+    suspend fun setLanguage(language: AppLanguage)
+    fun detectSystemLanguage(): AppLanguage
+}
+```
+
+`currentLanguage` `null` ateratzen du erabiltzaileak hizkuntza bat lehen aldiz hautatu arte. `detectSystemLanguage()` funtzio sinkrono bat da, `Locale.getDefault()` dagokion `AppLanguage`rekin mapatzen duena.
+
+## Gehitu hizkuntza berri bat
+
+Hizkuntza gehigarri baterako laguntza gehitzeko:
+
+1. Gehitu sarrera berri bat `AppLanguage` zerrendan bere `code`, `displayName` eta `nativeName`rekin. 
+2. Gehitu kode horren detekzioa `AppLanguage.fromLocale()` blokean `when`. 
+3. Sortu `StringsXx` objektu berri bat, itzulpen guztiekin `AppStrings` instantziatuko duena. 
+4. Gehitu kasua `stringsForLanguage()` funtzioan `LocalStrings.kt`.

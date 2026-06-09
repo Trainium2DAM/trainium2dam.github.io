@@ -1,0 +1,70 @@
+---
+title: Gestión de sesión
+sidebar_position: 3
+---
+# Gestion des séances
+
+## SecureSessionManager
+
+`SecureSessionManager.kt` gère la persistance de la session utilisateur entre les démarrages de l'application à l'aide de `SharedPreferences`.
+
+```kotlin
+object SecureSessionManager {
+    fun setContext(context: Context)
+    fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+    fun obtenerSesion(): SesionData?
+    fun cerrarSesion()
+}
+```
+
+### Initialisation
+
+`setContext(context)` doit être appelé avant toute autre opération. Invoqué dans `MainActivity.onCreate()` avec le contexte d'activité. En interne, il crée un `SharedPreferences` avec le nom `AppConfig.SESSION_PREFS_NAME` (`"trainium_session"`) et le mode `MODE_PRIVATE`.
+
+### démarrer la session
+
+Enregistrez les données de session dans `SharedPreferences` :
+
+```kotlin
+fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+```
+
+`userId`, `userName`, `isAdmin` et `isPremium` persistent. Renvoie `true` si la sauvegarde s'est terminée avec succès (vérifiez en relisant `userId`).
+
+Appelé depuis `LoginScreen` immédiatement après une authentification réussie.
+
+### obtenirSession
+
+Récupérer les données de session enregistrées :
+
+```kotlin
+fun obtenerSesion(): SesionData?
+```
+
+Renvoie un objet `SesionData` avec les données utilisateur, ou `null` s'il n'y a pas de session enregistrée (premier démarrage ou après une déconnexion). Il est appelé depuis l'écran `loading` au démarrage de l'application.
+
+### fermer la session
+
+Effacez toutes les données de `SharedPreferences` :
+
+```kotlin
+fun cerrarSesion()
+```
+
+Appelé depuis `ProfileScreen` lorsque l'utilisateur appuie sur "Déconnexion", juste avant de naviguer vers `main` avec `popUpTo(0)`.
+
+## Modèle de données de session
+
+```kotlin
+data class SesionData(
+    val userId: Int,
+    val userName: String,
+    val isAdmin: Boolean,
+    val isPremium: Boolean,
+    val token: String = ""
+)
+```
+
+## Durée de la session
+
+`AppConfig.SESSION_DURATION_MS` définit la durée théorique de la séance (7 jours en millisecondes). Cependant, dans l’implémentation actuelle, la session n’expire pas automatiquement ; Il persiste jusqu'à ce que l'utilisateur se déconnecte explicitement ou que les données de l'application soient effacées.

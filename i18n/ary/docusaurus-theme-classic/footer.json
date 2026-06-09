@@ -1,0 +1,26 @@
+{
+  "link.title.Documentation": {
+    "message": "التوثيق",
+    "description": "The title of the footer links column with title=Documentation in the footer"
+  },
+  "link.title.Resources": {
+    "message": "موارد",
+    "description": "The title of the footer links column with title=Resources in the footer"
+  },
+  "link.item.label.Introduction": {
+    "message": "مقدمة",
+    "description": "The label of footer link with label=Introduction linking to /docs/intro"
+  },
+  "link.item.label.API Reference": {
+    "message": "مرجع واجهة برمجة التطبيقات",
+    "description": "The label of footer link with label=API Reference linking to /docs/api-servicios/firebase"
+  },
+  "link.item.label.GitHub": {
+    "message": "جيثب",
+    "description": "The label of footer link with label=GitHub linking to https://github.com/trainium2dam"
+  },
+  "copyright": {
+    "message": "ترينيوم – التوثيق الفني",
+    "description": "The footer copyright"
+  }
+}

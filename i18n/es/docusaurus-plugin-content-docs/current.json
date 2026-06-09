@@ -1,0 +1,46 @@
+{
+  "version.label": {
+    "message": "Next",
+    "description": "The label for version current"
+  },
+  "sidebar.tutorialSidebar.category.Instalacion": {
+    "message": "Instalacion",
+    "description": "The label for category 'Instalacion' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Arquitectura": {
+    "message": "Arquitectura",
+    "description": "The label for category 'Arquitectura' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Base de datos": {
+    "message": "Base de datos",
+    "description": "The label for category 'Base de datos' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Funcionalidades": {
+    "message": "Funcionalidades",
+    "description": "The label for category 'Funcionalidades' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.API y servicios": {
+    "message": "API y servicios",
+    "description": "The label for category 'API y servicios' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Diseño": {
+    "message": "Diseño",
+    "description": "The label for category 'Diseño' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Despliegue": {
+    "message": "Despliegue",
+    "description": "The label for category 'Despliegue' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Referencia": {
+    "message": "Referencia",
+    "description": "The label for category 'Referencia' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Documentación técnica": {
+    "message": "Documentación técnica",
+    "description": "The label for category 'Documentación técnica' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Manual de usuario": {
+    "message": "Manual de usuario",
+    "description": "The label for category 'Manual de usuario' in sidebar 'tutorialSidebar'"
+  }
+}

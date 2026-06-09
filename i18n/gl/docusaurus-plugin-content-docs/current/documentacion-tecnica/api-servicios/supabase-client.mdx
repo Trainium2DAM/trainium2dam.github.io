@@ -1,0 +1,96 @@
+---
+title: Cliente Supabase
+sidebar_position: 1
+---
+# Cliente Supabase
+
+## SupabaseClient
+
+`SupabaseClient.kt` define un singleton `object` que inicializa o cliente Supabase SDK. É o punto de acceso único para todas as operacións de base de datos na aplicación.
+
+```kotlin
+object SupabaseClient {
+    val client = createSupabaseClient(
+        supabaseUrl = AppConfig.SUPABASE_URL,
+        supabaseKey = AppConfig.SUPABASE_KEY
+    ) {
+        install(Postgrest)
+        install(Auth)
+    }
+}
+```
+
+As credenciais lense desde `AppConfig`, que centraliza todas as constantes de configuración. Os complementos instalados son `Postgrest` (para operacións CRUD en táboas) e `Auth` (módulo de autenticación SDK, dispoñible para uso futuro).
+
+## Use a través de repositorios
+
+As operacións de base de datos non se realizan directamente desde compoñentes ou ViewModels, senón a través da capa do repositorio (ver [Capa de repositorios](/docs/arquitectura/repositorios)). Todos os métodos de repositorio son funcións `suspend` que se executan en `Dispatchers.IO`.
+
+### Consulta sinxela (SELECT con filtro)
+
+```kotlin
+val usuario = SupabaseClient.client.from(DbTables.USUARIOS)
+    .select { filter { eq(DbColumns.DNI, dni) } }
+    .decodeSingleOrNull<Usuario>()
+```
+
+### Consulta con relacións incrustadas (UNICACIÓN implícita)
+
+PostgREST permítelle recuperar datos de táboas relacionadas nunha única solicitude usando a sintaxe de columna sen procesar:
+
+```kotlin
+val columns = Columns.raw("*, usuarios(*), maquinas(*)")
+val reservas = SupabaseClient.client.from(DbTables.RESERVAS)
+    .select(columns)
+    .decodeList<ReservaConDetalles>()
+```
+
+O obxecto `ReservaConDetalles` declara os campos `usuario: Usuario?` e `maquina: Maquina?` con `@SerialName` aliñados co nome da táboa relacionada.
+
+### Inserción (INSERT)
+
+```kotlin
+SupabaseClient.client.from(DbTables.RESERVAS)
+    .insert(Reserva(
+        idUsuario = idUsuario,
+        idMaquina = maquina.id,
+        fecha = fechaSeleccionada,
+        horaInicio = horaSeleccionada,
+        horaFin = horaFin
+    ))
+```
+
+### Actualización (ACTUALIZACIÓN con filtro)
+
+```kotlin
+SupabaseClient.client.from(DbTables.MAQUINAS)
+    .update({
+        set("operativa", false)
+        set(DbColumns.MANTENIMIENTO_DESDE, desde)
+        set(DbColumns.MANTENIMIENTO_HASTA, hasta)
+    }) { filter { eq(DbColumns.ID, maquina.id) } }
+```
+
+### Eliminar (BORRAR con filtro)
+
+```kotlin
+SupabaseClient.client.from(DbTables.RESERVAS)
+    .delete { filter { eq(DbColumns.ID, reserva.id ?: 0) } }
+```
+
+## Deserialización automática
+
+As clases de datos do paquete `models` están anotadas con `@Serializable` de `kotlinx.serialization`. O SDK Supabase usa este mecanismo para mapear automaticamente o JSON das respostas PostgREST cos tipos de Kotlin correspondentes. Os nomes de campo que difiren entre a columna da base de datos e o campo Kotlin están aliñados con `@SerialName`:
+
+```kotlin
+@Serializable
+data class Reserva(
+    val id: Int? = null,
+    @SerialName("id_usuario") val idUsuario: Int,
+    @SerialName("id_maquina") val idMaquina: Int,
+    val fecha: String,
+    @SerialName("hora_inicio") val horaInicio: String,
+    @SerialName("hora_fin") val horaFin: String,
+    val estado: Boolean = true
+)
+```

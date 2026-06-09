@@ -1,0 +1,225 @@
+---
+title: Componentes y patrones de UI
+sidebar_position: 2
+---
+# Компоненты и шаблоны пользовательского интерфейса
+
+В этом разделе описаны повторно используемые компоненты и шаблоны пользовательского интерфейса, которые повторяются во всем пользовательском интерфейсе.
+
+## Заголовок экрана
+
+**Фичеро:** `ui/theme/ScreenHeader.kt`
+
+Многоразовый компонент заголовка, используемый на всех дочерних экранах. Включает заголовок, подзаголовок, дополнительную кнопку «Назад», дополнительный контент справа и переключение темы.
+
+```kotlin
+@Composable
+fun ScreenHeader(
+    title: String,
+    subtitle: String,
+    visible: Boolean = true,
+    onBack: (() -> Unit)? = null,
+    trailing: @Composable (() -> Unit)? = null,
+    textColor: Color,
+    subtitleColor: Color,
+    onToggleTheme: (() -> Unit)? = null,
+    darkTheme: Boolean? = null
+)
+```
+
+Компонент применяет `statusBarsPadding()` и анимирует свою входную альфу с помощью `animateFloatAsState`, когда `visible` переходит от `false` к `true`.
+
+## Загрузка скелета
+
+**Фичеро:** `ui/theme/SkeletonLoading.kt`
+
+Загрузка компонентов, которые отображаются во время ожидания данных API, улучшает взаимодействие с пользователем за счет исключения пустых экранов.
+
+###Карточка скелета
+
+Анимированный прямоугольный заполнитель для карточек списков:
+
+```kotlin
+@Composable
+fun SkeletonCard(
+    modifier: Modifier = Modifier,
+    height: Int? = null,
+    width: Int? = null
+)
+```
+
+Используйте линейный градиент, анимированный в цикле с помощью `rememberInfiniteTransition`, чтобы имитировать эффект мерцания.
+
+### СкелетКруг
+
+Круглый заполнитель для аватаров и значков:
+
+```kotlin
+@Composable
+fun SkeletonCircle(
+    modifier: Modifier = Modifier,
+    size: Int = 100
+)
+```
+
+### СкелетТекст
+
+Закругленный прямоугольный заполнитель для текста:
+
+```kotlin
+@Composable
+fun SkeletonText(
+    modifier: Modifier = Modifier,
+    width: Int = 200,
+    height: Int = 20
+)
+```
+
+###Список скелетов
+
+Композиция из нескольких `SkeletonCard`, расположенных вертикально:
+
+```kotlin
+@Composable
+fun SkeletonList(
+    itemCount: Int = 5,
+    modifier: Modifier = Modifier,
+    itemHeight: Int = 80
+)
+```
+
+**Типичное использование:**
+
+```kotlin
+if (isLoading) {
+    SkeletonList(itemCount = 5, modifier = Modifier.fillMaxWidth())
+} else {
+    LazyColumn { /* items reales */ }
+}
+```
+
+## AppTimePickerDialog
+
+**Фичеро:** `ui/theme/AppTimePickerDialog.kt`
+
+Диалог выбора времени на основе `TimePicker` Материала 3. Заменяет `TimePickerDialog` Android View, использовавшийся в предыдущих версиях.
+
+```kotlin
+@Composable
+fun AppTimePickerDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (hour: Int, minute: Int) -> Unit,
+    initialHour: Int = LocalTime.now().hour,
+    initialMinute: Int = LocalTime.now().minute,
+    title: String = "Seleccionar hora",
+    is24Hour: Boolean = true,
+    onValidate: ((hour: Int, minute: Int) -> String?)? = null
+)
+```
+
+Параметр `onValidate` позволяет применять дополнительные проверки перед фиксацией. Если функция возвращает `String` (сообщение об ошибке), она отображает его как `Toast` и не закрывает диалоговое окно. Если он возвращает `null`, выбор считается действительным и вызывается `onConfirm`.
+
+## Шаблон карты элемента списка
+
+Списки автоматов, резервирования и блюд следуют одному и тому же шаблону карточек:
+
+```
+Card (RoundedCornerShape 16 dp, elevation, cardBg)
+  └── Row (padding 16 dp, verticalAlignment Center)
+        ├── Image/Icon (60-80 dp)
+        ├── Column (weight 1f)
+        │     ├── Text nombre (titleMedium, fontWeight Bold)
+        │     └── Text subtítulo (bodyMedium, alpha 0.5)
+        └── Botones de acción (IconButton)
+```
+
+Цвет фона `cardBg` адаптируется к активной теме: `Color(0xFF162347).copy(0.9f)` в темном режиме и `Color.White` в светлом.
+
+## Шаблон текстового поля (OutlinedTextField)
+
+Во всех формах используется `OutlinedTextField` с собственной цветовой схемой:
+
+```kotlin
+val inputColors = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = BlueAccent,
+    unfocusedBorderColor = if (isDarkTheme) Color.White.copy(0.15f) else BlueDark.copy(0.15f),
+    focusedLabelColor = BlueAccent,
+    unfocusedLabelColor = if (isDarkTheme) Color.White.copy(0.4f) else BlueDark.copy(0.4f),
+    cursorColor = BlueAccent,
+    focusedTextColor = textColor,
+    unfocusedTextColor = textColor.copy(0.9f)
+)
+```
+
+Активная рамка всегда `BlueAccent` (#2196F3) независимо от темы.
+
+## Кнопка основного действия (CTA)
+
+Кнопки основных действий используют горизонтальный градиент вместо плоского цвета Материала 3:
+
+```kotlin
+Button(
+    onClick = accion,
+    modifier = Modifier.fillMaxWidth().height(56.dp),
+    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+    contentPadding = PaddingValues()
+) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(
+                Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)),
+                RoundedCornerShape(16.dp)
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            "CONFIRMAR",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 2.sp,
+            color = Color.White
+        )
+    }
+}
+```
+
+## Кнопка «Назад»
+
+Возврат реализован с помощью `TextButton` вместо `IconButton` со стрелкой, чтобы увеличить область касания. `ScreenHeader` стандартизирует это поведение, используя `Icons.AutoMirrored.Filled.ArrowBack`.
+
+## Выбор темы (переключение)
+
+Переключатель темы отображается в `MainScreen` и `ProfileScreen` как `IconButton`, выровненный по правому верхнему углу, а `statusBarsPadding()` соответствует строке состояния системы:
+
+```kotlin
+IconButton(
+    onClick = onToggleTheme,
+    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).statusBarsPadding()
+) {
+    Icon(
+        if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+        contentDescription = "Cambiar tema",
+        tint = if (isDarkTheme) BlueSoft else BlueAccent
+    )
+}
+```
+
+В остальных экранах переключатель интегрирован в `ScreenHeader` через параметры `darkTheme` и `onToggleTheme`.
+
+## Аватар пользователя
+
+Аватар профиля отображается в `ProfileScreen` и `EditProfileScreen` в виде круга `Box` с `clip(CircleShape)`. Если у пользователя есть фотография в Base64, она декодируется с помощью `ImageUtils.decodeBase64ToBitmap`. Если у вас нет фотографии, отображается обычный значок человека.
+
+## Индикатор состояния машины
+
+Карточки машин в `MaquinasScreen` отображают цветной значок состояния:
+
+| Статус | Цвет | Текст | 
+|---|---|---| 
+| Операционный | Зеленый (`Color(0xFF4CAF50)`) | Доступно | 
+| На техническом обслуживании | Оранжевый (`Color(0xFFFF9800)`) | Техническое обслуживание |
+
+## Чип фильтра (ReservationsScreen)
+
+Экранные фильтры резервирования реализованы как `FilterChip` Материала 3 на горизонтально прокручиваемом `LazyRow`.

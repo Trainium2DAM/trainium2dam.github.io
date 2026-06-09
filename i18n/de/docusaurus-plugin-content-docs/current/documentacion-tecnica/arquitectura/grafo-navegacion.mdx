@@ -1,0 +1,91 @@
+---
+title: Grafo de navegación
+sidebar_position: 2
+---
+# Navigationsdiagramm
+
+Der Navigationsgraph wird zentral in `MainActivity.kt` über einen `NavHost` deklariert. Das Startziel ist immer `splash`.
+
+## Definierte Routen
+
+| Ruta | Zusammensetzbar | Argumentos | Zugänglich ab | 
+|---|---|---|---| 
+| `splash` | `SplashVideoScreen` | Ninguno | Startseite der App | 
+| `loading` | Pantalla de carga intermedia | Ninguno | `splash` (vollständiges Video) | 
+| `main` | `MainScreen` | Ninguno | `loading` | 
+| `login` | `LoginScreen` | Ninguno | `main` | 
+| `register` | `RegisterScreen` | Ninguno | `login` | 
+| `forgot` | `ForgotPasswordScreen` | Ninguno | `login` | 
+| `profile/{idUsuario}` | `ProfileScreen` | `Int` | `login` / `loading` (Session Guardada) | 
+| `edit_profile/{idUsuario}` | `EditProfileScreen` | `Int` | `profile` | 
+| `historial/{idUsuario}` | `HistorialScreen` | `Int` | `edit_profile` | 
+| `premium_selection/{idUsuario}` | `PremiumSelectionScreen` | `Int` | `profile` / `edit_profile` | 
+| `maquinas/{isAdmin}/{idUsuario}` | `MaquinasScreen` | `Int`, `Int` | `profile` | 
+| `reservas/{isAdmin}/{idUsuario}` | `ReservasScreen` | `Int`, `Int` | `profile` | 
+| `platos/{isAdmin}/{idUsuario}` | `PlatosScreen` | `Int`, `Int` | `profile` | 
+| `registro/{idUsuario}` | `RegistroScreen` | `Int` | `profile` |
+
+## Hauptnavigationsfluss
+
+```
+[splash]
+    |
+    v (onVideoFinished → popUpTo splash inclusive)
+[loading]  ─── sesión válida guardada ──────────────────────────> [profile/{idUsuario}]
+    |
+    v (sin sesión)
+[main]
+    |
+    v (onNavigateToLogin)
+[login]
+    |---> [register] (onNavigateToRegister)
+    |---> [forgot]   (onNavigateToForgot)
+    |
+    v (onLoginSuccess: idUsuario)
+[profile/{idUsuario}]
+    |---> [maquinas/{isAdmin}/{idUsuario}]     (onNavigateToMaquinas)
+    |---> [platos/{isAdmin}/{idUsuario}]       (onNavigateToPlatos)
+    |---> [registro/{idUsuario}]               (onNavigateToRegistroPeso)
+    |---> [reservas/{isAdmin}/{idUsuario}]     (onNavigateToReservas)
+    |---> [edit_profile/{idUsuario}]           (onNavigateToEditProfile)
+    |---> [premium_selection/{idUsuario}]      (onNavigateToPremium)
+    |---> [main] popUpTo(0)                    (onLogout)
+         |
+         v (edit_profile)
+    [edit_profile/{idUsuario}]
+         |---> [historial/{idUsuario}]           (onNavigateToHistorial)
+         |---> [premium_selection/{idUsuario}]   (onNavigateToPremium)
+```
+
+## Ladebildschirm
+
+Die Route `loading` fungiert als Vermittler zwischen dem Splash und dem Rest der App. Bei der Eingabe von `loading` wird geprüft, ob auf `SecureSessionManager` eine gültige gespeicherte Sitzung vorhanden ist. Wenn dies der Fall ist, navigieren Sie direkt zu `profile/{idUsuario}` und rufen Sie die Sitzungsbenutzer-ID ab. Wenn keine Sitzung vorhanden ist, navigieren Sie zu `main`.
+
+Durch dieses Verhalten müssen sich authentifizierte Benutzer nicht bei jedem Start der App erneut anmelden.
+
+## Backstack-Management
+
+Das Ziel `splash` wird aus dem hinteren Stapel entfernt, wenn mit `popUpTo("splash") { inclusive = true }` zu `loading` navigiert wird, wodurch verhindert wird, dass der Benutzer mit der Zurück-Taste zum Videobildschirm zurückkehren kann.
+
+Beim Abmelden von `ProfileScreen` wird `popUpTo(0)` ausgeführt, um den Backstack vollständig zu leeren, bevor zu `main` navigiert wird, wodurch der Zugriff auf geschützte Bildschirme über die Schaltfläche „Zurück“ des Systems verhindert wird. Darüber hinaus löscht `SecureSessionManager.cerrarSesion()` persistente Sitzungsdaten.
+
+## Boolesche Werte als Ganzzahlen übergeben
+
+Navigation Compose unterstützt `Boolean` nicht als Navigationsargumenttyp. Daher wird das Feld `isAdmin` als `Int` (0 oder 1) transportiert und beim Abrufen aus `Bundle` durch Vergleich konvertiert:
+
+```kotlin
+val isAdmin = backStackEntry.arguments?.getInt("isAdmin") == 1
+```
+
+Beim Browsen erfolgt die umgekehrte Konvertierung mit dem ternären Operator:
+
+```kotlin
+navController.navigate("maquinas/${if (isAdmin) 1 else 0}/$idUsuario")
+```
+
+## Systemleistenverwaltung
+
+`MainActivity.kt` reagiert auf Routenänderungen mit `SideEffect`, um die Farbe und den Stil der Status- und Navigationsleisten des Systems anzupassen:
+
+- Auf der Route `splash`: weißer Hintergrund, dunkle Symbole, sichtbare Navigationsleiste. 
+- In den übrigen Routen: dem Thema angepasster Hintergrund (dunkel `#0B1426` / hell `#F0F4FF`), Symbole entsprechend dem Thema, ausgeblendete Navigationsleiste (durch Schieben angezeigt).

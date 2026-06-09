@@ -1,0 +1,70 @@
+---
+title: Gestión de sesión
+sidebar_position: 3
+---
+# Xestión de sesións
+
+## SecureSessionManager
+
+`SecureSessionManager.kt` xestiona a persistencia da sesión do usuario entre os inicios da aplicación mediante `SharedPreferences`.
+
+```kotlin
+object SecureSessionManager {
+    fun setContext(context: Context)
+    fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+    fun obtenerSesion(): SesionData?
+    fun cerrarSesion()
+}
+```
+
+### Inicialización
+
+`setContext(context)` debe chamarse antes de calquera outra operación. Invocado en `MainActivity.onCreate()` co contexto da actividade. Internamente crea un `SharedPreferences` co nome `AppConfig.SESSION_PREFS_NAME` (`"trainium_session"`) e modo `MODE_PRIVATE`.
+
+### iniciar sesión
+
+Garda os datos da sesión en `SharedPreferences`:
+
+```kotlin
+fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+```
+
+`userId`, `userName`, `isAdmin` e `isPremium` persisten. Devolve `true` se o gardado completouse correctamente (comproba relendo `userId`).
+
+Chamado desde `LoginScreen` inmediatamente despois da autenticación correcta.
+
+### getSession
+
+Recuperar os datos da sesión gardados:
+
+```kotlin
+fun obtenerSesion(): SesionData?
+```
+
+Devolve un obxecto `SesionData` cos datos do usuario, ou `null` se non hai sesión gardada (primeiro arranque ou despois de pechar unha sesión). Chámase desde a pantalla `loading` cando se inicia a aplicación.
+
+### sesión pechada
+
+Borrar todos os datos de `SharedPreferences`:
+
+```kotlin
+fun cerrarSesion()
+```
+
+Chamado desde `ProfileScreen` cando o usuario preme "Pechar sesión", xusto antes de navegar a `main` con `popUpTo(0)`.
+
+## Modelo de datos de sesión
+
+```kotlin
+data class SesionData(
+    val userId: Int,
+    val userName: String,
+    val isAdmin: Boolean,
+    val isPremium: Boolean,
+    val token: String = ""
+)
+```
+
+## Duración da sesión
+
+`AppConfig.SESSION_DURATION_MS` define a duración teórica da sesión (7 días en milisegundos). Non obstante, na implementación actual a sesión non caduca automaticamente; Persiste ata que o usuario pecha sesión explícitamente ou se borran os datos da aplicación.

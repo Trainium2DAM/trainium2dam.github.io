@@ -1,0 +1,45 @@
+---
+title: Platos y nutricion
+sidebar_position: 2
+---
+# Plats et nutrition
+
+## PlaquesÉcran
+
+Le catalogue nutritionnel affiche les plats approuvés dans un format de carte unique avec une navigation séquentielle, semblable à un carrousel linéaire. L'utilisateur voit un plat à la fois et peut se déplacer entre eux.
+
+### Téléchargement de données
+
+Lors de l'initialisation de l'écran, deux requêtes sont faites à Supabase en parallèle :
+
+**Plats acceptés :** `from("platos").select { filter { eq("visibilidad", true); eq("aceptado", true) } }`. Seuls les plats approuvés par un administrateur et dont la visibilité est activée sont affichés dans le carrousel.
+
+**Suggestions en attente (administrateur uniquement) :** `from("platos").select { filter { eq("aceptado", false) } }`. Les plats en attente de modération ne sont visibles que par les administrateurs.
+
+### Affichage des plaques
+
+Chaque carte montre :
+- Image Dish (si `imagen_url` contient une chaîne Base64, elle est décodée en `Bitmap` en utilisant `ImageUtils.decodeBase64ToBitmap`). 
+- Nom du plat. 
+- Calories. 
+- Temps de préparation. 
+- Description ou recette.
+
+### Suggestion de plat par l'utilisateur
+
+Tout utilisateur peut suggérer un nouveau plat à l'aide du bouton de suggestion, qui ouvre une boîte de dialogue modale avec les champs suivants :
+- Titre (nom du plat)
+- Recette ou description
+- Temps de préparation
+- Calories
+- Photo (sélectionnée dans la galerie en utilisant `ActivityResultContracts.GetContent()`, convertie en Base64)
+
+La parabole est insérée dans Supabase avec `aceptado = false` et `visibilidad = true`. Il sera en attente d'examen par un administrateur.
+
+### Modération par l'administrateur
+
+L'administrateur voit dans une section séparée la liste des plats en attente d'approbation (`aceptado = false`). Pour chaque plat vous pouvez :
+- **OK :** Exécutez `update { set("aceptado", true) }` dans Supabase. Le plat devient visible dans le carrousel. 
+- **Rejet :** Exécutez `delete` dans Supabase. La plaque est définitivement retirée.
+
+Depuis le carrousel de plats acceptés, l'administrateur peut également supprimer tous les plats déjà publiés.

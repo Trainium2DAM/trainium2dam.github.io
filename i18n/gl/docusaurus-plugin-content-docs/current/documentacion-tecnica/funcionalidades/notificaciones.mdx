@@ -1,0 +1,126 @@
+---
+title: Notificaciones de reservas
+sidebar_position: 5
+---
+# Notificacións de reserva
+
+Trainium envía notificacións de recordatorios locais antes de cada reserva de maquinaria. O sistema usa `AlarmManager` para establecer alarmas exactas e `NotificationCompat` para mostrar a notificación.
+
+## Compoñentes
+
+### Notification Helper
+
+`NotificationHelper.kt` é un obxecto singleton con tres responsabilidades:
+
+**Creación da canle de notificación:**
+
+```kotlin
+fun createNotificationChannel(context: Context)
+```
+
+Rexistra a canle `trainium_reservations` no sistema `NotificationManager` (obrigatorio desde Android 8.0/API 26). A canle ten importancia `IMPORTANCE_HIGH` e a vibración activada. Chamado en `MainActivity.onCreate()` antes de calquera outra operación.
+
+**Configurando un recordatorio:**
+
+```kotlin
+fun scheduleReservationNotification(
+    context: Context,
+    reservaId: Int,
+    maquinaNombre: String,
+    fecha: String,
+    horaInicio: String,
+    horaFin: String,
+    minutesBefore: Int
+)
+```
+
+Calcula o instante de disparo como `horaInicioReserva - minutesBefore * 60 000 ms`. Se xa pasou ese momento, non se activa ningunha alarma. En caso contrario, crea un `PendingIntent` de orientación `NotificationReceiver` e rexístrao con `AlarmManager.setExactAndAllowWhileIdle` (API 23+) ou `setExact` en versións anteriores. O `requestCode` do `PendingIntent` é o `reservaId`, polo que cada reserva ten a súa propia alarma independente.
+
+**Cancelando un recordatorio:**
+
+```kotlin
+fun cancelScheduledNotification(context: Context, reservaId: Int)
+```
+
+Reconstrúe o `PendingIntent` co mesmo `reservaId` e chame a `AlarmManager.cancel`. Invocado ao cancelar unha reserva de `ReservasScreen`.
+
+**Reprogramando o seguinte recordatorio:**
+
+```kotlin
+suspend fun rescheduleNextReservationNotification(context: Context, userId: Int)
+```
+
+Función `suspend` que consulta as futuras reservas do usuario, ordena por hora de inicio e pon a alarma para a máis próxima. Invocado despois de crear ou cancelar unha reserva para manter sempre activo o seguinte recordatorio de reserva.
+
+### Receptor de notificacións
+
+`BroadcastReceiver` que recibe o `Intent` da alarma cando o sistema a activa. Crea e publica a notificación:
+
+- Título: `"Trainium — Recordatorio de reserva"`
+- Corpo: `"<nombre máquina>: HH:mm – HH:mm"`
+- Prioridade: `PRIORITY_HIGH`
+- Cancelación automática ao tocar
+
+`notificationId` é `reservaId`, polo que varias alarmas pendentes non se solapan.
+
+### Xestor de configuracións de notificacións
+
+Tanto o aviso previo elixido polo usuario como o estado de activación das notificacións persisten en DataStore:
+
+```kotlin
+class NotificationSettingsManager(private val context: Context) {
+    val minutesBefore: Flow<Int>               // antelación actual (default: 30)
+    val notificationsEnabled: Flow<Boolean>    // activadas/desactivadas (default: true)
+
+    suspend fun setMinutesBefore(minutes: Int)
+    suspend fun setNotificationsEnabled(enabled: Boolean)
+
+    companion object {
+        const val DEFAULT_MINUTES = 30
+        val OPTIONS = listOf(10, 15, 30, 60, 120)
+    }
+}
+```
+
+## Configuración desde a IU
+
+A preferencia de notificacións está definida como `EditProfileScreen`, na sección "Notificacións". Hai dous controis:
+
+- **Cambiar:** activa ou desactiva as notificacións de reserva globalmente. O valor mantense con `notifManager.setNotificationsEnabled(enabled)`. 
+- **Chips anticipados:** grupo de `FilterChip` coas opcións dispoñibles (10, 15, 30, 60 e 120 minutos). Ao seleccionar unha opción persiste o valor con `notifManager.setMinutesBefore(minutes)`. Só se mostran se as notificacións están activadas.
+
+## Permisos no manifesto
+
+```xml
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+<receiver
+    android:name=".NotificationReceiver"
+    android:exported="false" />
+```
+
+O permiso `POST_NOTIFICATIONS` solicítase en tempo de execución en Android 13+. Se o usuario o nega, o sistema de reservas segue funcionando normalmente pero non se envían notificacións.
+
+## Ciclo de vida dun recordatorio
+
+```
+Usuario crea reserva
+    → ReservasScreen / MaquinasScreen
+    → NotificationHelper.rescheduleNextReservationNotification()
+        → Consulta reservas futuras del usuario
+        → scheduleReservationNotification() con la próxima reserva
+            → AlarmManager programa alarma exacta
+
+Cuando llega la hora - minutesBefore:
+    → AlarmManager dispara el Intent
+    → NotificationReceiver.onReceive()
+        → Muestra notificación al usuario
+
+Usuario cancela reserva
+    → NotificationHelper.cancelScheduledNotification(reservaId)
+    → NotificationHelper.rescheduleNextReservationNotification()
+        → Se reprograma con la siguiente reserva futura
+```

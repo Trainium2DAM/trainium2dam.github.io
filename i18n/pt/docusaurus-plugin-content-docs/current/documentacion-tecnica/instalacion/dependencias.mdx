@@ -1,0 +1,105 @@
+---
+title: Dependencias
+sidebar_position: 3
+---
+# Dependencias
+
+Todas as dependências são declaradas em `app/build.gradle.kts` usando o sistema de catálogo de versões do Gradle (`libs`). As versões específicas são resolvidas no arquivo de projeto `gradle/libs.versions.toml`.
+
+## Dependências de produção
+
+### Núcleo AndroidX
+
+```kotlin
+implementation(libs.androidx.core.ktx)
+implementation(libs.androidx.lifecycle.runtime.ktx)
+implementation(libs.androidx.activity.compose)
+```
+
+`core.ktx` fornece extensões Kotlin para APIs Android. `lifecycle.runtime.ktx` permite lançar corrotinas com escopo vinculado ao ciclo de vida do componente. `activity.compose` é a ponte entre `ComponentActivity` e Jetpack Compose.
+
+### Composição do Jetpack + Material 3
+
+```kotlin
+implementation(platform(libs.androidx.compose.bom))
+implementation(libs.androidx.compose.ui)
+implementation(libs.androidx.compose.ui.graphics)
+implementation(libs.androidx.compose.ui.tooling.preview)
+implementation(libs.androidx.compose.material3)
+implementation("androidx.compose.material3:material3:1.2.0")
+implementation("androidx.compose.material:material-icons-extended")
+```
+
+O Compose BOM (lista de materiais) sincroniza as versões de todos os artefatos no kit de ferramentas. `material-icons-extended` fornece o conjunto completo de ícones de símbolos de materiais usados ​​nos vários componentes da interface.
+
+### Navegação
+
+```kotlin
+implementation("androidx.navigation:navigation-compose:2.7.7")
+```
+
+Permite definir o gráfico de navegação de forma declarativa usando elementos que podem ser compostos. A versão 2.7.7 suporta APIs de tipo seguro e manipulação de argumentos digitados usados ​​em `MainActivity.kt`.
+
+###Firebase
+
+```kotlin
+implementation(platform(libs.firebase.bom))
+implementation(libs.firebase.auth)
+```
+
+A BOM do Firebase sincroniza as versões dos SDKs do Firebase. Somente o módulo de autenticação (`firebase.auth`) é usado no nível do SDK do cliente, uma vez que o Data Connect é invocado por meio de chamadas HTTP diretas para o endpoint GraphQL.
+
+### Supabase
+
+```kotlin
+implementation(libs.supabase.postgrest)
+implementation(libs.supabase.auth)
+implementation(libs.ktor.client.android)
+```
+
+O SDK oficial do Supabase para Kotlin é dividido em módulos. `postgrest` gerencia operações CRUD em tabelas PostgreSQL. `supabase.auth` fornece fluxos de autenticação baseados em JWT. `ktor.client.android` é o mecanismo HTTP subjacente exigido pelo SDK.
+
+### Persistência local
+
+```kotlin
+implementation(libs.androidx.datastore.preferences)
+```
+
+As preferências do DataStore são usadas em `ThemeManager.kt` para persistir a preferência de tema do usuário (claro/escuro) entre as sessões. É o sucessor recomendado para `SharedPreferences` ao operar de forma assíncrona em corrotinas.
+
+### Material (legado)
+
+```kotlin
+implementation(libs.material)
+```
+
+Incluído para compatibilidade com `DatePickerDialog` e `TimePickerDialog` do Android View, que são instanciados diretamente em `MaquinasScreen.kt` e `ReservasScreen.kt`, pois o Compose Material 3 não fornece essas caixas de diálogo nativamente na versão usada.
+
+## Testando dependências
+
+```kotlin
+testImplementation(libs.junit)
+androidTestImplementation(libs.androidx.junit)
+androidTestImplementation(libs.androidx.espresso.core)
+androidTestImplementation(platform(libs.androidx.compose.bom))
+androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+debugImplementation(libs.androidx.compose.ui.tooling)
+debugImplementation(libs.androidx.compose.ui.test.manifest)
+```
+
+Os testes instrumentados estão localizados em `app/src/androidTest/` e os testes de unidade em `app/src/test/`. O projeto inclui as classes de teste padrão geradas pelo Android Studio (`ExampleInstrumentedTest` e `ExampleUnitTest`) sem testes personalizados adicionais nesta versão.
+
+## Plugins do Gradle
+
+```kotlin
+// app/build.gradle.kts
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.kotlin.serialization)
+}
+```
+
+O plugin `kotlin.compose` habilita o compilador Compose para Kotlin 2.0+. `google.services` processa `google-services.json`. `kotlin.serialization` habilita o processador de anotação `kotlinx.serialization`, usado por classes de dados de modelo para desserialização automática de respostas Supabase.

@@ -1,0 +1,44 @@
+---
+title: Registro de peso
+sidebar_position: 3
+---
+# Gewichtsaufzeichnung
+
+## RegistroScreen
+
+Es ermöglicht dem Benutzer, sein tägliches Körpergewicht aufzuzeichnen und die Entwicklung im Laufe der Zeit mithilfe eines Liniendiagramms zu visualisieren, das mit der `Canvas`-API von Compose erstellt wurde.
+
+### Daten-Upload
+
+Beim Initialisieren des Bildschirms wird die Supabase-Tabelle `peso_usuario` konsultiert, nach `id_usuario` gefiltert und die Ergebnisse in aufsteigender Reihenfolge nach Datum sortiert. Die Register werden im Zustand `registros: List<PesoUsuario>` gespeichert.
+
+### Beschränkung auf eine Anmeldung pro Tag
+
+Bevor das Eingabefeld angezeigt wird, prüft der Bildschirm, ob für das aktuelle Datum (`fechaHoy`) bereits ein Datensatz vorhanden ist. Die Variable `yaExisteHoy` wird berechnet, indem das Datum jedes Datensatzes mit dem Systemdatum verglichen wird:
+
+```kotlin
+val fechaHoy = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+val yaExisteHoy = registros.any { it.fecha == fechaHoy }
+```
+
+Wenn für heute bereits ein Datensatz vorhanden ist, wird das Eingabefeld ausgeblendet und eine Informationsmeldung angezeigt. Diese Einschränkung gilt ausschließlich auf der UI-Ebene. Für diese Spaltenkombination gibt es in der Datenbank keine `UNIQUE`-Einschränkung.
+
+### Einfügen eines neuen Datensatzes
+
+Der Benutzer gibt das Gewicht in das Textfeld ein (akzeptiert Dezimalwerte) und drückt die Bestätigungstaste. Ein `insert` wird in Supabase mit dem `id_usuario`, dem Gewichtswert und dem aktuellen Datum ausgeführt.
+
+### Bearbeiten eines vorhandenen Datensatzes
+
+Jede Zeile in der Auflistung enthält eine Schaltfläche zum Bearbeiten, die den Online-Bearbeitungsmodus (`editandoId`) aktiviert. Beim Festschreiben wird in Supabase ein `update` für den durch seinen `id` identifizierten Datensatz ausgeführt.
+
+### Einen Datensatz löschen
+
+Die Schaltfläche „Löschen“ für jede Zeile führt eine `delete` in Supabase-Filterung nach `id` des Datensatzes aus.
+
+### Evolutionsdiagramm
+
+Das Diagramm wird mit `Canvas` von Jetpack Compose gezeichnet. Die Implementierung normalisiert die Gewichtswerte auf den Bereich `[0, 1]` relativ zum Minimum und Maximum des Verlaufs, ordnet sie Pixelkoordinaten auf der Leinwand zu und verbindet sie mithilfe von `drawPath` mit Linien. Jeder Punkt wird durch einen ausgefüllten Kreis dargestellt.
+
+Die horizontale Achse stellt die Zeit dar (Einträge sind chronologisch geordnet) und die vertikale Achse stellt das Gewicht in Kilogramm dar. Die Minimal- und Maximalwerte werden als Textbeschriftungen an den Enden der Achse angezeigt.
+
+Wenn der Verlauf weniger als zwei Punkte enthält, wird das Diagramm nicht gerendert (zum Zeichnen einer Linie sind mindestens zwei Punkte erforderlich).

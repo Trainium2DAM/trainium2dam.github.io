@@ -1,0 +1,46 @@
+{
+  "version.label": {
+    "message": "Следующий",
+    "description": "The label for version current"
+  },
+  "sidebar.tutorialSidebar.category.Instalacion": {
+    "message": "Установка",
+    "description": "The label for category 'Instalacion' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Arquitectura": {
+    "message": "Архитектура",
+    "description": "The label for category 'Arquitectura' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Base de datos": {
+    "message": "База данных",
+    "description": "The label for category 'Base de datos' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Funcionalidades": {
+    "message": "Функции",
+    "description": "The label for category 'Funcionalidades' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.API y servicios": {
+    "message": "API и услуги",
+    "description": "The label for category 'API y servicios' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Diseño": {
+    "message": "Дизайн",
+    "description": "The label for category 'Diseño' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Despliegue": {
+    "message": "Развертывание",
+    "description": "The label for category 'Despliegue' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Referencia": {
+    "message": "Ссылка",
+    "description": "The label for category 'Referencia' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Documentación técnica": {
+    "message": "Техническая документация",
+    "description": "The label for category 'Documentación técnica' in sidebar 'tutorialSidebar'"
+  },
+  "sidebar.tutorialSidebar.category.Manual de usuario": {
+    "message": "Руководство пользователя",
+    "description": "The label for category 'Manual de usuario' in sidebar 'tutorialSidebar'"
+  }
+}

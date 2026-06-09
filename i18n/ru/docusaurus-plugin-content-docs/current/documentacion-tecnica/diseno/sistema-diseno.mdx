@@ -1,0 +1,130 @@
+---
+title: Sistema diseño
+sidebar_position: 1
+---
+# Система дизайна
+
+## Цветовая палитра
+
+Для палитры Trainium установлено значение `ui/theme/Color.kt`. Он соответствует темной монохромной эстетике с синим электриком в качестве акцентного цвета.
+
+### Базовые тона (независимо от темы)
+
+| Токен | Шестнадцатеричное значение | Основное использование | 
+|---|---|---| 
+| `BlueDark` | `#0B1426` | Темный фон темы | 
+| `BlueMid` | `#121F3D` | Темная поверхность темы | 
+| `BlueDeep` | `#162347` | Поверхность варианта темной темы | 
+| `BlueAccent` | `#2196F3` | Основной цвет действий (кнопок, активных границ) | 
+| `BlueElectric` | `#448AFF` | Градиентные кнопки CTA | 
+| `BlueSoft` | `#64B5F6` | Второстепенные тексты и субтитры в темной теме | 
+| `BlueGlow` | `#332196F3` | Эффекты свечения и тени с прозрачностью | 
+| `BlueLight` | `#BBDEFB` | Мягкие фоны в светлой теме | 
+| `WhiteSoft` | `#F0F4FF` | Светлый фон темы |
+
+### Цветовая схема темной темы
+
+| Рулонный материал 3 | Токен | ПОРЯДОК доблести | 
+|---|---|---| 
+| `primary` | `DarkPrimary` | `#448AFF` | 
+| `onPrimary` | `DarkOnPrimary` | `#001E5F` | 
+| `primaryContainer` | `DarkPrimaryContainer` | `#1A3A6E` | 
+| `background` | `DarkBackground` | `#0B1426` | 
+| `surface` | `DarkSurface` | `#121F3D` | 
+| `surfaceVariant` | `DarkSurfaceVariant` | `#1A2D54` | 
+| `error` | `DarkError` | `#FF6B6B` |
+
+### Цветовая схема светлой темы
+
+| Рулонный материал 3 | Токен | ПОРЯДОК доблести | 
+|---|---|---| 
+| `primary` | `LightPrimary` | `#1565C0` | 
+| `onPrimary` | `LightOnPrimary` | `#FFFFFF` | 
+| `primaryContainer` | `LightPrimaryContainer` | `#D0E4FF` | 
+| `background` | `LightBackground` | `#F0F4FF` | 
+| `surface` | `LightSurface` | `#FFFFFF` | 
+| `surfaceVariant` | `LightSurfaceVariant` | `#E3ECFA` | 
+| `error` | `LightError` | `#D32F2F` |
+
+## Типографика
+
+Масштаб шрифта установлен на `ui/theme/Type.kt` и использует `FontFamily.SansSerif` (шрифт без засечек по умолчанию в системе Android, обычно Roboto) для всех уровней.
+
+| Нивель | Вес | Таманьо | Интерлетраже | 
+|---|---|---|---| 
+| `displayLarge` | Черный (900) | 34 сп | -0,25 сп | 
+| `headlineLarge` | Жирный (700) | 28 сп | 0 сп | 
+| `headlineMedium` | Жирный (700) | 24 сп | 0 сп | 
+| `titleLarge` | Полужирный (600) | 20 сп | 0,15 сп | 
+| `titleMedium` | Полужирный (600) | 16 сп | 0,15 сп | 
+| `bodyLarge` | Обычный (400) | 16 сп | 0,5 сп | 
+| `bodyMedium` | Обычный (400) | 14 сп | 0,25 сп | 
+| `labelLarge` | Жирный (700) | 14 сп | 1,2 сп | 
+| `labelMedium` | Средний (500) | 12 сп | 0,5 сп | 
+| `labelSmall` | Средний (500) | 11 сп | 0,5 сп |
+
+`labelLarge` с `letterSpacing = 1.2 sp` используются на кнопках CTA (например, «НАЧАТЬ СЕЙЧАС», «ПРОДОЛЖИТЬ»), чтобы придать характерный для интерфейса эффект расширенного текста.
+
+## Фигуры
+
+Пользовательская система форм `PremiumShapes` заменяет стандартную угловую схему Материала 3:
+
+| Нивель | Радио Эскина | 
+|---|---| 
+| `small` | 10 дп | 
+| `medium` | 16 дп | 
+| `large` | 22 дп | 
+| `extraLarge` | 28 дп |
+
+Эти более широкие радиусы, чем значения по умолчанию в Material 3, способствуют округлому премиальному виду карточек и кнопок.
+
+## Управление темами
+
+Тема управляется в два слоя:
+
+**MaterialTheme (`ui/theme/Theme.kt`):** Определяет составной объект `Trainium2Theme`, который применяет `ColorScheme`, `Typography` и `Shapes` в соответствии с параметром `darkTheme`.
+
+**ThemeManager (`ThemeManager.kt`):** сохраняет предпочтения пользователя в хранилище данных. Предпочтение считывается как `Flow<Boolean?>` и собирается в `MainActivity.kt` с помощью `collectAsState(initial = null)`. Начальное значение `null` означает, что настройка еще не была прочитана с диска; в этом случае используется системная тема (`isSystemInDarkTheme()`).
+
+```kotlin
+val savedDarkMode by themeManager.isDarkMode.collectAsState(initial = null)
+val systemTheme = isSystemInDarkTheme()
+var isDarkTheme by remember(savedDarkMode) {
+    mutableStateOf(savedDarkMode ?: systemTheme)
+}
+```
+
+## Фоновые градиенты
+
+На всех экранах вместо плоского фона используются вертикальные градиенты. Градиент варьируется в зависимости от активной темы:
+
+**Тёмная тема:**
+```kotlin
+Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
+// #0B1426 → #121F3D → #162347
+```
+
+**Очистить тему:**
+```kotlin
+Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
+```
+
+## Анимация входа
+
+На всех экранах реализована ступенчатая анимация ввода с использованием `LaunchedEffect(Unit)` + `animateFloatAsState`. Стандартный шаблон:
+
+```kotlin
+var elementoVisible by remember { mutableStateOf(false) }
+val alpha by animateFloatAsState(
+    targetValue = if (elementoVisible) 1f else 0f,
+    animationSpec = tween(durationMillis = 500),
+    label = "elemento_alpha"
+)
+
+LaunchedEffect(Unit) {
+    delay(100)
+    elementoVisible = true
+}
+```
+
+Элементы раскрываются последовательно с задержками в 100–300 мс между каждым, создавая эффект каскадного появления.

@@ -1,0 +1,560 @@
+{
+  "theme.ErrorPageContent.title": {
+    "message": "Orrialde hau huts egin du.",
+    "description": "The title of the fallback page when the page crashed"
+  },
+  "theme.BackToTopButton.buttonAriaLabel": {
+    "message": "Joan goialdera",
+    "description": "The ARIA label for the back to top button"
+  },
+  "theme.blog.archive.title": {
+    "message": "Artxiboa",
+    "description": "The page & hero title of the blog archive page"
+  },
+  "theme.blog.archive.description": {
+    "message": "Artxiboa",
+    "description": "The page & hero description of the blog archive page"
+  },
+  "theme.blog.paginator.navAriaLabel": {
+    "message": "Blog zerrendako orriaren nabigazioa",
+    "description": "The ARIA label for the blog pagination"
+  },
+  "theme.blog.paginator.newerEntries": {
+    "message": "Sarrera berriagoak",
+    "description": "The label used to navigate to the newer blog posts page (previous page)"
+  },
+  "theme.blog.paginator.olderEntries": {
+    "message": "Sarrera zaharragoak",
+    "description": "The label used to navigate to the older blog posts page (next page)"
+  },
+  "theme.blog.post.paginator.navAriaLabel": {
+    "message": "Blogaren argitalpenaren orriaren nabigazioa",
+    "description": "The ARIA label for the blog posts pagination"
+  },
+  "theme.blog.post.paginator.newerPost": {
+    "message": "Argitalpen berriagoa",
+    "description": "The blog post button label to navigate to the newer/previous post"
+  },
+  "theme.blog.post.paginator.olderPost": {
+    "message": "Mezu zaharragoa",
+    "description": "The blog post button label to navigate to the older/next post"
+  },
+  "theme.tags.tagsPageLink": {
+    "message": "Ikusi etiketa guztiak",
+    "description": "The label of the link targeting the tag list page"
+  },
+  "theme.colorToggle.ariaLabel.mode.system": {
+    "message": "sistema modua",
+    "description": "The name for the system color mode"
+  },
+  "theme.colorToggle.ariaLabel.mode.light": {
+    "message": "argi modua",
+    "description": "The name for the light color mode"
+  },
+  "theme.colorToggle.ariaLabel.mode.dark": {
+    "message": "modu iluna",
+    "description": "The name for the dark color mode"
+  },
+  "theme.colorToggle.ariaLabel": {
+    "message": "Aldatu ilun eta argi modutik (une honetan {mode})",
+    "description": "The ARIA label for the color mode toggle"
+  },
+  "theme.docs.breadcrumbs.navAriaLabel": {
+    "message": "Ogi birrindua",
+    "description": "The ARIA label for the breadcrumbs"
+  },
+  "theme.docs.paginator.navAriaLabel": {
+    "message": "Docs orriak",
+    "description": "The ARIA label for the docs pagination"
+  },
+  "theme.docs.paginator.previous": {
+    "message": "Aurrekoa",
+    "description": "The label used to navigate to the previous doc"
+  },
+  "theme.docs.paginator.next": {
+    "message": "Hurrengoa",
+    "description": "The label used to navigate to the next doc"
+  },
+  "theme.docs.tagDocListPageTitle.nDocsTagged": {
+    "message": "Dokumentu bat etiketatua|{count} dokumentu etiketatuta",
+    "description": "Pluralized label for \"{count} docs tagged\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+  },
+  "theme.docs.tagDocListPageTitle": {
+    "message": "{nDocsTagged} \"{tagName}\"-rekin",
+    "description": "The title of the page for a docs tag"
+  },
+  "theme.docs.versionBadge.label": {
+    "message": "Bertsioa: {versionLabel}"
+  },
+  "theme.docs.versions.unreleasedVersionLabel": {
+    "message": "Hau {siteTitle} {versionLabel} bertsiorako argitaratu gabeko dokumentazioa da.",
+    "description": "The label used to tell the user that he's browsing an unreleased doc version"
+  },
+  "theme.docs.versions.unmaintainedVersionLabel": {
+    "message": "Hau {siteTitle} {versionLabel}-ren dokumentazioa da, jada aktiboki mantentzen ez dena.",
+    "description": "The label used to tell the user that he's browsing an unmaintained doc version"
+  },
+  "theme.docs.versions.latestVersionSuggestionLabel": {
+    "message": "Dokumentazio eguneratua lortzeko, ikusi {latestVersionLink} ({versionLabel}).",
+    "description": "The label used to tell the user to check the latest version"
+  },
+  "theme.docs.versions.latestVersionLinkLabel": {
+    "message": "azken bertsioa",
+    "description": "The label used for the latest version suggestion link label"
+  },
+  "theme.common.editThisPage": {
+    "message": "Editatu orrialde hau",
+    "description": "The link label to edit the current page"
+  },
+  "theme.common.headingLinkTitle": {
+    "message": "Esteka zuzena {heading}",
+    "description": "Title for link to heading"
+  },
+  "theme.lastUpdated.atDate": {
+    "message": "egunean {date}",
+    "description": "The words used to describe on which date a page has been last updated"
+  },
+  "theme.lastUpdated.byUser": {
+    "message": "egilea: {user}",
+    "description": "The words used to describe by who the page has been last updated"
+  },
+  "theme.lastUpdated.lastUpdatedAtBy": {
+    "message": "Azken eguneratzea{atDate}{byUser}",
+    "description": "The sentence used to display when a page has been last updated, and by who"
+  },
+  "theme.NotFound.title": {
+    "message": "Ez da orria aurkitu",
+    "description": "The title of the 404 page"
+  },
+  "theme.navbar.mobileVersionsDropdown.label": {
+    "message": "Bertsioak",
+    "description": "The label for the navbar versions dropdown on mobile view"
+  },
+  "theme.tags.tagsListLabel": {
+    "message": "Etiketak:",
+    "description": "The label alongside a tag list"
+  },
+  "theme.admonition.caution": {
+    "message": "kontuz",
+    "description": "The default label used for the Caution admonition (:::caution)"
+  },
+  "theme.admonition.danger": {
+    "message": "arriskua",
+    "description": "The default label used for the Danger admonition (:::danger)"
+  },
+  "theme.admonition.info": {
+    "message": "informazioa",
+    "description": "The default label used for the Info admonition (:::info)"
+  },
+  "theme.admonition.note": {
+    "message": "oharra",
+    "description": "The default label used for the Note admonition (:::note)"
+  },
+  "theme.admonition.tip": {
+    "message": "punta",
+    "description": "The default label used for the Tip admonition (:::tip)"
+  },
+  "theme.admonition.warning": {
+    "message": "abisua",
+    "description": "The default label used for the Warning admonition (:::warning)"
+  },
+  "theme.AnnouncementBar.closeButtonAriaLabel": {
+    "message": "Itxi",
+    "description": "The ARIA label for close button of announcement bar"
+  },
+  "theme.blog.sidebar.navAriaLabel": {
+    "message": "Blogaren azken argitalpenen nabigazioa",
+    "description": "The ARIA label for recent posts in the blog sidebar"
+  },
+  "theme.DocSidebarItem.expandCategoryAriaLabel": {
+    "message": "Zabaldu \"{label}\" alboko barraren kategoria",
+    "description": "The ARIA label to expand the sidebar category"
+  },
+  "theme.DocSidebarItem.collapseCategoryAriaLabel": {
+    "message": "Tolestu alboko barraren kategoria \"{label}\"",
+    "description": "The ARIA label to collapse the sidebar category"
+  },
+  "theme.IconExternalLink.ariaLabel": {
+    "message": "(Fitxa berri batean irekiko da)",
+    "description": "The ARIA label for the external link icon"
+  },
+  "theme.NavBar.navAriaLabel": {
+    "message": "Nagusia",
+    "description": "The ARIA label for the main navigation"
+  },
+  "theme.NotFound.p1": {
+    "message": "Ezin izan dugu aurkitu bilatzen ari zarena.",
+    "description": "The first paragraph of the 404 page"
+  },
+  "theme.NotFound.p2": {
+    "message": "Jarri harremanetan jatorrizko URLra estekatu zaituen gunearen jabearekin eta esan iezaiozu esteka hautsita dagoela.",
+    "description": "The 2nd paragraph of the 404 page"
+  },
+  "theme.navbar.mobileLanguageDropdown.label": {
+    "message": "Hizkuntzak",
+    "description": "The label for the mobile language switcher dropdown"
+  },
+  "theme.TOCCollapsible.toggleButtonLabel": {
+    "message": "Orrialde honetan",
+    "description": "The label used by the button on the collapsible TOC component"
+  },
+  "theme.blog.post.readMore": {
+    "message": "Irakurri gehiago",
+    "description": "The label used in blog post item excerpts to link to full blog posts"
+  },
+  "theme.blog.post.readMoreLabel": {
+    "message": "Irakurri gehiago {title}-i buruz",
+    "description": "The ARIA label for the link to full blog posts from excerpts"
+  },
+  "theme.blog.post.readingTime.plurals": {
+    "message": "Minutu bat irakurri|{readingTime} min irakurri",
+    "description": "Pluralized label for \"{readingTime} min read\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+  },
+  "theme.CodeBlock.copy": {
+    "message": "Kopiatu",
+    "description": "The copy button label on code blocks"
+  },
+  "theme.CodeBlock.copied": {
+    "message": "Kopiatua",
+    "description": "The copied button label on code blocks"
+  },
+  "theme.CodeBlock.copyButtonAriaLabel": {
+    "message": "Kopiatu kodea arbelean",
+    "description": "The ARIA label for copy code blocks button"
+  },
+  "theme.CodeBlock.wordWrapToggle": {
+    "message": "Aktibatu/desaktibatu hitz-bilketa",
+    "description": "The title attribute for toggle word wrapping button of code block lines"
+  },
+  "theme.docs.breadcrumbs.home": {
+    "message": "Hasierako orria",
+    "description": "The ARIA label for the home page in the breadcrumbs"
+  },
+  "theme.docs.sidebar.collapseButtonTitle": {
+    "message": "Tolestu alboko barra",
+    "description": "The title attribute for collapse button of doc sidebar"
+  },
+  "theme.docs.sidebar.collapseButtonAriaLabel": {
+    "message": "Tolestu alboko barra",
+    "description": "The title attribute for collapse button of doc sidebar"
+  },
+  "theme.docs.sidebar.navAriaLabel": {
+    "message": "Docs alboko barra",
+    "description": "The ARIA label for the sidebar navigation"
+  },
+  "theme.docs.sidebar.closeSidebarButtonAriaLabel": {
+    "message": "Itxi nabigazio-barra",
+    "description": "The ARIA label for close button of mobile sidebar"
+  },
+  "theme.docs.sidebar.toggleSidebarButtonAriaLabel": {
+    "message": "Aldatu nabigazio-barra",
+    "description": "The ARIA label for hamburger menu button of mobile navigation"
+  },
+  "theme.navbar.mobileSidebarSecondaryMenu.backButtonLabel": {
+    "message": "← Itzuli menu nagusira",
+    "description": "The label of the back button to return to main menu, inside the mobile navbar sidebar secondary menu (notably used to display the docs sidebar)"
+  },
+  "theme.navbar.mobileDropdown.collapseButton.expandAriaLabel": {
+    "message": "Zabaldu goitibehitza",
+    "description": "The ARIA label of the button to expand the mobile dropdown navbar item"
+  },
+  "theme.navbar.mobileDropdown.collapseButton.collapseAriaLabel": {
+    "message": "Tolestu goitibehitza",
+    "description": "The ARIA label of the button to collapse the mobile dropdown navbar item"
+  },
+  "theme.docs.sidebar.expandButtonTitle": {
+    "message": "Zabaldu alboko barra",
+    "description": "The ARIA label and title attribute for expand button of doc sidebar"
+  },
+  "theme.docs.sidebar.expandButtonAriaLabel": {
+    "message": "Zabaldu alboko barra",
+    "description": "The ARIA label and title attribute for expand button of doc sidebar"
+  },
+  "theme.SearchBar.seeAll": {
+    "message": "Ikusi {count} emaitza guztiak"
+  },
+  "theme.SearchPage.documentsFound.plurals": {
+    "message": "Dokumentu bat aurkitu da|{count} dokumentu aurkitu dira",
+    "description": "Pluralized label for \"{count} documents found\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+  },
+  "theme.SearchPage.existingResultsTitle": {
+    "message": "\"{query}\" bilaketaren emaitzak",
+    "description": "The search page title for non-empty query"
+  },
+  "theme.SearchPage.emptyResultsTitle": {
+    "message": "Bilatu dokumentazioa",
+    "description": "The search page title for empty query"
+  },
+  "theme.SearchPage.inputPlaceholder": {
+    "message": "Idatzi zure bilaketa hemen",
+    "description": "The placeholder for search page input"
+  },
+  "theme.SearchPage.inputLabel": {
+    "message": "Bilatu",
+    "description": "The ARIA label for search page input"
+  },
+  "theme.SearchPage.algoliaLabel": {
+    "message": "Algolia-k bultzatuta",
+    "description": "The description label for Algolia mention"
+  },
+  "theme.SearchPage.noResultsText": {
+    "message": "Ez da emaitzarik aurkitu",
+    "description": "The paragraph for empty search result"
+  },
+  "theme.SearchPage.fetchingNewResults": {
+    "message": "Emaitza berriak eskuratzen...",
+    "description": "The paragraph for fetching new search results"
+  },
+  "theme.SearchBar.label": {
+    "message": "Bilatu",
+    "description": "The ARIA label and placeholder for search button"
+  },
+  "theme.SearchModal.searchBox.resetButtonTitle": {
+    "message": "Garbitu kontsulta",
+    "description": "The label and ARIA label for search box reset button"
+  },
+  "theme.SearchModal.searchBox.cancelButtonText": {
+    "message": "Utzi",
+    "description": "The label and ARIA label for search box cancel button"
+  },
+  "theme.SearchModal.searchBox.placeholderText": {
+    "message": "Bilatu dokumentuak",
+    "description": "The placeholder text for the main search input field"
+  },
+  "theme.SearchModal.searchBox.placeholderTextAskAi": {
+    "message": "Egin beste galdera bat...",
+    "description": "The placeholder text when in AI question mode"
+  },
+  "theme.SearchModal.searchBox.placeholderTextAskAiStreaming": {
+    "message": "Erantzuten...",
+    "description": "The placeholder text for search box when AI is streaming an answer"
+  },
+  "theme.SearchModal.searchBox.enterKeyHint": {
+    "message": "bilatu",
+    "description": "The hint for the search box enter key text"
+  },
+  "theme.SearchModal.searchBox.enterKeyHintAskAi": {
+    "message": "sartu",
+    "description": "The hint for the Ask AI search box enter key text"
+  },
+  "theme.SearchModal.searchBox.searchInputLabel": {
+    "message": "Bilatu",
+    "description": "The ARIA label for search input"
+  },
+  "theme.SearchModal.searchBox.backToKeywordSearchButtonText": {
+    "message": "Itzuli gakoen bilaketara",
+    "description": "The text for back to keyword search button"
+  },
+  "theme.SearchModal.searchBox.backToKeywordSearchButtonAriaLabel": {
+    "message": "Itzuli gakoen bilaketara",
+    "description": "The ARIA label for back to keyword search button"
+  },
+  "theme.SearchModal.startScreen.recentSearchesTitle": {
+    "message": "Duela gutxi",
+    "description": "The title for recent searches"
+  },
+  "theme.SearchModal.startScreen.noRecentSearchesText": {
+    "message": "Ez dago azken bilaketarik",
+    "description": "The text when there are no recent searches"
+  },
+  "theme.SearchModal.startScreen.saveRecentSearchButtonTitle": {
+    "message": "Gorde bilaketa hau",
+    "description": "The title for save recent search button"
+  },
+  "theme.SearchModal.startScreen.removeRecentSearchButtonTitle": {
+    "message": "Kendu bilaketa hau historiatik",
+    "description": "The title for remove recent search button"
+  },
+  "theme.SearchModal.startScreen.favoriteSearchesTitle": {
+    "message": "Gogokoena",
+    "description": "The title for favorite searches"
+  },
+  "theme.SearchModal.startScreen.removeFavoriteSearchButtonTitle": {
+    "message": "Kendu bilaketa hau gogokoetatik",
+    "description": "The title for remove favorite search button"
+  },
+  "theme.SearchModal.startScreen.recentConversationsTitle": {
+    "message": "Azken elkarrizketak",
+    "description": "The title for recent conversations"
+  },
+  "theme.SearchModal.startScreen.removeRecentConversationButtonTitle": {
+    "message": "Kendu elkarrizketa hau historiatik",
+    "description": "The title for remove recent conversation button"
+  },
+  "theme.SearchModal.errorScreen.titleText": {
+    "message": "Ezin dira emaitzak eskuratu",
+    "description": "The title for error screen"
+  },
+  "theme.SearchModal.errorScreen.helpText": {
+    "message": "Baliteke sareko konexioa egiaztatu nahi izatea.",
+    "description": "The help text for error screen"
+  },
+  "theme.SearchModal.resultsScreen.askAiPlaceholder": {
+    "message": "Galdetu AI:",
+    "description": "The placeholder text for Ask AI input"
+  },
+  "theme.SearchModal.askAiScreen.disclaimerText": {
+    "message": "Erantzunak akatsak egin ditzakeen AIarekin sortzen dira. Egiaztatu erantzunak.",
+    "description": "The disclaimer text for AI answers"
+  },
+  "theme.SearchModal.askAiScreen.relatedSourcesText": {
+    "message": "Lotutako iturriak",
+    "description": "The text for related sources"
+  },
+  "theme.SearchModal.askAiScreen.thinkingText": {
+    "message": "Pentsatzen...",
+    "description": "The text when AI is thinking"
+  },
+  "theme.SearchModal.askAiScreen.copyButtonText": {
+    "message": "Kopiatu",
+    "description": "The text for copy button"
+  },
+  "theme.SearchModal.askAiScreen.copyButtonCopiedText": {
+    "message": "Kopiatu!",
+    "description": "The text for copy button when copied"
+  },
+  "theme.SearchModal.askAiScreen.copyButtonTitle": {
+    "message": "Kopiatu",
+    "description": "The title for copy button"
+  },
+  "theme.SearchModal.askAiScreen.likeButtonTitle": {
+    "message": "Atsegin dut",
+    "description": "The title for like button"
+  },
+  "theme.SearchModal.askAiScreen.dislikeButtonTitle": {
+    "message": "Ez gustatzen",
+    "description": "The title for dislike button"
+  },
+  "theme.SearchModal.askAiScreen.thanksForFeedbackText": {
+    "message": "Eskerrik asko zure iritziagatik!",
+    "description": "The text for thanks for feedback"
+  },
+  "theme.SearchModal.askAiScreen.preToolCallText": {
+    "message": "Bilatzen...",
+    "description": "The text before tool call"
+  },
+  "theme.SearchModal.askAiScreen.duringToolCallText": {
+    "message": "Bilatzen",
+    "description": "The text during tool call"
+  },
+  "theme.SearchModal.askAiScreen.afterToolCallText": {
+    "message": "Bilatua",
+    "description": "The text after tool call"
+  },
+  "theme.SearchModal.footer.selectText": {
+    "message": "Hautatu",
+    "description": "The select text for footer"
+  },
+  "theme.SearchModal.footer.submitQuestionText": {
+    "message": "Bidali galdera",
+    "description": "The submit question text for footer"
+  },
+  "theme.SearchModal.footer.selectKeyAriaLabel": {
+    "message": "Sartu tekla",
+    "description": "The ARIA label for select key in footer"
+  },
+  "theme.SearchModal.footer.navigateText": {
+    "message": "Nabigatu",
+    "description": "The navigate text for footer"
+  },
+  "theme.SearchModal.footer.navigateUpKeyAriaLabel": {
+    "message": "Gezia gora",
+    "description": "The ARIA label for navigate up key in footer"
+  },
+  "theme.SearchModal.footer.navigateDownKeyAriaLabel": {
+    "message": "Gezia behera",
+    "description": "The ARIA label for navigate down key in footer"
+  },
+  "theme.SearchModal.footer.closeText": {
+    "message": "Itxi",
+    "description": "The close text for footer"
+  },
+  "theme.SearchModal.footer.closeKeyAriaLabel": {
+    "message": "Ihes egiteko tekla",
+    "description": "The ARIA label for close key in footer"
+  },
+  "theme.SearchModal.footer.searchByText": {
+    "message": "Powered by",
+    "description": "The 'Powered by' text for footer"
+  },
+  "theme.SearchModal.footer.backToSearchText": {
+    "message": "Itzuli bilaketara",
+    "description": "The back to search text for footer"
+  },
+  "theme.SearchModal.noResultsScreen.noResultsText": {
+    "message": "Ez da emaitzarik aurkitu",
+    "description": "The text when there are no results"
+  },
+  "theme.SearchModal.noResultsScreen.suggestedQueryText": {
+    "message": "Saiatu bilatzen",
+    "description": "The text for suggested query"
+  },
+  "theme.SearchModal.noResultsScreen.reportMissingResultsText": {
+    "message": "Kontsulta honek emaitzak itzuli behar dituela uste duzu?",
+    "description": "The text for reporting missing results"
+  },
+  "theme.SearchModal.noResultsScreen.reportMissingResultsLinkText": {
+    "message": "Jakin iezaguzu.",
+    "description": "The link text for reporting missing results"
+  },
+  "theme.SearchModal.placeholder": {
+    "message": "Bilatu dokumentuak",
+    "description": "The placeholder of the input of the DocSearch pop-up modal"
+  },
+  "theme.blog.post.plurals": {
+    "message": "Argitalpen bat|{count} argitalpen",
+    "description": "Pluralized label for \"{count} posts\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+  },
+  "theme.blog.tagTitle": {
+    "message": "{nPosts} \"{tagName}\" etiketatua",
+    "description": "The title of the page for a blog tag"
+  },
+  "theme.blog.author.pageTitle": {
+    "message": "{authorName} - {nPosts}",
+    "description": "The title of the page for a blog author"
+  },
+  "theme.blog.authorsList.pageTitle": {
+    "message": "Egileak",
+    "description": "The title of the authors page"
+  },
+  "theme.blog.authorsList.viewAll": {
+    "message": "Ikusi egile guztiak",
+    "description": "The label of the link targeting the blog authors page"
+  },
+  "theme.blog.author.noPosts": {
+    "message": "Egile honek ez du mezurik idatzi oraindik.",
+    "description": "The text for authors with 0 blog post"
+  },
+  "theme.contentVisibility.unlistedBanner.title": {
+    "message": "Zerrendatu gabeko orria",
+    "description": "The unlisted content banner title"
+  },
+  "theme.contentVisibility.unlistedBanner.message": {
+    "message": "Orrialde hau zerrendatu gabe dago. Bilatzaileek ez dute indexatuko, eta esteka zuzena duten erabiltzaileek bakarrik atzi dezakete.",
+    "description": "The unlisted content banner message"
+  },
+  "theme.contentVisibility.draftBanner.title": {
+    "message": "Orri zirriborroa",
+    "description": "The draft content banner title"
+  },
+  "theme.contentVisibility.draftBanner.message": {
+    "message": "Orrialde hau zirriborro bat da. Garapenean bakarrik egongo da ikusgai eta ekoizpen-eraikitzetik kanpo geratuko da.",
+    "description": "The draft content banner message"
+  },
+  "theme.docs.DocCard.categoryDescription.plurals": {
+    "message": "1 elementu|{count} elementu",
+    "description": "The default description for a category card in the generated index about how many items this category includes"
+  },
+  "theme.ErrorPageContent.tryAgain": {
+    "message": "Saiatu berriro",
+    "description": "The label of the button to try again rendering when the React error boundary captures an error"
+  },
+  "theme.common.skipToMainContent": {
+    "message": "Saltatu eduki nagusira",
+    "description": "The skip to content label used for accessibility, allowing to rapidly navigate to main content with keyboard tab/enter navigation"
+  },
+  "theme.tags.tagsPageTitle": {
+    "message": "Etiketak",
+    "description": "The title of the tag list page"
+  }
+}

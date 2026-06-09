@@ -1,0 +1,130 @@
+---
+title: Sistema diseño
+sidebar_position: 1
+---
+# Sistema de projeto
+
+## Paleta de cores
+
+A paleta Trainium está definida como `ui/theme/Color.kt`. Segue uma estética escura e monocromática com o azul elétrico como cor de destaque.
+
+### Tons básicos (independente do tema)
+
+| Ficha | Valor hexadecimal | Utilização principal | 
+|---|---|---| 
+| `BlueDark` | `#0B1426` | Fundo tema escuro | 
+| `BlueMid` | `#121F3D` | Superfície tema escuro | 
+| `BlueDeep` | `#162347` | Superfície variante de tema escuro | 
+| `BlueAccent` | `#2196F3` | Cor primária das ações (botões, bordas ativas) | 
+| `BlueElectric` | `#448AFF` | Botões CTA gradientes | 
+| `BlueSoft` | `#64B5F6` | Textos secundários e legendas em tema escuro | 
+| `BlueGlow` | `#332196F3` | Efeitos de brilho e sombra com transparência | 
+| `BlueLight` | `#BBDEFB` | Fundos suaves em tema claro | 
+| `WhiteSoft` | `#F0F4FF` | Fundo tema claro |
+
+### Esquema de cores do tema escuro
+
+| Rolo Material 3 | Ficha | Valor HEX | 
+|---|---|---| 
+| `primary` | `DarkPrimary` | `#448AFF` | 
+| `onPrimary` | `DarkOnPrimary` | `#001E5F` | 
+| `primaryContainer` | `DarkPrimaryContainer` | `#1A3A6E` | 
+| `background` | `DarkBackground` | `#0B1426` | 
+| `surface` | `DarkSurface` | `#121F3D` | 
+| `surfaceVariant` | `DarkSurfaceVariant` | `#1A2D54` | 
+| `error` | `DarkError` | `#FF6B6B` |
+
+### Esquema de cores do tema claro
+
+| Rolo Material 3 | Ficha | Valor HEX | 
+|---|---|---| 
+| `primary` | `LightPrimary` | `#1565C0` | 
+| `onPrimary` | `LightOnPrimary` | `#FFFFFF` | 
+| `primaryContainer` | `LightPrimaryContainer` | `#D0E4FF` | 
+| `background` | `LightBackground` | `#F0F4FF` | 
+| `surface` | `LightSurface` | `#FFFFFF` | 
+| `surfaceVariant` | `LightSurfaceVariant` | `#E3ECFA` | 
+| `error` | `LightError` | `#D32F2F` |
+
+## Tipografia
+
+A escala da fonte é definida como `ui/theme/Type.kt` e usa `FontFamily.SansSerif` (a fonte sem serifa padrão do sistema Android, geralmente Roboto) para todos os níveis.
+
+| Nível | Peso | Tamanho | Entretraje | 
+|---|---|---|---| 
+| `displayLarge` | Preto (900) | 34 sp | -0,25 sp | 
+| `headlineLarge` | Negrito (700) | 28 sp | 0 sp | 
+| `headlineMedium` | Negrito (700) | 24 sp | 0 sp | 
+| `titleLarge` | SemiNegrito (600) | 20 sp | 0,15 sp | 
+| `titleMedium` | SemiNegrito (600) | 16 sp | 0,15 sp | 
+| `bodyLarge` | Normal (400) | 16 sp | 0,5 sp | 
+| `bodyMedium` | Normal (400) | 14 sp | 0,25 sp | 
+| `labelLarge` | Negrito (700) | 14 sp | 1,2 sp | 
+| `labelMedium` | Médio (500) | 12 sp | 0,5 sp | 
+| `labelSmall` | Médio (500) | 11 sp | 0,5 sp |
+
+O `labelLarge` com `letterSpacing = 1.2 sp` é usado em botões CTA (como "COMEÇAR AGORA", "CONTINUAR") para dar o efeito de texto expandido característico da interface.
+
+## Formas (Shapes)
+
+O sistema de formas personalizadas `PremiumShapes` substitui o esquema de canto padrão do Material 3:
+
+| Nível | Rádio de esquina | 
+|---|---| 
+| `small` | 10 dp | 
+| `medium` | 16 DP | 
+| `large` | 22 dp | 
+| `extraLarge` | 28 dp |
+
+Esses raios mais generosos do que os valores padrão do Material 3 contribuem para a aparência premium arredondada dos cartões e botões.
+
+## Gerenciamento de tema
+
+O tema é gerenciado em duas camadas:
+
+**MaterialTheme (`ui/theme/Theme.kt`):** Define o elemento que pode ser composto `Trainium2Theme` que aplica o `ColorScheme`, o `Typography` e o `Shapes` de acordo com o parâmetro `darkTheme`.
+
+**ThemeManager (`ThemeManager.kt`):** Persiste a preferência do usuário no DataStore. A preferência é lida como `Flow<Boolean?>` e coletada em `MainActivity.kt` com `collectAsState(initial = null)`. O valor inicial `null` significa que a preferência ainda não foi lida do disco; nesse caso, o tema do sistema (`isSystemInDarkTheme()`) é usado.
+
+```kotlin
+val savedDarkMode by themeManager.isDarkMode.collectAsState(initial = null)
+val systemTheme = isSystemInDarkTheme()
+var isDarkTheme by remember(savedDarkMode) {
+    mutableStateOf(savedDarkMode ?: systemTheme)
+}
+```
+
+## Gradientes de fundo
+
+Todas as telas usam gradientes verticais em vez de fundos planos. O gradiente varia dependendo do tema ativo:
+
+**Tema escuro:**
+```kotlin
+Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
+// #0B1426 → #121F3D → #162347
+```
+
+**Tema claro:**
+```kotlin
+Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
+```
+
+## Animações de entrada
+
+Todas as telas implementam animações de entrada escalonadas usando `LaunchedEffect(Unit)` + `animateFloatAsState`. O padrão padrão é:
+
+```kotlin
+var elementoVisible by remember { mutableStateOf(false) }
+val alpha by animateFloatAsState(
+    targetValue = if (elementoVisible) 1f else 0f,
+    animationSpec = tween(durationMillis = 500),
+    label = "elemento_alpha"
+)
+
+LaunchedEffect(Unit) {
+    delay(100)
+    elementoVisible = true
+}
+```
+
+Os elementos são revelados sequencialmente com atrasos de 100–300 ms entre cada um, criando um efeito de aparência em cascata.

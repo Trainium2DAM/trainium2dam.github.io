@@ -1,0 +1,151 @@
+---
+title: Esquema de Supabase
+sidebar_position: 1
+---
+# Esquema Supabase
+
+Supabase actua com a backend principal de l'aplicació. La base de dades subjacent és PostgreSQL. A continuació es descriu cada taula, les columnes i les relacions entre elles.
+
+## Taula: usuaris
+
+Emmagatzema les dades dels usuaris registrats a l'aplicació.
+
+| Columna | Tipus | Restriccions | Descripció | 
+|---|---|---|---| 
+| `id` | `integer` | PK, autoincrement | Identificador únic | 
+| `nombre` | `varchar(100)` | NOT NULL | Nom complet de l'usuari | 
+| `dni` | `varchar(20)` | UNIQUE | Document nacional d'identitat. S'usa com a identificador de login | 
+| `contraseniaHash` | `varchar(255)` | | Contrasenya emmagatzemada (text pla a la versió actual) | 
+| `email` | `varchar(100)` | UNIQUE | Correu electrònic. Es fa servir per a la recuperació de contrasenya | 
+| `telefono` | `varchar(20)` | | Número de telèfon de contacte | 
+| `admin` | `integer` | DEFAULT 0 | Indiqueu si l'usuari té rol d'administrador (0 = usuari, 1 = admin) | 
+| `premium` | `boolean` | DEFAULT false | Indiqueu si l'usuari té subscripció Premium activa | 
+| `fecha_ini_prem` | `date` | | Data d'inici de subscripció Premium | 
+| `fecha_fin_prem` | `date` | | Data de finalització de la subscripció Premium | 
+| `foto` | `text` | | imatge de perfil codificada a Base64 |
+
+La data class corresponent és `models/Usuario.kt`.
+
+## Taula: màquines
+
+Emmagatzema el catàleg de maquinària del gimnàs.
+
+| Columna | Tipus | Restriccions | Descripció | 
+|---|---|---|---| 
+| `id` | `integer` | PK, autoincrement | Identificador únic de la màquina | 
+| `nombre` | `varchar(100)` | NOT NULL | Nom descriptiu de la màquina | 
+| `tipo` | `varchar(50)` | | Categoria d'exercici (Cardio, Esquena, Cama, Pit, etc.) | 
+| `estado` | `integer` | DEFAULT 0 | Camp d´estat genèric | 
+| `descripcion` | `text` | | Descripció detallada de la màquina | 
+| `operativa` | `boolean` | DEFAULT true | Indica si la màquina està disponible per a reserves | 
+| `mantenimiento_desde` | `varchar` | | Data i hora d'inici del període de manteniment (`yyyy-MM-dd HH:mm`) | 
+| `mantenimiento_hasta` | `varchar` | | Data i hora de finalització del període de manteniment (`yyyy-MM-dd HH:mm`) |
+
+La data class corresponent és `models/Maquina.kt`.
+
+## Taula: reserves
+
+Emmagatzema les reserves de maquinària realitzades pels usuaris.
+
+| Columna | Tipus | Restriccions | Descripció | 
+|---|---|---|---| 
+| `id` | `integer` | PK, autoincrement | Identificador únic de la reserva | 
+| `id_usuario` | `integer` | FK → usuaris.id | Usuari que va fer la reserva | 
+| `id_maquina` | `integer` | FK → maquines.id | Màquina reservada | 
+| `fecha` | `date` | | Data de la reserva (`yyyy-MM-dd`) | 
+| `hora_inicio` | `time` | | Hora d'inici de la franja reservada 
+| `hora_fin` | `time` | | Hora de fi de la franja reservada | 
+| `estado` | `boolean` | DEFAULT true | `true` = activa, `false` = cancel·lada |
+
+Les data classes corresponents són `models/Reserva.kt` i `models/ReservaConDetalles.kt`. La segona inclou els objectes `Usuario` i `Maquina` embeguts, obtinguts mitjançant la sintaxi de relacions de PostgREST (`*, usuarios(*), maquinas(*)`).
+
+## Taula: plats
+
+Emmagatzema els plats nutricionals del catàleg.
+
+| Columna | Tipus | Restriccions | Descripció | 
+|---|---|---|---| 
+| `id` | `integer` | PK, autoincrement | Identificador únic del plat | 
+| `id_usuario` | `integer` | FK → usuaris.id | Usuari que va suggerir el plat (nullable per a plats del sistema) | 
+| `nombre` | `varchar(100)` | NOT NULL | Nom del plat | 
+| `descripcion` | `text` | | Descripció o recepta del plat | 
+| `calorias` | `double precision` | | Contingut calòric per ració | 
+| `imagen_url` | `varchar(255)` | | URL d'imatge o cadena Base64 de la imatge del plat | 
+| `fecha_subida` | `timestamp` | | Data i hora de creació del registre | 
+| `visibilidad` | `boolean` | DEFAULT true | Indica si el plat és visible al catàleg | 
+| `tiempo` | `varchar` | | Temps de preparació estimat (per exemple, 30 minuts) | 
+| `aceptado` | `boolean` | DEFAULT false | Indica si el plat ha estat aprovat per un administrador |
+
+La data class corresponent és `models/Plato.kt`.
+
+## Taula: pes_usuari
+
+Emmagatzemeu l'historial de registres de pes de cada usuari.
+
+| Columna | Tipus | Restriccions | Descripció | 
+|---|---|---|---| 
+| `id` | `integer` | PK, autoincrement | Identificador únic del registre | 
+| `id_usuario` | `integer` | FK → usuaris.id | Usuari a què pertany el registre | 
+| `peso` | `double precision` | NOT NULL | Pes en quilograms | 
+| `fecha` | `date` | | Data del registre (`yyyy-MM-dd`) |
+
+Laplicació imposa la restricció dun únic registre per dia a nivell dUI. La pantalla comprova si ja hi ha un registre per a la data actual abans de permetre afegir-ne un de nou.
+
+La data class corresponent és `models/PesoUsuario.kt`.
+
+## Taula: pagaments
+
+Emmagatzema l'historial de transaccions de subscripció Premium.
+
+| Columna | Tipus | Restriccions | Descripció | 
+|---|---|---|---| 
+| `id` | `integer` | PK, autoincrement | Identificador únic del pagament | 
+| `id_usuario` | `integer` | FK → usuaris.id | Usuari que va fer el pagament | 
+| `monto` | `double precision` | NOT NULL | Import de la transacció en euros | 
+| `fecha_pago` | `date` | | Data en què es va fer el pagament | 
+| `tipo` | `varchar(50)` | | Modalitat de subscripció (Mensual, Semestral, Anual) | 
+| `metodo_pago` | `varchar(25)` | | Mètode de pagament utilitzat (Targeta, Bizum) |
+
+La data class corresponent és `models/Pago.kt`.
+
+## Diagrama de relacions
+
+```
+usuarios (id)
+    |
+    |--< reservas (id_usuario) >-- maquinas (id)
+    |
+    |--< peso_usuario (id_usuario)
+    |
+    |--< platos (id_usuario)
+    |
+    |--< pagos (id_usuario)
+```
+
+Les relacions són totes de tipus un a molts. No es defineixen claus foranes explícites a nivell de Supabase Dashboard; la integritat referencial es gestiona a nivell daplicació.
+
+## Seguretat a nivell de fila
+
+Les polítiques de Row Level Security (RLS) de Supabase no estan configurades en aquesta versió. L'accés a les dades es fa amb la `anon key`, per la qual cosa qualsevol client amb la clau pot llegir i escriure a totes les taules. En un entorn de producció seria imprescindible definir polítiques RLS adequades o utilitzar la `service_role key` exclusivament des d'un backend de confiança.
+
+## Constants de base de dades
+
+Els noms de les taules i columnes se centralitzen a `DbConstants.kt` mitjançant els objectes `DbTables` i `DbColumns`, evitant l'ús de strings literals dispersos pel codi:
+
+```kotlin
+object DbTables {
+    const val USUARIOS = "usuarios"
+    const val MAQUINAS = "maquinas"
+    const val PLATOS = "platos"
+    const val PAGOS = "pagos"
+    const val RESERVAS = "reservas"
+    const val PESO_USUARIO = "peso_usuario"
+}
+
+object DbColumns {
+    const val ID = "id"
+    const val DNI = "dni"
+    const val NOMBRE = "nombre"
+    // ...
+}
+```

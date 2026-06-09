@@ -1,0 +1,73 @@
+---
+title: Firebase Auth y Data Connect
+sidebar_position: 2
+---
+# مصادقة Firebase واتصال البيانات
+
+## مصادقة Firebase
+
+تم الإعلان عن Firebase Auth SDK باعتبارها تبعية (`libs.firebase.auth`) وتم تضمينها في قائمة مكونات الصنف لـ Firebase. ومع ذلك، في الإصدار الحالي من التطبيق، لا يتم تفويض تدفق المصادقة الرئيسي إلى Firebase Auth: يتم تنفيذ تسجيل الدخول من خلال استعلام مباشر إلى جدول Supabase `usuarios` لمقارنة المعرف وكلمة المرور.
+
+يتوفر Firebase Auth للترحيل النهائي لنظام المصادقة إلى تدفق قياسي قائم على JWT (البريد الإلكتروني/كلمة المرور، OAuth، وما إلى ذلك) دون الحاجة إلى إضافة تبعيات إضافية.
+
+## عميل DataConnect
+
+`DataConnectClient.kt` ينفذ عميل HTTP يدويًا لاستدعاء نقطة نهاية Firebase Data Connect. على عكس Supabase SDK، لا تتوفر Kotlin SDK لـ Data Connect في هذا السياق، لذلك يتم استخدام `HttpURLConnection` مباشرة.
+
+### تكوين نقطة النهاية
+
+```kotlin
+object DataConnectClient {
+    private const val API_KEY = "<api-key-de-ejemplo>..."
+    private const val APP_ID = "<app-id-de-ejemplo>..."
+    private const val ENDPOINT = 
+        "https://europe-southwest1-dataconnect.googleapis.com/v1beta/projects/tu-proyecto.../connectors/default:executeGraphql" +
+        "/locations/europe-southwest1/services/tu-proyecto.../connectors/default:executeGraphql"
+}
+```
+
+النطاق الفرعي الإقليمي `europe-southwest1-dataconnect.googleapis.com` مطلوب. يؤدي استخدام المجال العام `dataconnect.googleapis.com` إلى إرجاع HTTP 404 عند نشر الخدمة في منطقة أخرى غير `us-central1`.
+
+### تنفيذ طريقة العمل
+
+```kotlin
+suspend fun execute(
+    query: String,
+    variables: Map<String, Any?> = emptyMap(),
+    operationName: String? = null
+): JSONObject?
+```
+
+| المعلمة | اكتب | الوصف | 
+|---|---|---| 
+| `query` | `String` | استعلام GraphQL أو طفرة بتنسيق سلسلة | 
+| `variables` | `Map<String, Any?>` | متغيرات عملية GraphQL (اختياري) | 
+| `operationName` | `String?` | اسم العملية عندما تحتوي الوثيقة على عدة (اختياري) |
+
+**قيمة الإرجاع:** `JSONObject` مع استجابة API الكاملة (بما في ذلك الكائن `data`) أو `null` إذا حدث خطأ في الشبكة أو كانت استجابة HTTP غير ناجحة (رمز خارج النطاق 200–299).
+
+### تم إرسال رؤوس HTTP
+
+| رأس | القيمة | 
+|---|---| 
+| `Content-Type` | `application/json` | 
+| `x-goog-api-key` | مفتاح واجهة برمجة تطبيقات مشروع Firebase | 
+| `x-firebase-gmpid` | معرف مشروع Firebase |
+
+### طلب هيكل الجسم
+
+```json
+{
+  "query": "query GetUsuarios { usuarios { id nombre } }",
+  "variables": {
+    "id": 42
+  },
+  "operationName": "GetUsuarios"
+}
+```
+
+يتم حذف الحقلين `variables` و`operationName` من النص إذا لم يتم توفيرهما.
+
+### إدارة الأخطاء
+
+يتم التقاط أخطاء الشبكة (`IOException`، `SocketTimeoutException`، وما إلى ذلك) باستخدام كتلة `catch(Exception)` وتسجيلها باستخدام `Log.e("DataConnect", ...)`. في هذه الحالة تقوم الطريقة بإرجاع `null`. تتم قراءة أخطاء HTTP (الاستجابة برمز خارج النطاق 200-299) من `errorStream` الخاص بالاتصال ويتم تسجيلها أيضًا قبل إرجاع `null`.

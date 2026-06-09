@@ -1,0 +1,56 @@
+---
+title: Requisitos previos
+sidebar_position: 1
+---
+# Requisits previs
+
+Abans de clonar el repositori i compilar el projecte cal disposar del següent programari instal·lat i configurat a la màquina de desenvolupament.
+
+## Entorn de desenvolupament
+
+| Eina | Versió mínima | Notes | 
+|---|---|---| 
+| Android Studio | Hedgehog (2023.1.1) o superior | Es recomana la versió més recent estable | 
+| JDK | 11 | Configurat com a `sourceCompatibility` i `targetCompatibility` al mòdul `:app` | 
+| Gradle | 8.13 | Gestionat pel wrapper inclòs al repositori (`gradlew`) | 
+| Android SDK (compileSdk) | 36 | Instal·lar des de l'SDK Manager d'Android Studio | 
+| Android SDK (minSdk) | 24 (Android 7.0 Nougat) | L'aplicació no s'instal·la a versions anteriors | 
+| Kotlin | 2.0+ | Gestionat pel plugin `kotlin.android` declarat a `build.gradle.kts` |
+
+## Comptes de servei necessaris
+
+El projecte depèn de dos backends externs que requereixen comptes actius:
+
+**Supabase**
+
+Cal un projecte de Supabase amb les taules de l'esquema descrites a [Base de datos](/docs/base-de-datos/esquema-supabase). Les credencials (`SUPABASE_URL` i `SUPABASE_KEY`) es declaren com a constants a `AppConfig.kt`. Per a entorns de producció es recomana moure-les a un fitxer `local.properties` oa variables d'entorn i no incloure els valors reals al repositori.
+
+**Base de foc**
+
+Cal un projecte de Firebase amb el servei Data Connect habilitat. El fitxer `google-services.json` s'ha de copiar a `app/google-services.json`. Aquest fitxer no s'ha de pujar al dipòsit si el projecte és públic.
+
+## Permisos requerits per l'aplicació
+
+El `AndroidManifest.xml` declara els següents permisos:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+```
+
+| Permís | Tipus | Propòsit | 
+|---|---|---| 
+| `INTERNET` | Normal | Accés a Supabase i Firebase | 
+| `ACCESS_NETWORK_STATE` | Normal | Comprovació de connectivitat | 
+| `POST_NOTIFICATIONS` | Runtime (Android 13+) | Mostra notificacions de recordatori de reserves | 
+| `SCHEDULE_EXACT_ALARM` | Normal | Programar alarmes exactes per als recordatoris | 
+| `USE_EXACT_ALARM` | Normal | Garantia addicional d'exactitud d'alarmes a API 33+ | 
+| `RECEIVE_BOOT_COMPLETED` | Normal | Declarat per a futura reprogramació d'alarmes després de reiniciar |
+
+El permís `POST_NOTIFICATIONS` se sol·licita en temps d'execució des de `MainActivity.onCreate()` a dispositius amb Android 13 (API 33) o superior. En versions anteriors, el permís es concedeix automàticament. L'aplicació continua funcionant sense aquest permís, però no enviarà notificacions de recordatori.
+
+La connectivitat de xarxa és imprescindible per al funcionament de laplicació ja que totes les operacions de dades són remotes.

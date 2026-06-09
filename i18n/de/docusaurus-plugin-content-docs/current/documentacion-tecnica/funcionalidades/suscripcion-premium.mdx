@@ -1,0 +1,90 @@
+---
+title: Suscripcion Premium
+sidebar_position: 4
+---
+# Premium-Abonnement
+
+## PremiumSelectionScreen
+
+Verwalten Sie den Vertrags- und Verlängerungsablauf für Premium-Abonnements. Der Vorgang wird auf einem einzigen Bildschirm mit der Auswahl des Plans und der Zahlungsmethode abgeschlossen.
+
+### Pläne verfügbar
+
+| Planen | Preis | Dauer | 
+|---|---|---| 
+| Monatlich | 9,99 € | 1 Monat | 
+| Halbjährlich | 49,99 € | 6 Monate | 
+| Jährlich | 89,99 € | 12 Monate |
+
+Pläne werden als Liste von `PlanInfo`-Objekten in `PremiumSelectionViewModel` definiert:
+
+```kotlin
+data class PlanInfo(val nombre: String, val precio: Double, val meses: Int)
+
+val planes = listOf(
+    PlanInfo("Mensual", 9.99, 1),
+    PlanInfo("Semestral", 49.99, 6),
+    PlanInfo("Anual", 89.99, 12)
+)
+```
+
+### Zahlungsmethoden
+
+- **Kredit-/Debitkarte:** Zeigt ein Formular mit den Feldern Kartennummer (zwischen 13 und 16 Ziffern, Ziffernblock), Ablaufdatum und CVV (3 Ziffern) an. Das ViewModel validiert das Format der drei Felder, bevor die Zahlung verarbeitet wird. 
+- **Bizum:** Erfordert keine zusätzlichen Felder, bestätigen Sie einfach die Auswahl.
+
+### Kartenvalidierung
+
+Vor der Verarbeitung der Kartenzahlung führt das ViewModel `validateCard()` aus, das Folgendes prüft:
+
+1. Kartennummer mit 13 bis 16 Ziffern. 
+2. CVV mit genau 3 Ziffern. 
+3. Ablaufdatum im gültigen und nicht abgelaufenen Format.
+
+Wenn eine Validierung fehlschlägt, wird ein Fehlercode ausgegeben (`invalid_card_number`, `invalid_cvv`, `invalid_expiry_date`, `card_expired`), den der Bildschirm in eine Meldung über `Toast` übersetzt.
+
+### Abonnementverlängerung
+
+Wenn der Benutzer Premium bereits aktiv hat, erkennt `PremiumSelectionViewModel.loadUser(id)` die Verlängerung (`esRenovacion = true`) und stellt `fechaFinActual` wieder her. Bei der Berechnung der Termine des neuen Zeitraums wird das Startdatum der Verlängerung auf den Tag nach `fechaFinActual` gesetzt, damit es keine Überschneidungen oder verlorene Tage gibt:
+
+```kotlin
+fun calculateDates() {
+    val plan = planes.getOrNull(planSeleccionado) ?: return
+    val cal = Calendar.getInstance()
+    if (esRenovacion && !fechaFinActual.isNullOrBlank()) {
+        val fechaActual = AppConfig.FORMAT_ISO_DATE.parse(fechaFinActual) ?: Date()
+        cal.time = fechaActual
+        fechaInicioCalculada = fechaFinActual
+    } else {
+        cal.time = Date()
+        fechaInicioCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+    }
+    cal.add(Calendar.MONTH, plan.meses)
+    fechaFinCalculada = AppConfig.FORMAT_ISO_DATE.format(cal.time)
+}
+```
+
+### Zahlungsabwicklung
+
+Wenn Sie die Bestätigungstaste drücken, führt die Anwendung die folgende Sequenz aus:
+
+1. **Zahlung aufzeichnen:** Fügt einen neuen Datensatz in Tabelle `pagos` mit `id_usuario`, dem ausgewählten Planbetrag, dem aktuellen Datum, dem Plantyp und der Zahlungsmethode ein.
+
+2. **Abonnement aktivieren:** Aktualisiert den Benutzerdatensatz in Tabelle `usuarios`:
+- `premium = true`
+- `fecha_ini_prem` = berechnetes Startdatum (`yyyy-MM-dd`)
+- `fecha_fin_prem` = berechnetes Startdatum + Anzahl der Monate im Plan
+
+Nach erfolgreicher Verarbeitung wird ein Bestätigungsdialog angezeigt und `onSuccess` wird aufgerufen, um den Bildschirm zu schließen.
+
+### Zahlungshistorie
+
+Die in Tabelle `pagos` erfassten Zahlungen werden von `HistorialScreen` konsultiert und in absteigender Reihenfolge nach `fecha_pago` aufgelistet. Jeder Eintrag zeigt den Plantyp, die Zahlungsmethode, den Betrag, das Datum und das voraussichtliche Enddatum des Abonnements (lokal aus dem Plantyp berechnet).
+
+## Anzeige der verbleibenden Tage auf ProfileScreen
+
+`ProfileViewModel` berechnet die verbleibenden Tage des Premium-Abonnements aus dem Feld `fechaFin` des Benutzers. Das Ergebnis wird als `diasRestantes: Int` und in `ProfileScreen` angezeigt:
+
+- Wenn `diasRestantes > 7`: in Gold angezeigt, ohne Dringlichkeit. 
+- Wenn `diasRestantes` zwischen 0 und 7 liegt: wird es in Rot als Warnung vor dem bevorstehenden Ablauf angezeigt. 
+- Wenn `diasRestantes == 0`: Anstelle der Zahl wird das Wort „Gebühren heute“ angezeigt.

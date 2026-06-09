@@ -1,0 +1,70 @@
+---
+title: Gestión de sesión
+sidebar_position: 3
+---
+# Gerenciamento de sessão
+
+## SecureSessionManager
+
+`SecureSessionManager.kt` gerencia a persistência da sessão do usuário entre inicializações de aplicativos usando `SharedPreferences`.
+
+```kotlin
+object SecureSessionManager {
+    fun setContext(context: Context)
+    fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+    fun obtenerSesion(): SesionData?
+    fun cerrarSesion()
+}
+```
+
+### Inicialização
+
+`setContext(context)` deve ser chamado antes de qualquer outra operação. Invocado em `MainActivity.onCreate()` com o contexto da atividade. Internamente ele cria um `SharedPreferences` com o nome `AppConfig.SESSION_PREFS_NAME` (`"trainium_session"`) e modo `MODE_PRIVATE`.
+
+### startSession
+
+Salve os dados da sessão em `SharedPreferences`:
+
+```kotlin
+fun iniciarSesion(id: Int, nombre: String, isAdmin: Boolean, isPremium: Boolean): Boolean
+```
+
+`userId`, `userName`, `isAdmin` e `isPremium` persistem. Retorna `true` se o salvamento foi concluído com sucesso (verifique relendo `userId`).
+
+Chamado de `LoginScreen` imediatamente após autenticação bem-sucedida.
+
+### getSession
+
+Recuperar dados de sessão salvos:
+
+```kotlin
+fun obtenerSesion(): SesionData?
+```
+
+Retorna um objeto `SesionData` com os dados do usuário, ou `null` se não houver sessão salva (primeira inicialização ou após logout). Ele é chamado na tela `loading` quando o aplicativo é iniciado.
+
+###fecharSessão
+
+Limpe todos os dados de `SharedPreferences`:
+
+```kotlin
+fun cerrarSesion()
+```
+
+Chamado de `ProfileScreen` quando o usuário pressiona "Sair", pouco antes de navegar para `main` com `popUpTo(0)`.
+
+## Modelo SessionData
+
+```kotlin
+data class SesionData(
+    val userId: Int,
+    val userName: String,
+    val isAdmin: Boolean,
+    val isPremium: Boolean,
+    val token: String = ""
+)
+```
+
+## Duração da sessão
+
+`AppConfig.SESSION_DURATION_MS` define a duração teórica da sessão (7 dias em milissegundos). Entretanto, na implementação atual a sessão não expira automaticamente; Ele persiste até que o usuário efetue logout explicitamente ou os dados do aplicativo sejam apagados.

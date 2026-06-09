@@ -1,0 +1,239 @@
+---
+title: Modelos de datos
+sidebar_position: 1
+---
+# Модели данных
+
+Все классы данных в пакете `models` помечены `@Serializable` из `kotlinx.serialization`. По умолчанию они неизменяемы и используются как для десериализации ответов Supabase, так и для сериализации тел запросов на вставку и обновление.
+
+---
+
+## Пользователь
+
+**Фичеро:** `models/Usuario.kt` 
+**Супабаза Таблы:** `usuarios`
+
+```kotlin
+@Serializable
+data class Usuario(
+    @SerialName("id")
+    val id: Int = 0,
+    val nombre: String,
+    val dni: String,
+    val contraseniaHash: String,
+    val admin: Int,
+    val premium: Boolean,
+    val email: String? = null,
+    val telefono: String? = null,
+    val foto: String? = null,
+    @SerialName("fecha_ini_prem")
+    val fechaInicio: String? = null,
+    @SerialName("fecha_fin_prem")
+    val fechaFin: String? = null
+)
+```
+
+| Поле | Тип | Обнуляемый | Описание | 
+|---|---|---|---| 
+| `id` | `Int` | Нет | Автоинкрементный ПК (по умолчанию 0 при вставке) | 
+| `nombre` | `String` | Нет | Полное имя | 
+| `dni` | `String` | Нет | DNI используется в качестве учетных данных для входа | 
+| `contraseniaHash` | `String` | Нет | Пароль (в этой версии обычный текст) | 
+| `admin` | `Int` | Нет | 0 = пользователь, 1 = администратор | 
+| `premium` | `Boolean` | Нет | Статус подписки | 
+| `email` | `String?` | Да | Электронная почта | 
+| `telefono` | `String?` | Да | Контактный телефон | 
+| `foto` | `String?` | Да | Изображение профиля в Base64 | 
+| `fechaInicio` | `String?` | Да | Дата начала премиум-подписки (`yyyy-MM-dd`) | 
+| `fechaFin` | `String?` | Да | Дата окончания премиум-подписки (`yyyy-MM-dd`) |
+
+Поля `fechaInicio` и `fechaFin` считываются в `ProfileViewModel` для расчета оставшихся дней подписки Premium и отображения их в `ProfileScreen`.
+
+---
+
+##Данныесессии
+
+**Фичеро:** `models/SesionData.kt`
+
+```kotlin
+data class SesionData(
+    val userId: Int,
+    val userName: String,
+    val isAdmin: Boolean,
+    val isPremium: Boolean,
+    val token: String = ""
+)
+```
+
+Модель, используемая `SecureSessionManager` для представления постоянного сеанса пользователя. Он не помечен `@Serializable`, поскольку не сериализован в JSON; оно хранится поле за полем в `SharedPreferences`.
+
+---
+
+## Машина
+
+**Фичеро:** `models/Maquina.kt` 
+**Супабаза Таблы:** `maquinas`
+
+```kotlin
+@Serializable
+data class Maquina(
+    val id: Int,
+    val nombre: String,
+    val tipo: String? = null,
+    val estado: Int = 0,
+    val descripcion: String? = null,
+    val operativa: Boolean = true,
+    val foto: String? = null,
+    val mantenimiento_desde: String? = null,
+    val mantenimiento_hasta: String? = null
+)
+```
+
+| Поле | Тип | Обнуляемый | Описание | 
+|---|---|---|---| 
+| `id` | `Int` | Нет | Автоинкрементный ПК | 
+| `nombre` | `String` | Нет | Имя машины | 
+| `tipo` | `String?` | Да | Категория упражнений | 
+| `estado` | `Int` | Нет | Общее поле статуса (значение по умолчанию 0) | 
+| `descripcion` | `String?` | Да | Подробное описание | 
+| `operativa` | `Boolean` | Нет | `true` = доступно для бронирования | 
+| `foto` | `String?` | Да | Изображение машины в Base64 | 
+| `mantenimiento_desde` | `String?` | Да | Начало периода технического обслуживания (`yyyy-MM-dd HH:mm`) | 
+| `mantenimiento_hasta` | `String?` | Да | Окончание периода обслуживания (`yyyy-MM-dd HH:mm`) |
+
+---
+
+## Резерва
+
+**Фичеро:** `models/Reserva.kt` 
+**Супабаза Таблы:** `reservas`
+
+```kotlin
+@Serializable
+data class Reserva(
+    val id: Int? = null,
+    @SerialName("id_usuario") val idUsuario: Int,
+    @SerialName("id_maquina") val idMaquina: Int,
+    val fecha: String,
+    @SerialName("hora_inicio") val horaInicio: String,
+    @SerialName("hora_fin") val horaFin: String,
+    val estado: Boolean = true
+)
+```
+
+| Поле | Тип | Обнуляемый | Описание | 
+|---|---|---|---| 
+| `id` | `Int?` | Да | PK (нуль при вставке, назначенный Supabase) | 
+| `idUsuario` | `Int` | Нет | ФК → user.id | 
+| `idMaquina` | `Int` | Нет | ФК → cars.id | 
+| `fecha` | `String` | Нет | Дата бронирования (`yyyy-MM-dd`) | 
+| `horaInicio` | `String` | Нет | Время начала (`HH:mm`) | 
+| `horaFin` | `String` | Нет | Время окончания (`HH:mm`). Максимум 60 минут после `horaInicio` | 
+| `estado` | `Boolean` | Нет | `true` = активно, `false` = отменено |
+
+## РезерваКонДетальлес
+
+Расширенный класс данных для запросов со встроенными связями (неявное соединение PostgREST).
+
+```kotlin
+@Serializable
+data class ReservaConDetalles(
+    val id: Int,
+    val fecha: String,
+    @SerialName("hora_inicio") val horaInicio: String,
+    @SerialName("hora_fin") val horaFin: String,
+    val estado: Boolean,
+    @SerialName("usuarios") val usuario: Usuario? = null,
+    @SerialName("maquinas") val maquina: Maquina? = null
+)
+```
+
+Он получается с помощью столбца `"*, usuarios(*), maquinas(*)"`.
+
+---
+
+## Платон
+
+**Фичеро:** `models/Plato.kt` 
+**Супабаза Таблы:** `platos`
+
+```kotlin
+@Serializable
+data class Plato(
+    val id: Int? = null,
+    @SerialName("id_usuario") val idUsuario: Int? = null,
+    val nombre: String,
+    val descripcion: String? = null,
+    val calorias: Double? = null,
+    @SerialName("imagen_url") val imagenUrl: String? = null,
+    @SerialName("fecha_subida") val fechaSubida: String? = null,
+    val visibilidad: Boolean = true,
+    val tiempo: String? = null,
+    val aceptado: Boolean = false
+)
+```
+
+| Поле | Тип | Обнуляемый | Описание | 
+|---|---|---|---| 
+| `id` | `Int?` | Да | PK (ноль на вставке) | 
+| `idUsuario` | `Int?` | Да | FK →users.id(null для системных блюд) | 
+| `nombre` | `String` | Нет | Название блюда | 
+| `descripcion` | `String?` | Да | Рецепт или описание | 
+| `calorias` | `Double?` | Да | Калорийность на порцию | 
+| `imagenUrl` | `String?` | Да | Изображение Base64 Строка | 
+| `fechaSubida` | `String?` | Да | Временная метка создания | 
+| `visibilidad` | `Boolean` | Нет | `true` = виден в каталоге | 
+| `tiempo` | `String?` | Да | Время подготовки в произвольном тексте (например, `"30 minutos"`) | 
+| `aceptado` | `Boolean` | Нет | `false` = ожидает модерации администратором |
+
+---
+
+## ПесоУсуарио
+
+**Фичеро:** `models/PesoUsuario.kt` 
+**Супабаза Таблы:** `peso_usuario`
+
+```kotlin
+@Serializable
+data class PesoUsuario(
+    val id: Int? = null,
+    @SerialName("id_usuario") val idUsuario: Int,
+    val peso: Double,
+    val fecha: String
+)
+```
+
+| Поле | Тип | Обнуляемый | Описание | 
+|---|---|---|---| 
+| `id` | `Int?` | Да | PK (ноль на вставке) | 
+| `idUsuario` | `Int` | Нет | ФК → user.id | 
+| `peso` | `Double` | Нет | Вес в килограммах | 
+| `fecha` | `String` | Нет | Дата регистрации (`yyyy-MM-dd`) |
+
+---
+
+## Платить
+
+**Фичеро:** `models/Pago.kt` 
+**Супабаза Таблы:** `pagos`
+
+```kotlin
+@Serializable
+data class Pago(
+    val id: Int? = null,
+    @SerialName("id_usuario") val idUsuario: Int,
+    val monto: Double,
+    @SerialName("fecha_pago") val fechaPago: String,
+    val tipo: String,
+    @SerialName("metodo_pago") val metodoPago: String
+)
+```
+
+| Поле | Тип | Обнуляемый | Описание | 
+|---|---|---|---| 
+| `id` | `Int?` | Да | PK (ноль на вставке) | 
+| `idUsuario` | `Int` | Нет | ФК → user.id | 
+| `monto` | `Double` | Нет | Сумма в евро | 
+| `fechaPago` | `String` | Нет | Дата платежа (`yyyy-MM-dd`) | 
+| `tipo` | `String` | Нет | Формат: ежемесячно, полугодовой, годовой | 
+| `metodoPago` | `String` | Нет | Метод: Кард, Бизум |

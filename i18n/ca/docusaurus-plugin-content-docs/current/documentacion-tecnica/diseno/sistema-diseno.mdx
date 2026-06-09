@@ -1,0 +1,130 @@
+---
+title: Sistema diseño
+sidebar_position: 1
+---
+# Sistema de disseny
+
+## Paleta de colors
+
+La paleta Trainium està configurada en `ui/theme/Color.kt`. Segueix una estètica fosca i monocroma amb el blau elèctric com a color d'accent.
+
+### Tons base (independents del tema)
+
+| Token | Valor HEX | Ús principal | 
+|---|---|---| 
+| `BlueDark` | `#0B1426` | Fons del tema fosc | 
+| `BlueMid` | `#121F3D` | Superfície del tema fosc | 
+| `BlueDeep` | `#162347` | Superfície variant del tema fosc | 
+| `BlueAccent` | `#2196F3` | Color primari d'accions (botons, vores actives) | 
+| `BlueElectric` | `#448AFF` | Gradient de botons CTA | 
+| `BlueSoft` | `#64B5F6` | Textos secundaris i subtítols en tema fosc | 
+| `BlueGlow` | `#332196F3` | Efectes de brillantor i ombres amb transparència | 
+| `BlueLight` | `#BBDEFB` | Fons suaus en tema clar | 
+| `WhiteSoft` | `#F0F4FF` | Fons del tema clar |
+
+### Esquema de colors del tema fosc
+
+| Rol Material 3 | Token | Valor HEX | 
+|---|---|---| 
+| `primary` | `DarkPrimary` | `#448AFF` | 
+| `onPrimary` | `DarkOnPrimary` | `#001E5F` | 
+| `primaryContainer` | `DarkPrimaryContainer` | `#1A3A6E` | 
+| `background` | `DarkBackground` | `#0B1426` | 
+| `surface` | `DarkSurface` | `#121F3D` | 
+| `surfaceVariant` | `DarkSurfaceVariant` | `#1A2D54` | 
+| `error` | `DarkError` | `#FF6B6B` |
+
+### Esquema de colors del tema clar
+
+| Rol Material 3 | Token | Valor HEX | 
+|---|---|---| 
+| `primary` | `LightPrimary` | `#1565C0` | 
+| `onPrimary` | `LightOnPrimary` | `#FFFFFF` | 
+| `primaryContainer` | `LightPrimaryContainer` | `#D0E4FF` | 
+| `background` | `LightBackground` | `#F0F4FF` | 
+| `surface` | `LightSurface` | `#FFFFFF` | 
+| `surfaceVariant` | `LightSurfaceVariant` | `#E3ECFA` | 
+| `error` | `LightError` | `#D32F2F` |
+
+## Tipografia
+
+L'escala tipogràfica està definida a `ui/theme/Type.kt` i utilitza `FontFamily.SansSerif` (la font sans-serif per defecte del sistema Android, normalment Roboto) per a tots els nivells.
+
+| Nivell | Pes | mida | Interletraje | 
+|---|---|---|---| 
+| `displayLarge` | Negre (900) | 34 sp | -0,25 sp | 
+| `headlineLarge` | Negreta (700) | 28 sp | 0 sp | 
+| `headlineMedium` | Negreta (700) | 24 sp | 0 sp | 
+| `titleLarge` | SemiNegreta (600) | 20 sp | 0,15 sp | 
+| `titleMedium` | SemiNegreta (600) | 16 sp | 0,15 sp | 
+| `bodyLarge` | Normal (400) | 16 sp | 0,5 sp | 
+| `bodyMedium` | Normal (400) | 14 sp | 0,25 sp | 
+| `labelLarge` | Negreta (700) | 14 sp | 1,2 sp | 
+| `labelMedium` | Mitjana (500) | 12 sp | 0,5 sp | 
+| `labelSmall` | Mitjana (500) | 11 sp | 0,5 sp |
+
+El `labelLarge` amb `letterSpacing = 1.2 sp` s'usa als botons CTA (com "COMENÇAR ARA", "CONTINUAR") per donar l'efecte de text expandit característic de la interfície.
+
+## Formes
+
+El sistema de formes personalitzat `PremiumShapes` reemplaça l'esquema de cantons per defecte de Material 3:
+
+| Nivell | Radio d'esquina | 
+|---|---| 
+| `small` | 10 dp | 
+| `medium` | 16 dp | 
+| `large` | 22 dp | 
+| `extraLarge` | 28 dp |
+
+Aquests radis més generosos que els valors per defecte de Material 3 contribueixen a l'aspecte premium arrodonit de targetes i botons.
+
+## Gestió de temes
+
+El tema es gestiona en dues capes:
+
+**MaterialTheme (`ui/theme/Theme.kt`):** Defineix el `Trainium2Theme` composable que aplica el `ColorScheme`, la `Typography` i les `Shapes` segons el paràmetre `darkTheme`.
+
+**ThemeManager (`ThemeManager.kt`):** Persisteix la preferència de l'usuari a DataStore. La preferència es llegeix com un `Flow<Boolean?>` i es col·lecciona a `MainActivity.kt` amb `collectAsState(initial = null)`. El valor inicial `null` vol dir que la preferència encara no s'ha llegit del disc; en aquest cas, es fa servir el tema del sistema (`isSystemInDarkTheme()`).
+
+```kotlin
+val savedDarkMode by themeManager.isDarkMode.collectAsState(initial = null)
+val systemTheme = isSystemInDarkTheme()
+var isDarkTheme by remember(savedDarkMode) {
+    mutableStateOf(savedDarkMode ?: systemTheme)
+}
+```
+
+## Gradients de fons
+
+Totes les pantalles utilitzen gradients verticals en comptes de fons plans. El gradient varia segons el tema actiu:
+
+**Tema fosc:** 
+```kotlin
+Brush.verticalGradient(listOf(BlueDark, BlueMid, BlueDeep))
+// #0B1426 → #121F3D → #162347
+```
+
+**Esborrar el tema:**
+```kotlin
+Brush.verticalGradient(listOf(Color(0xFFF0F4FF), Color(0xFFE3ECFF), Color(0xFFD6E4FF)))
+```
+
+## Animacions d'entrada
+
+Totes les pantalles implementen animacions dentrada escalonades mitjançant `LaunchedEffect(Unit)` + `animateFloatAsState`. El patró estàndard és:
+
+```kotlin
+var elementoVisible by remember { mutableStateOf(false) }
+val alpha by animateFloatAsState(
+    targetValue = if (elementoVisible) 1f else 0f,
+    animationSpec = tween(durationMillis = 500),
+    label = "elemento_alpha"
+)
+
+LaunchedEffect(Unit) {
+    delay(100)
+    elementoVisible = true
+}
+```
+
+Els elements es revelen seqüencialment amb retards de 100-300 ms entre cadascun, creant un efecte daparició en cascada.

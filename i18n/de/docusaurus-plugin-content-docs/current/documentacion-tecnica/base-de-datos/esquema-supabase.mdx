@@ -1,0 +1,151 @@
+---
+title: Esquema de Supabase
+sidebar_position: 1
+---
+# Supabase-Schema
+
+Supabase fungiert als Haupt-Backend der Anwendung. Die zugrunde liegende Datenbank ist PostgreSQL. Nachfolgend werden jede Tabelle, ihre Spalten und die Beziehungen zwischen ihnen beschrieben.
+
+## Tabelle: Benutzer
+
+Speichert die Daten der in der Anwendung registrierten Benutzer.
+
+| Spalte | Geben Sie | ein Einschränkungen | Beschreibung | 
+|---|---|---|---| 
+| `id` | `integer` | PK, automatische Inkrementierung | Eindeutige Benutzerkennung | 
+| `nombre` | `varchar(100)` | NICHT NULL | Vollständiger Name des Benutzers | 
+| `dni` | `varchar(20)` | EINZIGARTIG | Nationales Ausweisdokument. Es wird als Anmeldekennung | verwendet
+| `contraseniaHash` | `varchar(255)` | | Gespeichertes Passwort (Klartext in aktueller Version) | 
+| `email` | `varchar(100)` | EINZIGARTIG | E-Mail. Wird zur Passwortwiederherstellung verwendet | 
+| `telefono` | `varchar(20)` | | Kontakttelefonnummer | 
+| `admin` | `integer` | STANDARD 0 | Gibt an, ob der Benutzer eine Administratorrolle hat (0 = Benutzer, 1 = Administrator) | 
+| `premium` | `boolean` | DEFAULT false | Gibt an, ob der Benutzer über ein aktives Premium-Abonnement verfügt | 
+| `fecha_ini_prem` | `date` | | Startdatum des Premium-Abonnements | 
+| `fecha_fin_prem` | `date` | | Enddatum des Premium-Abonnements | 
+| `foto` | `text` | | Base64-codiertes Profilbild |
+
+Die entsprechende Datenklasse ist `models/Usuario.kt`.
+
+## Tabelle: Maschinen
+
+Speichert den Fitnessgerätekatalog.
+
+| Spalte | Geben Sie | ein Einschränkungen | Beschreibung | 
+|---|---|---|---| 
+| `id` | `integer` | PK, automatische Inkrementierung | Eindeutige Maschinenkennung | 
+| `nombre` | `varchar(100)` | NICHT NULL | Anzeigename der Maschine | 
+| `tipo` | `varchar(50)` | | Übungskategorie (Cardio, Rücken, Bein, Brust usw.) | 
+| `estado` | `integer` | STANDARD 0 | Allgemeines Statusfeld | 
+| `descripcion` | `text` | | Ausführliche Maschinenbeschreibung | 
+| `operativa` | `boolean` | STANDARD wahr | Zeigt an, ob die Maschine für Reservierungen verfügbar ist | 
+| `mantenimiento_desde` | `varchar` | | Datum und Uhrzeit des Beginns des Wartungszeitraums (`yyyy-MM-dd HH:mm`) | 
+| `mantenimiento_hasta` | `varchar` | | Datum und Uhrzeit des Endes des Wartungszeitraums (`yyyy-MM-dd HH:mm`) |
+
+Die entsprechende Datenklasse ist `models/Maquina.kt`.
+
+## Tabelle: Reserven
+
+Speichert von Benutzern vorgenommene Maschinenreservierungen.
+
+| Spalte | Geben Sie | ein Einschränkungen | Beschreibung | 
+|---|---|---|---| 
+| `id` | `integer` | PK, automatische Inkrementierung | Eindeutige Reservierungskennung | 
+| `id_usuario` | `integer` | FK → user.id | Benutzer, der die Reservierung vorgenommen hat | 
+| `id_maquina` | `integer` | FK →machines.id | Reservierte Maschine | 
+| `fecha` | `date` | | Reservierungsdatum (`yyyy-MM-dd`) | 
+| `hora_inicio` | `time` | | Startzeit des reservierten Slots | 
+| `hora_fin` | `time` | | Endzeit des reservierten Slots | 
+| `estado` | `boolean` | STANDARD wahr | `true` = aktiv, `false` = abgebrochen |
+
+Die entsprechenden Datenklassen sind `models/Reserva.kt` und `models/ReservaConDetalles.kt`. Die zweite enthält die eingebetteten Objekte `Usuario` und `Maquina`, die über die PostgREST-Beziehungssyntax (`*, usuarios(*), maquinas(*)`) abgerufen werden.
+
+## Tisch: Geschirr
+
+Bewahren Sie nahrhafte Gerichte aus dem Katalog auf.
+
+| Spalte | Geben Sie | ein Einschränkungen | Beschreibung | 
+|---|---|---|---| 
+| `id` | `integer` | PK, automatische Inkrementierung | Eindeutige Gericht-ID | 
+| `id_usuario` | `integer` | FK → user.id | Benutzer, der das Gericht vorgeschlagen hat (nullable für Systemgerichte) | 
+| `nombre` | `varchar(100)` | NICHT NULL | Name des Gerichts | 
+| `descripcion` | `text` | | Beschreibung oder Rezept des Gerichts | 
+| `calorias` | `double precision` | | Kaloriengehalt pro Portion | 
+| `imagen_url` | `varchar(255)` | | Bild-URL oder Base64-String des Plattenbilds | 
+| `fecha_subida` | `timestamp` | | Erstellungsdatum und -uhrzeit aufzeichnen | 
+| `visibilidad` | `boolean` | STANDARD wahr | Gibt an, ob das Gericht im Katalog sichtbar ist | 
+| `tiempo` | `varchar` | | Geschätzte Vorbereitungszeit (zum Beispiel „30 Minuten“) | 
+| `aceptado` | `boolean` | DEFAULT false | Zeigt an, ob das Gericht von einem Administrator genehmigt wurde |
+
+Die entsprechende Datenklasse ist `models/Plato.kt`.
+
+## Tabelle: user_weight
+
+Speichert den Verlauf der Gewichtsaufzeichnungen für jeden Benutzer.
+
+| Spalte | Geben Sie | ein Einschränkungen | Beschreibung | 
+|---|---|---|---| 
+| `id` | `integer` | PK, automatische Inkrementierung | Eindeutiger Datensatzbezeichner | 
+| `id_usuario` | `integer` | FK → user.id | Benutzer, zu dem der Datensatz gehört | 
+| `peso` | `double precision` | NICHT NULL | Gewicht in Kilogramm | 
+| `fecha` | `date` | | Registrierungsdatum (`yyyy-MM-dd`) |
+
+Die Anwendung sieht die Beschränkung einer einzigen Registrierung pro Tag auf UI-Ebene vor. Der Bildschirm prüft, ob für das aktuelle Datum bereits ein Datensatz vorhanden ist, bevor ein neuer hinzugefügt werden kann.
+
+Die entsprechende Datenklasse ist `models/PesoUsuario.kt`.
+
+## Tabelle: Zahlungen
+
+Speichert den Transaktionsverlauf des Premium-Abonnements.
+
+| Spalte | Geben Sie | ein Einschränkungen | Beschreibung | 
+|---|---|---|---| 
+| `id` | `integer` | PK, automatische Inkrementierung | Eindeutige Zahlungskennung | 
+| `id_usuario` | `integer` | FK → user.id | Benutzer, der die Zahlung vorgenommen hat | 
+| `monto` | `double precision` | NICHT NULL | Transaktionsbetrag in Euro | 
+| `fecha_pago` | `date` | | Datum der Zahlung | 
+| `tipo` | `varchar(50)` | | Abonnementmodus (monatlich, halbjährlich, jährlich) | 
+| `metodo_pago` | `varchar(25)` | | Verwendete Zahlungsmethode (Karte, Bizum) |
+
+Die entsprechende Datenklasse ist `models/Pago.kt`.
+
+## Beziehungsdiagramm
+
+```
+usuarios (id)
+    |
+    |--< reservas (id_usuario) >-- maquinas (id)
+    |
+    |--< peso_usuario (id_usuario)
+    |
+    |--< platos (id_usuario)
+    |
+    |--< pagos (id_usuario)
+```
+
+Die Beziehungen sind alle eins-zu-viele. Auf der Supabase-Dashboard-Ebene sind keine expliziten Fremdschlüssel definiert. Die referenzielle Integrität wird auf Anwendungsebene verwaltet.
+
+## Sicherheit auf Zeilenebene
+
+Supabase Row Level Security (RLS)-Richtlinien sind in dieser Version nicht konfiguriert. Der Datenzugriff erfolgt mit `anon key`, sodass jeder Client mit dem Schlüssel alle Tabellen lesen und schreiben kann. In einer Produktionsumgebung wäre es wichtig, entsprechende RLS-Richtlinien zu definieren oder `service_role key` ausschließlich von einem vertrauenswürdigen Backend aus zu verwenden.
+
+## Datenbankkonstanten
+
+Die Namen der Tabellen und Spalten werden in `DbConstants.kt` durch die Objekte `DbTables` und `DbColumns` zentralisiert, wodurch die Verwendung von im Code verstreuten Literalzeichenfolgen vermieden wird:
+
+```kotlin
+object DbTables {
+    const val USUARIOS = "usuarios"
+    const val MAQUINAS = "maquinas"
+    const val PLATOS = "platos"
+    const val PAGOS = "pagos"
+    const val RESERVAS = "reservas"
+    const val PESO_USUARIO = "peso_usuario"
+}
+
+object DbColumns {
+    const val ID = "id"
+    const val DNI = "dni"
+    const val NOMBRE = "nombre"
+    // ...
+}
+```

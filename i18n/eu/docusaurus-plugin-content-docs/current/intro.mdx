@@ -1,0 +1,63 @@
+---
+title: Trainium
+sidebar_position: 1
+---
+# Trainium
+
+Trainium jatorrizko Android aplikazio bat da, gimnasio baten kudeaketa integralera zuzenduta. Erabiltzaileei izena emateko, makineria erreserbatzeko, haien aurrerapen fisikoaren jarraipena egiteko aukera ematen die pisua erregistratzeko eta elikadura planak jarraitzeko. Eskuragarri dauden funtzionalitateak zabaltzen dituen Premium harpidetza-sistema du, baita administratzaile eginkizuna ere, makinen katalogoaren kudeaketarako sarbidea, erreserba aktiboak eta elikadura-platerak moderatzeko.
+
+## Ezaugarri nagusiak
+
+Aplikazioak funtzionalitate hauek ezartzen ditu bere azken bertsioan:
+
+- Erabiltzaileen autentifikazioa IDa eta pasahitza erabiliz, kredentzialak posta elektronikoz berreskuratuz
+- Erabiltzaile berrien erregistroa eremuak balioztatzeko (izena, NAN, posta elektronikoa, telefonoa)
+- Abioen arteko saio iraunkorra `SharedPreferences` erabiliz 7 eguneko iraupen konfiguragarria duena
+- Makineriaren erreserba data eta ordu-tartearen aukeraketarekin, gainjartzeak hauteman eta ordubeteko muga erreserba bakoitzeko.
+- Makineria mantentzeko sistema, eragindako erreserbak automatikoki baliogabetzearekin
+- Aurrez erreserbaren abisua push jakinarazpen konfiguragarriak (10, 15, 30, 60 edo 120 minutu)
+- Esportatu erreserbak gailuaren egutegira
+- Pisuaren jarraipena denboraren bilakaera grafikoarekin
+- Elikadura-plateren katalogoa erabiltzaileak iradokizun sistemarekin eta administratzaileak moderatuta
+- Premium harpidetza hiru prezio motarekin (hilabetekoa, seihilekokoa eta urtekoa) eta ordainketa-erregistroa, geratzen diren egunen adierazlearekin
+- Profilen edizioa Base64-n gordetako erabiltzailearen argazkiarekin
+- Gai argi eta ilunen euskarria lehentasunen iraunkortasunarekin DataStore bidez
+- **Hizkuntza anitzeko euskarria** sistemaren hizkuntza detektatzeko automatikoki eta eskuzko hautatzailearekin (12 hizkuntza erabilgarri)
+- Pantaila animatua sarrerako bideo erreprodukzioarekin
+- Kargatu eskeleto-pantailekin API-ko kontsultetan
+
+## Teknologia pila
+
+| Geruza | Teknologia | 
+|---|---| 
+| Hizkuntza | Kotlin | 
+| UI | Jetpack Compose + Material 3 | 
+| Nabigazioa | Navigation Compose 2.7.7 | 
+| Backend nagusia | Supabase (PostgreSQL) SDK ofizialaren bidez | 
+| Backend alternatiboa | Firebase Data Connect (GraphQL) | 
+| Autentifikazioa | Firebase Auth (deklaratu) | 
+| Tokiko iraunkortasuna | Jetpack DataStore Hobespenak + SharedPreferences | 
+| Nazioartekotzea | Berezko kate-sistema Compose-n (i18n) | 
+| Jakinarazpenak | AlarmManager + NotificationCompat | 
+| Eraikitzeko sistema | Gradle (Kotlin DSL) | 
+| IDE | AndroidStudio |
+
+## Dokumentazio egitura
+
+**Instalazioa eta konfigurazioa** garapen-ingurunearen eskakizunak, biltegia klonatzen eta proiektua eraikitzeko beharrezkoak diren Supabase eta Firebase kredentzialak konfiguratzen ditu.
+
+**Arkitektura** moduluaren egitura, nabigazio grafikoa, biltegi-geruza eta hartutako diseinu-erabakiak deskribatzen ditu.
+
+**Datubaseak** Supabase taula-eskema, entitate-erlazioak eta Firebase Data Connect GraphQL eskema dokumentatzen ditu.
+
+**Pantailak** aplikazioaren pantaila bakoitza, bere erantzukizunak eta nabigazio-fluxuak deskribatzen ditu.
+
+**Funtzionalitateak** bloke funtzional nagusi bakoitzaren ezarpena zehazten du.
+
+**API eta Zerbitzuak** Supabase, Firebase Auth eta Firebase Data Connect-ekin integrazioa azaltzen du.
+
+**Diseinua** diseinu-sistema, kolore-paleta, tipografia eta UI osagai berrerabilgarriak dokumentatzen ditu.
+
+**Inplementazioa** APK arazketa edo askatzeko urratsak adierazten ditu.
+
+**Erreferentzia** datu-ereduen, konstanteen eta erabilgarritasun-klaseen inbentarioa biltzen du.

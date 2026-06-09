@@ -1,0 +1,76 @@
+---
+title: Gestión de reservas
+sidebar_position: 5
+---
+# Gestion des réservations
+
+La rubrique **"Mes Réservations"** vous permet de consulter toutes vos réservations, de les filtrer par date ou statut, d'annuler celles dont vous n'avez plus besoin et de les exporter vers l'agenda de votre téléphone.
+
+---
+
+## Voir vos réservations
+
+Appuyez sur **"Mes réservations"** sur l'écran principal. Toutes vos réservations seront chargées par date (la plus proche en premier). Pendant le chargement de la liste, vous verrez l'effet du chargement du squelette.
+
+Chaque fiche de réservation indique :
+
+- Nom de la **machine** réservée. 
+- **Date** de la réservation. 
+- **Heure de début et de fin**. 
+- Statut (actif ou passé).
+
+---
+
+## Filtrer les réservations
+
+En haut de l'écran, vous trouverez les filtres disponibles. Vous pouvez les faire glisser horizontalement s'ils ne tiennent pas tous sur l'écran :
+
+| Filtrer | Ce qui montre | 
+|---|---| 
+| **À venir** | Réservations dont l'heure de fin n'est pas encore arrivée. Vue par défaut à l'entrée | 
+| **Aujourd'hui** | Uniquement les réservations prévues pour la journée en cours | 
+| **Passés** | Réservations dont l'heure de fin est déjà dépassée | 
+| **Tous** | Toutes vos réservations sans aucun filtre | 
+| **Par date** | Ouvrir un calendrier pour choisir un jour spécifique |
+
+:::astuce
+Le filtre **"Passé"** prend en compte l'heure exacte de fin, pas seulement le jour. Une réservation d'aujourd'hui déjà terminée apparaîtra correctement dans "Passés" même si c'est encore le même jour. 
+:::
+
+---
+
+## Annuler une réservation
+
+Pour annuler une réservation active, appuyez sur le bouton d'annulation qui apparaît sur votre carte. Lorsque vous effectuez cette opération, les opérations suivantes se produisent automatiquement :
+
+1. La réservation est supprimée du système. 
+2. Le rappel de notification prévu pour cette réservation est annulé. 
+3. Si vous avez d'autres réservations à venir, le rappel est reprogrammé pour pointer vers la suivante.
+
+Vous n'avez rien à faire manuellement pour gérer les notifications : l'application s'occupe de tout lorsque vous annulez.
+
+:::attention
+L'annulation est définitive. Une fois annulée, vous devrez effectuer une nouvelle réservation si vous souhaitez utiliser à nouveau cette machine à ce moment-là, à condition qu'elle soit toujours disponible. 
+:::
+
+---
+
+## Exporter une réservation vers le calendrier du téléphone
+
+Chaque carte de réservation comprend une icône de calendrier dans le coin supérieur droit. Lorsque vous appuyez dessus :
+
+1. Une boîte de dialogue de confirmation apparaît avec les données de réservation (machine, date et heure). 
+2. Si vous confirmez, l'application ouvre l'application calendrier sur votre téléphone avec toutes les données déjà renseignées : titre avec le nom de la machine, la date, l'heure de début et l'heure de fin. 
+3. Confirmez dans votre application de calendrier pour enregistrer l'événement.
+
+Cette fonctionnalité est utile à la fois pour les réservations futures (en se souvenant de vous visuellement sur le calendrier) et pour les réservations passées (en gardant un historique de votre activité).
+
+:::infos
+L'exportation ouvre l'application de calendrier par défaut de votre téléphone. Si plusieurs applications de calendrier sont installées, le système vous demandera laquelle vous souhaitez utiliser. 
+:::
+
+---
+
+## Vue Administrateur
+
+Si votre compte dispose d'autorisations d'administrateur, sur l'écran des réservations, vous verrez également les réservations du **reste des utilisateurs**, pas seulement les vôtres. Chaque carte comporte également le nom de l'utilisateur qui a effectué la réservation. L'administrateur peut annuler toute réservation active, pas seulement la sienne.

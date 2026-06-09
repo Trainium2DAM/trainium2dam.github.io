@@ -1,0 +1,45 @@
+---
+title: Platos y nutricion
+sidebar_position: 2
+---
+# Pratos e nutrición
+
+##Pantalla de placas
+
+O catálogo nutricional amosa pratos aprobados nun único formato de tarxeta con navegación secuencial, semellante a un carrusel lineal. O usuario ve un prato á vez e pode moverse de un lado a outro.
+
+### Carga de datos
+
+Ao inicializar a pantalla, fanse dúas consultas a Supabase en paralelo:
+
+**Pratos aceptados:** `from("platos").select { filter { eq("visibilidad", true); eq("aceptado", true) } }`. Só se mostran no carrusel os pratos que foron aprobados por un administrador e que teñan a visibilidade activada.
+
+**Suxestións pendentes (só administrador):** `from("platos").select { filter { eq("aceptado", false) } }`. Os pratos pendentes de moderación só son visibles para os administradores.
+
+### Expositor de placas
+
+Cada tarxeta mostra:
+- Imaxe do prato (se `imagen_url` contén unha cadea Base64, decodícase como `Bitmap` usando `ImageUtils.decodeBase64ToBitmap`). 
+- Nome do prato. 
+- Calorías. 
+- Tempo de preparación. 
+- Descrición ou receita.
+
+### Suxestión de prato polo usuario
+
+Calquera usuario pode suxerir un novo prato usando o botón de suxestión, que abre un diálogo modal cos seguintes campos:
+- Título (nome do prato)
+- Receita ou descrición
+- Tempo de preparación
+- Calorías
+- Foto (seleccionada da galería mediante `ActivityResultContracts.GetContent()`, convertida a Base64)
+
+O prato insírese en Supabase con `aceptado = false` e `visibilidad = true`. Estará pendente de revisión por parte dun administrador.
+
+### Moderación por parte do administrador
+
+O administrador ve nunha sección separada a lista de pratos pendentes de aprobación (`aceptado = false`). Para cada prato podes:
+- **OK:** Executar `update { set("aceptado", true) }` en Supabase. O prato faise visible no carrusel. 
+- **Rexeitar:** Executar `delete` en Supabase. A placa é eliminada permanentemente.
+
+Desde o carrusel de pratos aceptados, o administrador tamén pode eliminar os pratos xa publicados.

@@ -104,10 +104,10 @@ const STATS = [
 ];
 
 const LOGOS = [
-  { src: '/img/logo1.png', alt: 'IES Las Espeñetas' },
-  { src: '/img/logo2.png', alt: 'GVA' },
-  { src: '/img/logo3.jpg', alt: 'Ministerio de Educación' },
-  { src: '/img/logo4.jpg', alt: 'Fondo Social Europeo' },
+  { src: '/img/logo1.webp', alt: 'IES Las Espeñetas', href: 'https://portal.edu.gva.es/03011070/' },
+  { src: '/img/logo2.webp', alt: 'GVA', href: 'https://ceice.gva.es/es/' },
+  { src: '/img/logo3.webp', alt: 'Ministerio de Educación', href: 'https://www.educacionfpydeportes.gob.es/portada.html' },
+  { src: '/img/logo4.webp', alt: 'Fondo Social Europeo', href: 'https://ceice.gva.es/es/web/fse' },
 ];
 
 const FIGMA_DEMO_URL =
@@ -312,7 +312,7 @@ function HeroSection() {
             </Button>
             <Button
               component={Link as any}
-              to="/docs/"
+              to="/docs/intro"
               variant="subtle"
               size="md"
               color={isDark ? 'gray' : 'dark'}
@@ -590,16 +590,17 @@ function LogosSection() {
         </Text>
         <Group justify="center" align="center" gap="3rem" wrap="wrap">
           {LOGOS.map((logo, i) => (
-            <img
-              key={i}
-              ref={(el) => {
-                logosRef.current[i] = el;
-              }}
-              src={logo.src}
-              alt={logo.alt}
-              className={styles.logoImg}
-              loading="lazy"
-            />
+            <a key={i} href={logo.href} target="_blank" rel="noopener noreferrer">
+              <img
+                ref={(el) => {
+                  logosRef.current[i] = el;
+                }}
+                src={logo.src}
+                alt={logo.alt}
+                className={styles.logoImg}
+                loading="lazy"
+              />
+            </a>
           ))}
         </Group>
       </Container>
@@ -700,7 +701,7 @@ function CallToAction() {
             </Button>
             <Button
               component={Link as any}
-              to="/docs/"
+              to="/docs/intro/intro"
               variant="outline"
               size="lg"
               color={isDark ? 'brand' : 'brand'}

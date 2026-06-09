@@ -1,0 +1,270 @@
+---
+title: Pantallas
+sidebar_position: 1
+---
+# Bildschirme
+
+In diesem Abschnitt werden jedes Composable auf Bildschirmebene, seine Verantwortlichkeiten, die Parameter, die es empfängt, und die Nebenwirkungen, die es erzeugt, beschrieben.
+
+---
+
+## SplashVideoScreen
+
+**Datensatz:** `SplashVideoScreen.kt` 
+**Ruta:** `splash`
+
+Zeigt einen Begrüßungsbildschirm mit einführender Videowiedergabe an. Das Video wird von `res/raw/video_app.mp4` mit `VideoView` geladen, das in Compose mit `AndroidView` integriert ist.
+
+**Verhalten:**
+- Erscheint mit einer 500 ms langen Einblendung zu Beginn. 
+- Nach 2 Sekunden erscheinen im unteren Bereich die Fortschrittsanzeige und das Branding. 
+- Navigiert automatisch zu `loading`, wenn das Video fertig ist (`OnCompletionListener`) oder nach einer Zeitüberschreitung von 13 Sekunden, wenn das Video nicht endet. 
+- Der Hintergrund ist unabhängig vom Systemthema fest weiß.
+
+**Parameter:**
+
+| Parameter | Geben Sie | ein Beschreibung | 
+|---|---|---| 
+| `onVideoFinished` | `() -> Unit` | Rückruf am Ende des Videos aufgerufen |
+
+---
+
+## LoadingScreen (Ladebildschirm)
+
+**Ruta:** `loading`
+
+Zwischenbildschirm, der prüft, ob auf `SecureSessionManager` eine gültige persistente Sitzung vorhanden ist. Es gibt kein eigenes Composable, die Logik wird direkt im Composable des `loading`-Pfades des NavHost ausgeführt.
+
+**Verhalten:**
+- Lesen Sie die gespeicherte Sitzung mit `SecureSessionManager.obtenerSesion()`. 
+- Wenn eine gültige Sitzung vorhanden ist, navigieren Sie direkt zu `profile/{idUsuario}`. 
+- Wenn keine Sitzung vorhanden ist, navigieren Sie zu `main`.
+
+---
+
+## Hauptbildschirm
+
+**Datenblatt:** `MainScreen.kt` 
+**Ruta:** `main`
+
+Willkommensbildschirm für nicht authentifizierte Benutzer. Es zeigt das Trainium-Logo, den Slogan und einen Login-Button. Enthält die Themenauswahl in der oberen rechten Ecke.
+
+**Parameter:**
+
+| Parameter | Geben Sie | ein Beschreibung | 
+|---|---|---| 
+| `isDarkTheme` | `Boolean` | Steuert das aktive visuelle Thema | 
+| `onToggleTheme` | `() -> Unit` | Zwischen hellem und dunklem Thema wechseln | 
+| `onNavigateToLogin` | `() -> Unit` | Navigieren Sie zum Anmeldebildschirm |
+
+---
+
+## Anmeldebildschirm
+
+**Datensatz:** `LoginScreen.kt` 
+**Ruta:** `login` 
+**ViewModel:** `LoginViewModel`
+
+Verwaltet die Authentifizierung bestehender Benutzer mithilfe von ID und Passwort.
+
+**Authentifizierungsablauf:**
+1. Der Benutzer gibt seine ID und sein Passwort ein. 
+2. Das ViewModel fragt `AuthRepository.getUserByDni(dni)` ab. 
+3. Wenn ein Datensatz gefunden wird und das Passwort übereinstimmt, wird `SecureSessionManager.iniciarSesion(...)` aufgerufen, um die Sitzung beizubehalten. 
+4. `onLoginSuccess` wird mit den Benutzerdaten aufgerufen. Die App navigiert zu `profile/{idUsuario}`; Profildaten (Name, Admin, Premium) werden frisch von Supabase auf `ProfileViewModel` geladen. 
+5. Wenn die Anmeldeinformationen falsch sind, wird eine Fehlermeldung auf dem Bildschirm angezeigt.
+
+**Parameter:**
+
+| Parameter | Geben Sie | ein Beschreibung | 
+|---|---|---| 
+| `isDarkTheme` | `Boolean` | Steuert das aktive visuelle Thema | 
+| `onBack` | `() -> Unit` | Zurück zu `MainScreen` | 
+| `onNavigateToRegister` | `() -> Unit` | Navigieren Sie zur Registrierung | 
+| `onNavigateToForgot` | `() -> Unit` | Navigieren Sie zu Passwortwiederherstellung | 
+| `onLoginSuccess` | `(String, Int, Int, Int) -> Unit` | Rückruf mit (Name, isAdmin, Benutzer-ID, isPremium). Die Navigation verwendet nur UserId; Der Rest wird in das ViewModel des ProfileScreen geladen. |
+
+---
+
+## RegisterScreen
+
+**Datenblatt:** `RegisterScreen.kt` 
+**Ruta:** `register` 
+**ViewModel:** `RegisterViewModel`
+
+Anmeldeformular für neue Benutzer. Sammeln Sie Name, ID, E-Mail, Passwort und Telefonnummer und delegieren Sie sie an `AuthRepository.insertUser(...)`.
+
+**Validierungen implementiert:**
+- Alle Pflichtfelder müssen ausgefüllt sein. 
+- Der DNI darf nicht bereits registriert sein (vorherige Überprüfung mit `AuthRepository.userExistsByDni`). 
+- Der neue Benutzer wird standardmäßig mit `admin=0` und `premium=false` eingefügt.
+
+**Parameter:**
+
+| Parameter | Geben Sie | ein Beschreibung | 
+|---|---|---| 
+| `isDarkTheme` | `Boolean` | Steuert das aktive visuelle Thema | 
+| `onBack` | `() -> Unit` | Zurück zu `LoginScreen` |
+
+---
+
+## ForgotPasswordScreen
+
+**Datensatz:** `ForgotPasswordScreen.kt` 
+**Ruta:** `forgot` 
+**ViewModel:** `ForgotPasswordViewModel`
+
+Ablauf zur Passwortwiederherstellung in zwei Schritten:
+
+**Schritt 1:** Der Benutzer gibt seine ID und E-Mail ein. `AuthRepository.verifyCredentials(dni, email)` wird aufgerufen, um zu überprüfen, ob das Paar vorhanden ist. Wenn korrekt, fahren Sie mit Schritt 2 fort.
+
+**Schritt 2:** Der Benutzer gibt das neue Passwort und seine Bestätigung ein. Wenn sie übereinstimmen, wird Feld `contraseniaHash` mit `AuthRepository.updatePassword(userId, newPass)` aktualisiert.
+
+**Parameter:**
+
+| Parameter | Geben Sie | ein Beschreibung | 
+|---|---|---| 
+| `isDarkTheme` | `Boolean` | Steuert das aktive visuelle Thema | 
+| `onBack` | `() -> Unit` | Zurück zu `LoginScreen` |
+
+---
+
+## ProfileScreen
+
+**Datenblatt:** `ProfileScreen.kt` 
+**Ruta:** `profile/{idUsuario}` 
+**ViewModel:** `ProfileViewModel`
+
+Hauptknotenpunkt der Anwendung nach der Anmeldung. Es zeigt den Avatar des Benutzers, seinen Namen, sein Premium-/Admin-Abzeichen und die Zugriffsschaltflächen für jeden Abschnitt.
+
+**Funktionalität beim Laden:**
+- Ruft aktualisierte Benutzerdaten von Supabase ab (Name, Foto, Premium-Status, Administratorrolle). 
+- Wenn der Benutzer Premium ist, werden die verbleibenden Abonnementtage (`ProfileViewModel.diasRestantes`) aus dem Feld `fechaFin` des Modells `Usuario` berechnet und auf dem Ausweis angezeigt. Wenn das Abonnement heute abläuft, wird „Läuft heute ab“ angezeigt. Wenn noch 7 Tage oder weniger übrig sind, wird die Anzeige als Warnung rot. 
+- Überprüfen Sie, ob für das aktuelle Datum aufgrund von Maschinenwartung automatisch stornierte Reservierungen vorliegen. Wenn ja, wird **einmal pro Sitzung** ein informativer `AlertDialog` angezeigt (gesteuert durch die globale Variable `avisoMostrado`).
+
+**Kopfzeilensymbole:**
+Der `ProfileScreen` enthält in der Kopfzeile ein Sprachsymbol (Globus), ein Themensymbol (Sonne/Mond) und ein Einstellungssymbol, das zu `edit_profile` navigiert.
+
+**Navigationsschaltflächen verfügbar:**
+
+| Knopf | Verfügbar für | Ziel | 
+|---|---|---| 
+| Maschinen | Alle | `maquinas/{isAdmin}/{idUsuario}` | 
+| Meine Reservierungen | Alle | `reservas/{isAdmin}/{idUsuario}` | 
+| Gerichte | Alle | `platos/{isAdmin}/{idUsuario}` | 
+| Gewichtsaufzeichnung | Alle | `registro/{idUsuario}` | 
+| Prämie | Alle | `premium_selection/{idUsuario}` | 
+| Abmelden | Alle | `main` (popUpTo 0) + `SecureSessionManager.cerrarSesion()` |
+
+**Parameter:**
+
+| Parameter | Geben Sie | ein Beschreibung | 
+|---|---|---| 
+| `userId` | `Int` | Benutzer-ID in der Datenbank | 
+| `isPremium` | `Boolean` | Premium-Abonnementstatus (ergänzend zu dem vom ViewModel geladenen) | 
+| `darkTheme` | `Boolean` | Steuert das aktive visuelle Thema | 
+| `onToggleTheme` | `() -> Unit` | Zwischen hellem und dunklem Thema wechseln | 
+| `onToggleLanguage` | `() -> Unit` | Öffnen Sie die Sprachauswahl | 
+| `onLogout` | `() -> Unit` | Abmelderückruf | 
+| `onNavigateToMaquinas` | `() -> Unit` | Navigieren Sie zum Maschinenkatalog | 
+| `onNavigateToPlatos` | `() -> Unit` | Navigieren Sie zum Geschirrkatalog | 
+| `onNavigateToRegistroPeso` | `() -> Unit` | Navigieren Sie zum Gewichtsprotokoll | 
+| `onNavigateToReservas` | `() -> Unit` | Navigieren Sie zu Reservierungen | 
+| `onNavigateToEditProfile` | `() -> Unit` | Navigieren Sie zu Profilbearbeitung | 
+| `onNavigateToPremium` | `() -> Unit` | Navigieren Sie zur Premium-Planauswahl |
+
+---
+
+## EditProfileScreen
+
+**Datensatz:** `EditProfileScreen.kt` 
+**Ruta:** `edit_profile/{idUsuario}` 
+**ViewModel:** `EditProfileViewModel`
+
+Ermöglicht dem Benutzer, seinen Namen, seine E-Mail-Adresse, seine Telefonnummer, sein Passwort und sein Profilfoto zu ändern. Das Foto wird mit `ActivityResultContracts.GetContent()` aus der Gerätegalerie ausgewählt und mit `ImageUtils.uriToBase64` in Base64 konvertiert. Beim Speichern delegieren Sie an `UsuarioRepository.update(...)`.
+
+**Abschnitt „Benachrichtigungen“:** Der Bildschirm enthält einen Konfigurationsabschnitt für Reservierungsbenachrichtigungen mit zwei Steuerelementen:
+- Ein `Switch` zum globalen Aktivieren oder Deaktivieren von Benachrichtigungen (`NotificationSettingsManager.setNotificationsEnabled`). 
+- Eine Gruppe von `FilterChip` mit den verfügbaren Vorlaufoptionen (10, 15, 30, 60 und 120 Minuten), nur sichtbar, wenn Benachrichtigungen aktiviert sind. Die Präferenz wird mit `NotificationSettingsManager.setMinutesBefore(minutes)` beibehalten.
+
+**Parameter:**
+
+| Parameter | Geben Sie | ein Beschreibung | 
+|---|---|---| 
+| `idUsuario` | `Int` | Zu bearbeitende Benutzer-ID | 
+| `isDarkTheme` | `Boolean` | Steuert das aktive visuelle Thema | 
+| `onBack` | `() -> Unit` | Zurück zu `ProfileScreen` | 
+| `onNavigateToHistorial` | `(Int) -> Unit` | Navigieren Sie zum Zahlungsverlauf | 
+| `onNavigateToPremium` | `() -> Unit` | Navigieren Sie zur Premium-Planauswahl |
+
+---
+
+## MaquinasScreen
+
+**Datensatz:** `MaquinasScreen.kt` 
+**Ruta:** `maquinas/{isAdmin}/{idUsuario}` 
+**ViewModel:** `MaquinasViewModel`
+
+Fitnessstudio-Gerätekatalog mit Reservierungsfunktion für Standardbenutzer und Wartungsmanagement für Administratoren. Beinhaltet die Validierung der maximalen Dauer von 60 Minuten pro Reservierung. Wenn Sie eine Reservierung erstellen, planen Sie automatisch eine Erinnerung mit `NotificationHelper`.
+
+Eine ausführliche Dokumentation finden Sie in [Funcionalidades - Máquinas y reservas](/docs/funcionalidades/maquinas-reservas).
+
+---
+
+## ReservasScreen
+
+**Datensatz:** `ReservasScreen.kt` 
+**Ruta:** `reservas/{isAdmin}/{idUsuario}` 
+**ViewModel:** `ReservasViewModel`
+
+Liste der Reservierungen mit einem Filtersystem nach fünf Kriterien: Bevorstehend, Heute, Vergangen, Alle und Datum. Enthält eine Schaltfläche zum Exportieren in den Kalender des Geräts für jede Reservierung und eine Benachrichtigungsverwaltung bei Stornierungen. Eine ausführliche Dokumentation finden Sie in [Funcionalidades - Máquinas y reservas](/docs/funcionalidades/maquinas-reservas).
+
+---
+
+## PlatesScreen
+
+**Datensatz:** `PlatosScreen.kt` 
+**Ruta:** `platos/{isAdmin}/{idUsuario}` 
+**ViewModel:** `PlatosViewModel`
+
+Katalog nahrhafter Gerichte. Eine ausführliche Dokumentation finden Sie in [Funcionalidades - Platos y nutrición](/docs/funcionalidades/platos-nutricion).
+
+---
+
+## RegistroScreen
+
+**Datenblatt:** `RegistroScreen.kt` 
+**Ruta:** `registro/{idUsuario}` 
+**ViewModel:** `RegistroViewModel`
+
+Körpergewichtskontrolle mit Evolutionsdiagramm. Eine ausführliche Dokumentation finden Sie in [Funcionalidades - Registro de peso](/docs/funcionalidades/registro-peso).
+
+---
+
+## HistorialScreen
+
+**Datensatz:** `HistorialScreen.kt` 
+**Ruta:** `historial/{idUsuario}` 
+**ViewModel:** `HistorialViewModel`
+
+Zeigt den Zahlungsverlauf des Benutzers sortiert nach absteigendem Datum an. Zahlungen werden von `PagoRepository.getByUser(idUsuario)` abgebucht.
+
+Zu jedem Eintrag in der Liste werden das Konzept (die Art des Plans), die Zahlungsmethode, der Betrag und das Datum angezeigt. Im Falle eines Verbindungsfehlers wird eine Fehlermeldung mit einer Wiederholungsschaltfläche angezeigt. Während die Daten geladen werden, wird eine Skelettliste angezeigt.
+
+**Parameter:**
+
+| Parameter | Geben Sie | ein Beschreibung | 
+|---|---|---| 
+| `idUsuario` | `Int` | ID des Benutzers, dessen Verlauf konsultiert wird | 
+| `isDarkTheme` | `Boolean` | Steuert das aktive visuelle Thema | 
+| `onBack` | `() -> Unit` | Zurück zu `EditProfileScreen` |
+
+---
+
+## PremiumSelectionScreen
+
+**Datensatz:** `PremiumSelectionScreen.kt` 
+**Ruta:** `premium_selection/{idUsuario}` 
+**ViewModel:** `PremiumSelectionViewModel`
+
+Bildschirm zum Abschluss eines Premium-Abonnements. Eine ausführliche Dokumentation finden Sie in [Funcionalidades - Suscripción Premium](/docs/funcionalidades/suscripcion-premium).

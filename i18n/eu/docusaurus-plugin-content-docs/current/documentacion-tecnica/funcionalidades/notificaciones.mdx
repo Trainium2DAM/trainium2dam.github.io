@@ -1,0 +1,126 @@
+---
+title: Notificaciones de reservas
+sidebar_position: 5
+---
+# Erreserbaren jakinarazpenak
+
+Trainium-ek tokiko oroigarrien jakinarazpenak bidaltzen ditu makineria erreserba bakoitzaren aurretik. Sistemak `AlarmManager` erabiltzen du alarma zehatzak ezartzeko eta `NotificationCompat` jakinarazpena bistaratzeko.
+
+## Osagaiak
+
+### Jakinarazpenen Laguntzailea
+
+`NotificationHelper.kt` bakarreko objektu bat da, hiru erantzukizun dituena:
+
+**Jakinarazpen kanalaren sorrera:**
+
+```kotlin
+fun createNotificationChannel(context: Context)
+```
+
+Erregistratu `trainium_reservations` kanala `NotificationManager` sisteman (beharrezkoa Android 8.0 / API 26tik). Kanalak garrantzia `IMPORTANCE_HIGH` du eta bibrazioa aktibatuta. `MainActivity.onCreate()`-n deituta beste edozein eragiketa baino lehen.
+
+**Abisua ezartzen:**
+
+```kotlin
+fun scheduleReservationNotification(
+    context: Context,
+    reservaId: Int,
+    maquinaNombre: String,
+    fecha: String,
+    horaInicio: String,
+    horaFin: String,
+    minutesBefore: Int
+)
+```
+
+Kalkulatu jaurtiketa instantea `horaInicioReserva - minutesBefore * 60 000 ms` gisa. Momentu hori jada igaro bada, ez da alarmarik ezartzen. Bestela, `PendingIntent` xede `NotificationReceiver` sortzen du eta `AlarmManager.setExactAndAllowWhileIdle` (API 23+) edo `setExact`-rekin erregistratzen du bertsio zaharretan. `PendingIntent`-ren `requestCode` `reservaId` da, beraz, erreserba bakoitzak bere alarma independentea du.
+
+**Abisua bertan behera uzten:**
+
+```kotlin
+fun cancelScheduledNotification(context: Context, reservaId: Int)
+```
+
+Berreraiki `PendingIntent` `reservaId` berarekin eta deitu `AlarmManager.cancel`. `ReservasScreen`-ren erreserba bertan behera uztean deitzen da.
+
+**Hurrengo abisua berriro programatzen:**
+
+```kotlin
+suspend fun rescheduleNextReservationNotification(context: Context, userId: Int)
+```
+
+Erabiltzailearen etorkizuneko erreserbak kontsultatzen dituen `suspend` funtzioa, hasiera orduaren arabera ordenatzen du eta hurbilen dagoenari alarma ezartzen dio. Erreserba bat sortu edo bertan behera utzi ondoren deitzen da hurrengo erreserba-abisua beti aktibo mantentzeko.
+
+### Jakinarazpen-hartzailea
+
+`BroadcastReceiver` sistemak abiarazten duenean alarmaren `Intent` jasotzen duena. Eraiki eta argitaratu jakinarazpena:
+
+- Izenburua: `"Trainium — Recordatorio de reserva"`
+- Gorputza: `"<nombre máquina>: HH:mm – HH:mm"`
+- Lehentasuna: `PRIORITY_HIGH`
+- Ukipenean automatikoki bertan behera uztea
+
+`notificationId` `reservaId` da, beraz, zain dauden hainbat alarma ez dira gainjartzen.
+
+### Jakinarazpenen ezarpenen kudeatzailea
+
+Erabiltzaileak aukeratutako aldez aurretiko jakinarazpenak eta jakinarazpenen aktibazio-egoerak DataStore-n jarraitzen dute:
+
+```kotlin
+class NotificationSettingsManager(private val context: Context) {
+    val minutesBefore: Flow<Int>               // antelación actual (default: 30)
+    val notificationsEnabled: Flow<Boolean>    // activadas/desactivadas (default: true)
+
+    suspend fun setMinutesBefore(minutes: Int)
+    suspend fun setNotificationsEnabled(enabled: Boolean)
+
+    companion object {
+        const val DEFAULT_MINUTES = 30
+        val OPTIONS = listOf(10, 15, 30, 60, 120)
+    }
+}
+```
+
+## Konfigurazioa UI-tik
+
+Jakinarazpenen hobespena `EditProfileScreen` ezarrita dago, "Jakinarazpenak" atalean. Bi kontrol daude:
+
+- **Aldatu:** erreserben jakinarazpenak aktibatzen edo desaktibatzen ditu mundu osoan. Balioa `notifManager.setNotificationsEnabled(enabled)`-rekin jarraitzen du. 
+- **Aldez aurretik txipak:** `FilterChip`-ren taldea eskuragarri dauden aukerekin (10, 15, 30, 60 eta 120 minutu). Aukera bat hautatzeak `notifManager.setMinutesBefore(minutes)`-rekin duen balioari eusten dio. Jakinarazpenak aktibatuta badaude soilik erakusten dira.
+
+## Baimenak manifestuan
+
+```xml
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+<receiver
+    android:name=".NotificationReceiver"
+    android:exported="false" />
+```
+
+`POST_NOTIFICATIONS` baimena Android 13+en exekuzioan eskatzen da. Erabiltzaileak ukatzen badu, erreserba sistemak normal funtzionatzen jarraitzen du baina ez da jakinarazpenik bidaltzen.
+
+## Oroigarri baten bizi-zikloa
+
+```
+Usuario crea reserva
+    → ReservasScreen / MaquinasScreen
+    → NotificationHelper.rescheduleNextReservationNotification()
+        → Consulta reservas futuras del usuario
+        → scheduleReservationNotification() con la próxima reserva
+            → AlarmManager programa alarma exacta
+
+Cuando llega la hora - minutesBefore:
+    → AlarmManager dispara el Intent
+    → NotificationReceiver.onReceive()
+        → Muestra notificación al usuario
+
+Usuario cancela reserva
+    → NotificationHelper.cancelScheduledNotification(reservaId)
+    → NotificationHelper.rescheduleNextReservationNotification()
+        → Se reprograma con la siguiente reserva futura
+```

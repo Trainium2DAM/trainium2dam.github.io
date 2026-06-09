@@ -1,0 +1,225 @@
+---
+title: Componentes y patrones de UI
+sidebar_position: 2
+---
+# UI-Komponenten und -Muster
+
+In diesem Abschnitt werden wiederverwendbare Komponenten und UI-Muster dokumentiert, die sich in der gesamten Benutzeroberfläche wiederholen.
+
+## ScreenHeader
+
+**Datensatz:** `ui/theme/ScreenHeader.kt`
+
+Wiederverwendbare Header-Komponente, die auf allen untergeordneten Bildschirmen verwendet wird. Enthält Titel, Untertitel, optionale Zurück-Schaltfläche, zusätzlichen Inhalt auf der rechten Seite und Themenumschaltung.
+
+```kotlin
+@Composable
+fun ScreenHeader(
+    title: String,
+    subtitle: String,
+    visible: Boolean = true,
+    onBack: (() -> Unit)? = null,
+    trailing: @Composable (() -> Unit)? = null,
+    textColor: Color,
+    subtitleColor: Color,
+    onToggleTheme: (() -> Unit)? = null,
+    darkTheme: Boolean? = null
+)
+```
+
+Die Komponente wendet `statusBarsPadding()` an und animiert ihr Eingabealpha mit `animateFloatAsState`, wenn `visible` von `false` auf `true` wechselt.
+
+## Skeleton Loading
+
+**Datensatz:** `ui/theme/SkeletonLoading.kt`
+
+Laden von Komponenten, die angezeigt werden, während auf API-Daten gewartet wird, wodurch die Benutzererfahrung verbessert wird, indem leere Bildschirme vermieden werden.
+
+### SkeletonCard
+
+Animierter rechteckiger Platzhalter für Listenkarten:
+
+```kotlin
+@Composable
+fun SkeletonCard(
+    modifier: Modifier = Modifier,
+    height: Int? = null,
+    width: Int? = null
+)
+```
+
+Verwenden Sie einen linearen Farbverlauf, der in einer Schleife mit `rememberInfiniteTransition` animiert wird, um den Schimmereffekt zu simulieren.
+
+### SkeletonCircle
+
+Kreisförmiger Platzhalter für Avatare und Icons:
+
+```kotlin
+@Composable
+fun SkeletonCircle(
+    modifier: Modifier = Modifier,
+    size: Int = 100
+)
+```
+
+### SkeletonText
+
+Abgerundeter rechteckiger Platzhalter für Texte:
+
+```kotlin
+@Composable
+fun SkeletonText(
+    modifier: Modifier = Modifier,
+    width: Int = 200,
+    height: Int = 20
+)
+```
+
+### SkeletonList
+
+Zusammensetzung mehrerer vertikal gestapelter `SkeletonCard`:
+
+```kotlin
+@Composable
+fun SkeletonList(
+    itemCount: Int = 5,
+    modifier: Modifier = Modifier,
+    itemHeight: Int = 80
+)
+```
+
+**Typische Verwendung:**
+
+```kotlin
+if (isLoading) {
+    SkeletonList(itemCount = 5, modifier = Modifier.fillMaxWidth())
+} else {
+    LazyColumn { /* items reales */ }
+}
+```
+
+## AppTimePickerDialog
+
+**Datenblatt:** `ui/theme/AppTimePickerDialog.kt`
+
+Zeitauswahldialog basierend auf `TimePicker` von Material 3. Ersetzt `TimePickerDialog` von Android View, das in früheren Versionen verwendet wurde.
+
+```kotlin
+@Composable
+fun AppTimePickerDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (hour: Int, minute: Int) -> Unit,
+    initialHour: Int = LocalTime.now().hour,
+    initialMinute: Int = LocalTime.now().minute,
+    title: String = "Seleccionar hora",
+    is24Hour: Boolean = true,
+    onValidate: ((hour: Int, minute: Int) -> String?)? = null
+)
+```
+
+Der Parameter `onValidate` ermöglicht die Anwendung zusätzlicher Validierungen vor dem Festschreiben. Wenn die Funktion eine `String` (Fehlermeldung) zurückgibt, zeigt sie diese als `Toast` an und schließt den Dialog nicht. Wenn `null` zurückgegeben wird, gilt die Auswahl als gültig und `onConfirm` wird aufgerufen.
+
+## Listenelement-Kartenmuster
+
+Die Automaten-, Reservierungs- und Speisenlisten folgen dem gleichen Kartenmuster:
+
+```
+Card (RoundedCornerShape 16 dp, elevation, cardBg)
+  └── Row (padding 16 dp, verticalAlignment Center)
+        ├── Image/Icon (60-80 dp)
+        ├── Column (weight 1f)
+        │     ├── Text nombre (titleMedium, fontWeight Bold)
+        │     └── Text subtítulo (bodyMedium, alpha 0.5)
+        └── Botones de acción (IconButton)
+```
+
+Die Hintergrundfarbe `cardBg` passt sich dem aktiven Theme an: `Color(0xFF162347).copy(0.9f)` in dunkel und `Color.White` in hell.
+
+## Textfeldmuster (OutlinedTextField)
+
+Alle Formulare verwenden `OutlinedTextField` mit dem benutzerdefinierten Farbschema:
+
+```kotlin
+val inputColors = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = BlueAccent,
+    unfocusedBorderColor = if (isDarkTheme) Color.White.copy(0.15f) else BlueDark.copy(0.15f),
+    focusedLabelColor = BlueAccent,
+    unfocusedLabelColor = if (isDarkTheme) Color.White.copy(0.4f) else BlueDark.copy(0.4f),
+    cursorColor = BlueAccent,
+    focusedTextColor = textColor,
+    unfocusedTextColor = textColor.copy(0.9f)
+)
+```
+
+Der aktive Rahmen ist unabhängig vom Thema immer `BlueAccent` (#2196F3).
+
+## Primäre Aktionsschaltfläche (CTA)
+
+Die Hauptaktionsschaltflächen verwenden einen horizontalen Farbverlauf anstelle der flachen Farbe von Material 3:
+
+```kotlin
+Button(
+    onClick = accion,
+    modifier = Modifier.fillMaxWidth().height(56.dp),
+    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+    contentPadding = PaddingValues()
+) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(
+                Brush.horizontalGradient(listOf(BlueAccent, BlueElectric)),
+                RoundedCornerShape(16.dp)
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            "CONFIRMAR",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 2.sp,
+            color = Color.White
+        )
+    }
+}
+```
+
+## Zurück-Taste
+
+Backtracking wird mit `TextButton` anstelle eines Pfeils `IconButton` implementiert, um mehr Berührungsfläche zu erhalten. `ScreenHeader` standardisiert dieses Verhalten mit `Icons.AutoMirrored.Filled.ArrowBack`.
+
+## Themenauswahl (umschalten)
+
+Die Themenumschaltung erscheint in `MainScreen` und `ProfileScreen` als `IconButton`, ausgerichtet an der oberen rechten Ecke, wobei `statusBarsPadding()` die Systemstatusleiste berücksichtigt:
+
+```kotlin
+IconButton(
+    onClick = onToggleTheme,
+    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).statusBarsPadding()
+) {
+    Icon(
+        if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+        contentDescription = "Cambiar tema",
+        tint = if (isDarkTheme) BlueSoft else BlueAccent
+    )
+}
+```
+
+In den restlichen Bildern ist der Umschalter über die Parameter `darkTheme` und `onToggleTheme` in `ScreenHeader` integriert.
+
+## Benutzeravatar
+
+Der Profil-Avatar wird in `ProfileScreen` und `EditProfileScreen` als kreisförmiges `Box` mit `clip(CircleShape)` angezeigt. Wenn der Benutzer ein Foto in Base64 hat, wird es mit `ImageUtils.decodeBase64ToBitmap` dekodiert. Wenn Sie kein Foto haben, wird ein generisches Personensymbol angezeigt.
+
+## Maschinenstatusanzeige
+
+Maschinenkarten in `MaquinasScreen` zeigen ein farbiges Statusschild:
+
+| Status | Farbe | Text | 
+|---|---|---| 
+| Betriebsbereit | Grün (`Color(0xFF4CAF50)`) | Verfügbar | 
+| In Wartung | Orange (`Color(0xFFFF9800)`) | Wartung |
+
+## Filterchip (Reservierungsbildschirm)
+
+Die Reservierungsbildschirmfilter werden als `FilterChip` von Material 3 auf einem horizontal scrollbaren `LazyRow` implementiert.

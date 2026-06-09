@@ -1,0 +1,105 @@
+---
+title: Capa de repositorios
+sidebar_position: 3
+---
+# Repository-Ebene
+
+Die Repository-Schicht abstrahiert den Zugriff auf Supabase vom Rest der Anwendung. Jedes Repository kapselt CRUD-Operationen für eine bestimmte Entität. Alle Methoden sind `suspend`-Funktionen, die auf `Dispatchers.IO` ausgeführt werden.
+
+## ServiceLocator
+
+`di/ServiceLocator.kt` fungiert als Zugangspunkt zu den Repositories. Jedes Repository wird auf `lazy`-Weise instanziiert (eine einzelne Instanz, die beim ersten Zugriff erstellt wird):
+
+```kotlin
+object ServiceLocator {
+    val authRepository by lazy { AuthRepository() }
+    val usuarioRepository by lazy { UsuarioRepository() }
+    val maquinaRepository by lazy { MaquinaRepository() }
+    val reservaRepository by lazy { ReservaRepository() }
+    val platoRepository by lazy { PlatoRepository() }
+    val pesoRepository by lazy { PesoRepository() }
+    val pagoRepository by lazy { PagoRepository() }
+}
+```
+
+ViewModels greifen über `ServiceLocator.xRepository` auf Repositorys zu.
+
+## AuthRepository
+
+Verwaltet Authentifizierungs- und Registrierungsvorgänge.
+
+| Methode | Beschreibung | 
+|---|---| 
+| `getUserByDni(dni)` | Suchen Sie nach einem Benutzer anhand der ID. Gibt `Usuario?` | zurück
+| `userExistsByDni(dni)` | Überprüfen Sie, ob bereits ein DNI registriert ist. Gibt `Boolean` | zurück
+| `verifyCredentials(dni, email)` | Überprüfen Sie das DNI + E-Mail-Paar für die Passwortwiederherstellung | 
+| `updatePassword(userId, newPass)` | Aktualisiert das Feld `contraseniaHash` des Benutzers | 
+| `insertUser(nombre, dni, email, pass, telefono)` | Registrieren Sie einen neuen Benutzer mit `admin=0` und `premium=false` |
+
+##UserRepository
+
+Verwaltet das Lesen und Aktualisieren des Benutzerprofils.
+
+| Methode | Beschreibung | 
+|---|---| 
+| `getById(id)` | Ruft einen Benutzer anhand seiner ID ab. Gibt `Usuario?` | zurück
+| `update(id, nombre, email, telefono, pass, foto)` | Bearbeitbare Profilfelder aktualisieren | 
+| `updatePremium(id, isPremium, fechaIni, fechaFin)` | Premium-Abonnement aktivieren oder deaktivieren |
+
+## MaquinaRepository
+
+Verwalten Sie den Maschinenkatalog.
+
+| Methode | Beschreibung | 
+|---|---| 
+| `getAll()` | Ruft die vollständige Liste der Maschinen ab. Gibt `List<Maquina>` | zurück
+| `insert(maquina)` | Fügen Sie eine neue Maschine ein | 
+| `delete(id)` | Eine Maschine nach ID löschen | 
+| `activateMaintenance(id, desde, hasta)` | Markieren Sie die Maschine mit dem Wartungsbereich | als nicht betriebsbereit
+| `deactivateMaintenance(id)` | Maschine wieder in Betrieb nehmen und Wartungsfelder reinigen |
+
+## ReservaRepository
+
+Maschinenreserven verwalten.
+
+| Methode | Beschreibung | 
+|---|---| 
+| `getAll()` | Erhalten Sie alle Reservierungen mit eingebetteten Benutzer- und Maschinendaten | 
+| `getByUser(userId)` | Reservierungen von einem bestimmten Benutzer abrufen | 
+| `getByMachine(machineId)` | Holen Sie sich die aktiven Reservierungen einer Maschine | 
+| `insert(reserva)` | Erstellen Sie eine neue Reservierung | 
+| `delete(id)` | Eine Reservierung nach ID stornieren/löschen |
+
+Reservierungsabfragen verwenden die eingebettete PostgREST-Beziehungssyntax (`*, usuarios(*), maquinas(*)`), um Benutzer- und Maschinendaten in einer einzigen Anfrage abzurufen.
+
+## PlatoRepository
+
+Verwalten Sie den Katalog der Nährgerichte.
+
+| Methode | Beschreibung | 
+|---|---| 
+| `getAccepted()` | Ruft die Gerichte mit `aceptado=true` und `visibilidad=true` | ab
+| `getPending()` | Ruft die Gerichte mit `aceptado=false` ab (nur für Administratoren) | 
+| `insert(plato)` | Fügen Sie eine neue Platte mit `aceptado=false` | ein
+| `accept(id)` | Ein Gericht genehmigen: `aceptado=true` | 
+| `delete(id)` | Eine Platte dauerhaft löschen |
+
+## PesoRepository
+
+Verwalten Sie Körpergewichtsaufzeichnungen.
+
+| Methode | Beschreibung | 
+|---|---| 
+| `getByUser(userId)` | Ruft den Gewichtsverlauf eines Benutzers ab, sortiert nach aufsteigendem Datum | 
+| `insert(pesoUsuario)` | Einen neuen Gewichtsdatensatz einfügen | 
+| `update(id, peso)` | Aktualisiert den Wert eines vorhandenen Datensatzes | 
+| `delete(id)` | Einen Gewichtsdatensatz löschen |
+
+## PagoRepository
+
+Verwalten Sie den Zahlungsverlauf des Abonnements.
+
+| Methode | Beschreibung | 
+|---|---| 
+| `getByUser(userId)` | Ruft die Zahlungen eines Benutzers ab, sortiert nach absteigendem Datum | 
+| `insert(pago)` | Registrieren Sie eine neue Abonnementzahlung |

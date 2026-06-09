@@ -1,0 +1,105 @@
+---
+title: Dependencias
+sidebar_position: 3
+---
+# Abhängigkeiten
+
+Alle Abhängigkeiten werden in `app/build.gradle.kts` mithilfe des Versionskatalogsystems von Gradle (`libs`) deklariert. Die konkreten Versionen sind in der Projektdatei `gradle/libs.versions.toml` aufgelöst.
+
+## Produktionsabhängigkeiten
+
+### AndroidX Core
+
+```kotlin
+implementation(libs.androidx.core.ktx)
+implementation(libs.androidx.lifecycle.runtime.ktx)
+implementation(libs.androidx.activity.compose)
+```
+
+`core.ktx` bietet Kotlin-Erweiterungen für Android-APIs. `lifecycle.runtime.ktx` ermöglicht das Starten von Coroutinen mit einem Umfang, der mit dem Lebenszyklus der Komponente verknüpft ist. `activity.compose` ist die Brücke zwischen `ComponentActivity` und Jetpack Compose.
+
+### Jetpack Compose + Material 3
+
+```kotlin
+implementation(platform(libs.androidx.compose.bom))
+implementation(libs.androidx.compose.ui)
+implementation(libs.androidx.compose.ui.graphics)
+implementation(libs.androidx.compose.ui.tooling.preview)
+implementation(libs.androidx.compose.material3)
+implementation("androidx.compose.material3:material3:1.2.0")
+implementation("androidx.compose.material:material-icons-extended")
+```
+
+Die Compose BOM (Bill of Materials) synchronisiert die Versionen aller Artefakte im Toolkit. `material-icons-extended` stellt den vollständigen Satz an Materialsymbolsymbolen bereit, die in den verschiedenen Schnittstellenkomponenten verwendet werden.
+
+### Navigation
+
+```kotlin
+implementation("androidx.navigation:navigation-compose:2.7.7")
+```
+
+Es ermöglicht die deklarative Definition des Navigationsdiagramms mithilfe von Composables. Version 2.7.7 unterstützt typsichere APIs und die Behandlung typisierter Argumente, die in `MainActivity.kt` verwendet werden.
+
+### Firebase
+
+```kotlin
+implementation(platform(libs.firebase.bom))
+implementation(libs.firebase.auth)
+```
+
+Die Firebase-Stückliste synchronisiert die Versionen der Firebase-SDKs. Auf der Client-SDK-Ebene wird nur das Authentifizierungsmodul (`firebase.auth`) verwendet, da Data Connect über direkte HTTP-Aufrufe an den GraphQL-Endpunkt aufgerufen wird.
+
+### Supabase
+
+```kotlin
+implementation(libs.supabase.postgrest)
+implementation(libs.supabase.auth)
+implementation(libs.ktor.client.android)
+```
+
+Das offizielle Supabase SDK für Kotlin ist in Module unterteilt. `postgrest` verwaltet CRUD-Operationen für PostgreSQL-Tabellen. `supabase.auth` bietet JWT-basierte Authentifizierungsflüsse. `ktor.client.android` ist die zugrunde liegende HTTP-Engine, die für das SDK erforderlich ist.
+
+### Lokale Persistenz
+
+```kotlin
+implementation(libs.androidx.datastore.preferences)
+```
+
+DataStore-Einstellungen werden in `ThemeManager.kt` verwendet, um die Designpräferenz (hell/dunkel) des Benutzers zwischen Sitzungen beizubehalten. Es ist der empfohlene Nachfolger von `SharedPreferences` für den asynchronen Betrieb auf Coroutinen.
+
+### Material (Legacy)
+
+```kotlin
+implementation(libs.material)
+```
+
+Aus Gründen der Kompatibilität mit `DatePickerDialog` und `TimePickerDialog` von Android View enthalten, die direkt in `MaquinasScreen.kt` und `ReservasScreen.kt` instanziiert werden, da Compose Material 3 diese Dialoge in der verwendeten Version nicht nativ bereitstellt.
+
+## Abhängigkeiten testen
+
+```kotlin
+testImplementation(libs.junit)
+androidTestImplementation(libs.androidx.junit)
+androidTestImplementation(libs.androidx.espresso.core)
+androidTestImplementation(platform(libs.androidx.compose.bom))
+androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+debugImplementation(libs.androidx.compose.ui.tooling)
+debugImplementation(libs.androidx.compose.ui.test.manifest)
+```
+
+Instrumentierte Tests befinden sich in `app/src/androidTest/` und Komponententests in `app/src/test/`. Das Projekt umfasst die von Android Studio generierten Standardtestklassen (`ExampleInstrumentedTest` und `ExampleUnitTest`) ohne zusätzliche benutzerdefinierte Tests in dieser Version.
+
+## Plugins von Gradle
+
+```kotlin
+// app/build.gradle.kts
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.kotlin.serialization)
+}
+```
+
+Das `kotlin.compose`-Plugin aktiviert den Compose-Compiler für Kotlin 2.0+. `google.services` verarbeitet `google-services.json`. `kotlin.serialization` aktiviert den Annotationsprozessor `kotlinx.serialization`, der von Modelldatenklassen für die automatische Deserialisierung von Supabase-Antworten verwendet wird.

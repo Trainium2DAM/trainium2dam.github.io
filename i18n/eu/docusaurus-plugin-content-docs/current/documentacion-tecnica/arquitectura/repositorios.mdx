@@ -1,0 +1,105 @@
+---
+title: Capa de repositorios
+sidebar_position: 3
+---
+# Biltegiaren geruza
+
+Biltegiko geruzak Supabaserako sarbidea abstraitzen du gainerako aplikazioetatik. Biltegi bakoitzak CRUD eragiketak kapsulatzen ditu entitate jakin baterako. Metodo guztiak `suspend` funtzioak dira `Dispatchers.IO`-n exekutatzen direnak.
+
+## Zerbitzu-lokatzailea
+
+`di/ServiceLocator.kt` biltegietarako sarbide-puntu gisa jokatzen du. Biltegi bakoitza `lazy` moduan instantziatzen da (instantzia bakarra, lehen sarbidean sortua):
+
+```kotlin
+object ServiceLocator {
+    val authRepository by lazy { AuthRepository() }
+    val usuarioRepository by lazy { UsuarioRepository() }
+    val maquinaRepository by lazy { MaquinaRepository() }
+    val reservaRepository by lazy { ReservaRepository() }
+    val platoRepository by lazy { PlatoRepository() }
+    val pesoRepository by lazy { PesoRepository() }
+    val pagoRepository by lazy { PagoRepository() }
+}
+```
+
+ViewModels-ek biltegietara sartzen dira `ServiceLocator.xRepository` bidez.
+
+## AuthRepository
+
+Autentifikazio- eta erregistro-eragiketak kudeatzen ditu.
+
+| Metodoa | Deskribapena | 
+|---|---| 
+| `getUserByDni(dni)` | Bilatu erabiltzaile bat IDaren arabera. `Usuario?` itzultzen du | 
+| `userExistsByDni(dni)` | Egiaztatu NANa erregistratuta dagoen. `Boolean` itzultzen du | 
+| `verifyCredentials(dni, email)` | Egiaztatu NAN + posta elektroniko bikotea pasahitza berreskuratzeko | 
+| `updatePassword(userId, newPass)` | Erabiltzailearen `contraseniaHash` eremua | eguneratzen du
+| `insertUser(nombre, dni, email, pass, telefono)` | Erregistratu erabiltzaile berri bat `admin=0` eta `premium=false` |
+
+##Erabiltzaileen biltegia
+
+Erabiltzaile-profilaren irakurketa eta eguneratzea kudeatzen du.
+
+| Metodoa | Deskribapena | 
+|---|---| 
+| `getById(id)` | Erabiltzaile bat bere IDaren arabera lortzen du. `Usuario?` itzultzen du | 
+| `update(id, nombre, email, telefono, pass, foto)` | Eguneratu edita daitezkeen profileko eremuak | 
+| `updatePremium(id, isPremium, fechaIni, fechaFin)` | Aktibatu edo desaktibatu Premium harpidetza |
+
+## MaquinaRepository
+
+Makineriaren katalogoa kudeatzea.
+
+| Metodoa | Deskribapena | 
+|---|---| 
+| `getAll()` | Makinen zerrenda osoa lortzen du. `List<Maquina>` itzultzen du | 
+| `insert(maquina)` | Txertatu makina berri bat | 
+| `delete(id)` | Ezabatu makina bat IDaren arabera | 
+| `activateMaintenance(id, desde, hasta)` | Markatu makina funtzionatzen ez duela mantentze-tartearekin | 
+| `deactivateMaintenance(id)` | Makina berriro aktibatu eta mantentze-eremuak garbitu |
+
+## Erreserba Biltegia
+
+Makineriaren erreserbak kudeatzea.
+
+| Metodoa | Deskribapena | 
+|---|---| 
+| `getAll()` | Lortu erreserba guztiak kapsulatutako erabiltzaile eta makinen datuekin | 
+| `getByUser(userId)` | Lortu erabiltzaile jakin baten erreserbak | 
+| `getByMachine(machineId)` | Lortu makina baten erreserba aktiboak | 
+| `insert(reserva)` | Sortu erreserba berri bat | 
+| `delete(id)` | Utzi/ezabatu erreserba bat IDaren arabera |
+
+Erreserba-kontsultek PostgREST erlazio txertatutako sintaxia erabiltzen dute (`*, usuarios(*), maquinas(*)`) erabiltzaile eta makinen datuak eskaera bakarrean eskuratzeko.
+
+## PlatoRepository
+
+Elikadura-plateren katalogoa kudeatzea.
+
+| Metodoa | Deskribapena | 
+|---|---| 
+| `getAccepted()` | `aceptado=true` eta `visibilidad=true` | dituzten platerak lortzen ditu
+| `getPending()` | Platerak `aceptado=false`rekin lortzen ditu (administratzaileentzat soilik) | 
+| `insert(plato)` | Sartu plaka berri bat `aceptado=false` | 
+| `accept(id)` | Onartu plater bat: `aceptado=true` | 
+| `delete(id)` | Ezabatu plaka bat betiko |
+
+## PesoRepository
+
+Gorputzaren pisuaren erregistroak kudeatu.
+
+| Metodoa | Deskribapena | 
+|---|---| 
+| `getByUser(userId)` | Erabiltzaile baten pisuaren historia lortzen du, goranzko dataren arabera ordenatuta | 
+| `insert(pesoUsuario)` | Sartu pisu-erregistro berri bat | 
+| `update(id, peso)` | Lehendik dagoen erregistro baten balioa | eguneratzen du
+| `delete(id)` | Ezabatu pisu-erregistro bat |
+
+## PagoRepository
+
+Kudeatu harpidetza-ordainketen historia.
+
+| Metodoa | Deskribapena | 
+|---|---| 
+| `getByUser(userId)` | Erabiltzaile baten ordainketak jasotzen ditu, beheranzko dataren arabera ordenatuta
+| `insert(pago)` | Erregistratu harpidetza-ordainketa berri bat |

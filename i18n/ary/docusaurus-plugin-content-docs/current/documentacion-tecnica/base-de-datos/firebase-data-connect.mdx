@@ -1,0 +1,139 @@
+---
+title: Firebase Data Connect
+sidebar_position: 2
+---
+# اتصال بيانات Firebase
+
+Firebase Data Connect عبارة عن خدمة Firebase تعرض واجهة برمجة تطبيقات GraphQL أعلى قاعدة بيانات PostgreSQL المُدارة. في Trainium يتم استخدامه كخلفية تكميلية لـ Supabase لعمليات معينة.
+
+## إعدادات
+
+يحتوي الدليل `app/dataconnect/` على عناصر تكوين Data Connect:
+
+```
+dataconnect/
+├── dataconnect.yaml           # Configuración del servicio
+├── schema/
+│   └── schema.gql             # Definición del esquema de tipos
+└── default_connector/
+    ├── connector.yaml         # Configuración del conector
+    └── queries.gql            # Queries y mutaciones definidas
+```
+
+### dataconnect.yaml
+
+يحدد اسم مشروع Firebase والمنطقة واسم خدمة Data Connect. المنطقة التي تم تكوينها هي `europe-southwest1`.
+
+### موصل.yaml
+
+يحدد اسم الموصل الافتراضي (`default`) ويربط الاستعلامات من الملف `queries.gql` بالموصل المذكور.
+
+## مخطط GraphQL (schema.gql)
+
+يحدد المخطط ستة أنواع رئيسية تتوافق تقريبًا مع جداول Supabase:
+
+### نوع الآلة
+
+```graphql
+type Maquinas @table(name: "MAQUINAS") {
+  id: Int!
+  nombre: String! @col(dataType: "varchar(100)")
+  tipo: String @col(dataType: "varchar(50)")
+  estado: Int! @default(value: 0)
+  descripcion: String @col(dataType: "text")
+  operativa: Int! @default(value: 1)
+}
+```
+
+### نوع المستخدم
+
+```graphql
+type Usuario @table(name: "USUARIO") {
+  id: Int!
+  nombre: String! @col(dataType: "varchar(100)")
+  dni: String @unique @col(dataType: "varchar(20)")
+  email: String @unique @col(dataType: "varchar(100)")
+  contraseniaHash: String @col(name: "CONTRASEÑA_HASH", dataType: "varchar(255)")
+  telefono: String @col(dataType: "varchar(20)")
+  premium: Boolean @default(value: false)
+  fechaIniPrem: Date @col(name: "FECHA_INI_PREM")
+  fechaFinPrem: Date @col(name: "FECHA_FIN_PREM")
+  fechaReg: Date! @col(name: "FECHA_REG") @default(expr: "request.time")
+  admin: Int! @default(value: 0)
+}
+```
+
+### اكتب الأطباق
+
+```graphql
+type Platos @table(name: "PLATOS") {
+  id: Int!
+  idUsuario: Usuario
+  nombre: String! @col(dataType: "varchar(100)")
+  descripcion: String @col(dataType: "text")
+  calorias: Float @col(name: "CALORIAS")
+  imagenUrl: String @col(name: "IMAGEN_URL", dataType: "varchar(255)")
+  fechaSubida: Date! @col(name: "FECHA_SUBIDA") @default(expr: "request.time")
+  visibilidad: Boolean @default(value: true)
+}
+```
+
+### نوع الحجز
+
+```graphql
+type Reservas @table(name: "RESERVAS") {
+  id: Int!
+  idUsuario: Usuario!
+  idMaquina: Maquinas!
+  fecha: Date
+  horaInicio: String @col(name: "HORA_INICIO", dataType: "time")
+  horaFin: String @col(name: "HORA_FIN", dataType: "time")
+  estado: Boolean @default(value: true)
+}
+```
+
+### نوع وزن المستخدم
+
+```graphql
+type PesoUsuario @table(name: "PESO_USUARIO") {
+  id: Int!
+  idUsuario: Usuario!
+  peso: Float! @col(name: "PESO")
+  fecha: Date
+}
+```
+
+### نوع الدفع
+
+```graphql
+type Pagos @table(name: "PAGOS") {
+  id: Int!
+  idUsuario: Usuario!
+  monto: Int! @col(name: "monto", dataType: "bigint")
+  fechaPago: Date @col(name: "fecha_pago")
+  tipo: String @col(name: "tipo", dataType: "varchar(50)")
+  metodoPago: String @col(name: "metodo_pago", dataType: "varchar(25)")
+}
+```
+
+## عميل HTTP (DataConnectClient.kt)
+
+لا يستخدم الاتصال مع Data Connect حزمة Firebase SDK لنظام التشغيل Android، بل يستخدم عميل HTTP يدويًا تم تنفيذه في `DataConnectClient.kt`. يقدم هذا الكائن المفرد طلبات `POST` إلى نقطة نهاية Data Connect REST مع نص الاستعلام بتنسيق JSON.
+
+```kotlin
+object DataConnectClient {
+    private const val API_KEY = "..."
+    private const val APP_ID = "<app-id-de-ejemplo>..."
+    private const val ENDPOINT = "https://europe-southwest1-dataconnect.googleapis.com/v1beta/projects/tu-proyecto.../connectors/default:executeGraphql"
+
+    suspend fun execute(
+        query: String,
+        variables: Map<String, Any?> = emptyMap(),
+        operationName: String? = null
+    ): JSONObject?
+}
+```
+
+تتم المصادقة باستخدام Google API باستخدام الرأس `x-goog-api-key`. تتضمن نقطة النهاية النطاق الفرعي الإقليمي `europe-southwest1-dataconnect.googleapis.com`، المطلوب لتجنب استجابات 404 عند نشر الخدمة في منطقة معينة.
+
+تقوم الطريقة `execute` بإرجاع الكائن `JSONObject` للاستجابة الكاملة أو `null` في حالة حدوث خطأ في الشبكة أو استجابة HTTP غير ناجحة. يتم تنفيذ المكالمة في المرسل `Dispatchers.IO` باستخدام `withContext`.
